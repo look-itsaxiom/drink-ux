@@ -1,0 +1,27 @@
+{
+  "name": "drink-ux",
+  "version": "1.0.0",
+  "description": "SaaS app for coffee businesses with custom drink builder and POS integration",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "dev": "npm run dev --workspaces --if-present"
+  },
+  "keywords": [
+    "pos",
+    "coffee",
+    "drink-builder",
+    "saas",
+    "ionic",
+    "react"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
