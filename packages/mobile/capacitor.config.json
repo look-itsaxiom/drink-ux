@@ -1,0 +1,8 @@
+{
+  "appId": "com.drinkux.app",
+  "appName": "Drink-UX",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
