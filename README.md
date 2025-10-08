@@ -147,12 +147,17 @@ Drink-UX supports integration with the following POS systems:
 
 ### Mobile App
 
-- **Interactive Drink Builder**
-  - Size selection
-  - Milk type options
-  - Flavor customizations
-  - Visual price updates
-  - Add to cart functionality
+- **Visual Drink Builder**
+  - Interactive, game-like interface with real-time visual feedback
+  - Component-based drink construction (Cup → Base → Modifiers)
+  - SVG-rendered cup that fills as ingredients are added
+  - Smart intent clarification for ambiguous combinations
+  - Cup size selection (Small, Medium, Large)
+  - Base drink options (Espresso, Cold Brew, Tea, etc.)
+  - Extensive modifiers (Milk types, Syrups, Ice, Toppings)
+  - Real-time price calculation
+  - Modern, sleek UI with smooth animations
+  - Fully responsive mobile-first design
 
 - **Order Management**
   - Real-time cart updates
