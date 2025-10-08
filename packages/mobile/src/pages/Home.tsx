@@ -1,68 +1,89 @@
+import { useState } from 'react';
 import {
   IonContent,
   IonHeader,
   IonPage,
   IonTitle,
   IonToolbar,
-  IonGrid,
-  IonRow,
-  IonCol,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardSubtitle,
-  IonCardContent,
   IonButton,
   IonIcon,
+  IonRadioGroup,
+  IonRadio,
+  IonItem,
+  IonLabel,
+  IonList,
 } from '@ionic/react';
-import { cartOutline } from 'ionicons/icons';
+import { cartOutline, addCircleOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router';
 import './Home.css';
 
 const Home: React.FC = () => {
   const history = useHistory();
+  const [selectedSize, setSelectedSize] = useState<string>('medium');
 
-  const drinks = [
-    { id: '1', name: 'Classic Latte', category: 'Espresso', price: '$4.50' },
-    { id: '2', name: 'Cappuccino', category: 'Espresso', price: '$4.25' },
-    { id: '3', name: 'Cold Brew', category: 'Cold Coffee', price: '$4.00' },
-    { id: '4', name: 'Mocha', category: 'Specialty', price: '$5.00' },
-  ];
+  const handleCreateDrink = () => {
+    // Navigate to drink builder with optional size parameter
+    history.push(`/drink/new?size=${selectedSize}`);
+  };
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar color="primary">
-          <IonTitle>Drink Menu</IonTitle>
+          <IonTitle>Drink Builder</IonTitle>
           <IonButton slot="end" fill="clear" onClick={() => history.push('/cart')}>
             <IonIcon icon={cartOutline} />
           </IonButton>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
-        <IonGrid>
-          <IonRow>
-            {drinks.map((drink) => (
-              <IonCol size="12" sizeMd="6" sizeLg="4" key={drink.id}>
-                <IonCard>
-                  <IonCardHeader>
-                    <IonCardTitle>{drink.name}</IonCardTitle>
-                    <IonCardSubtitle>{drink.category}</IonCardSubtitle>
-                  </IonCardHeader>
-                  <IonCardContent>
-                    <p>Starting at {drink.price}</p>
-                    <IonButton
-                      expand="block"
-                      onClick={() => history.push(`/drink/${drink.id}`)}
-                    >
-                      Customize
-                    </IonButton>
-                  </IonCardContent>
-                </IonCard>
-              </IonCol>
-            ))}
-          </IonRow>
-        </IonGrid>
+      <IonContent fullscreen className="home-page">
+        <div className="home-container">
+          <div className="welcome-section">
+            <h1>Build Your Perfect Drink</h1>
+            <p>Create a custom drink exactly how you like it</p>
+          </div>
+
+          <div className="size-selection-section">
+            <h2>Choose Your Cup Size</h2>
+            <IonList className="size-list">
+              <IonRadioGroup value={selectedSize} onIonChange={(e: CustomEvent) => setSelectedSize(e.detail.value)}>
+                <IonItem>
+                  <IonLabel>
+                    <h3>Small</h3>
+                    <p>8 oz - Perfect for a quick drink</p>
+                  </IonLabel>
+                  <IonRadio slot="start" value="small" />
+                </IonItem>
+                <IonItem>
+                  <IonLabel>
+                    <h3>Medium</h3>
+                    <p>12 oz - Most popular size</p>
+                  </IonLabel>
+                  <IonRadio slot="start" value="medium" />
+                </IonItem>
+                <IonItem>
+                  <IonLabel>
+                    <h3>Large</h3>
+                    <p>16 oz - Maximum refreshment</p>
+                  </IonLabel>
+                  <IonRadio slot="start" value="large" />
+                </IonItem>
+              </IonRadioGroup>
+            </IonList>
+          </div>
+
+          <div className="action-section">
+            <IonButton 
+              expand="block" 
+              size="large"
+              onClick={handleCreateDrink}
+              className="create-drink-button"
+            >
+              <IonIcon slot="start" icon={addCircleOutline} />
+              Create Your Drink
+            </IonButton>
+          </div>
+        </div>
       </IonContent>
     </IonPage>
   );

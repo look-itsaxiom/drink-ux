@@ -284,6 +284,89 @@ const DrinkBuilder: React.FC = () => {
     }
   };
 
+  const generateDrinkName = (): string => {
+    if (!drinkState.base) {
+      return 'Custom Drink';
+    }
+
+    const base = drinkState.base.name.toLowerCase();
+    const modifiers = drinkState.modifiers;
+    
+    // Find key modifiers
+    const hasMilk = modifiers.some(m => m.category === 'milk');
+    const milkType = modifiers.find(m => m.category === 'milk')?.name || '';
+    const syrups = modifiers.filter(m => m.category === 'syrup');
+
+    // Espresso-based drink naming
+    if (base.includes('espresso')) {
+      // Latte: espresso + milk
+      if (hasMilk && syrups.length === 0) {
+        const milkPrefix = milkType.includes('Oat') ? 'Oat' : milkType.includes('Almond') ? 'Almond' : '';
+        return `${milkPrefix} Latte`.trim();
+      }
+      
+      // Flavored Latte: espresso + milk + syrup
+      if (hasMilk && syrups.length > 0) {
+        const syrupName = syrups[0].name.replace(' Syrup', '');
+        return `${syrupName} Latte`;
+      }
+
+      // Macchiato: espresso + foam (for now, just espresso)
+      if (!hasMilk && modifiers.length === 0) {
+        return 'Espresso';
+      }
+
+      // Flavored Espresso
+      if (syrups.length > 0) {
+        const syrupName = syrups[0].name.replace(' Syrup', '');
+        return `${syrupName} Espresso`;
+      }
+    }
+
+    // Cold Brew based drinks
+    if (base.includes('cold brew')) {
+      if (hasMilk && syrups.length > 0) {
+        const syrupName = syrups[0].name.replace(' Syrup', '');
+        return `${syrupName} Cold Brew`;
+      }
+      
+      if (hasMilk) {
+        return 'Cold Brew with Milk';
+      }
+
+      if (syrups.length > 0) {
+        const syrupName = syrups[0].name.replace(' Syrup', '');
+        return `${syrupName} Cold Brew`;
+      }
+
+      return 'Cold Brew';
+    }
+
+    // Tea-based drinks
+    if (base.includes('tea')) {
+      if (hasMilk) {
+        const teaType = base.replace(' tea', '');
+        return `${teaType} Tea Latte`;
+      }
+
+      if (syrups.length > 0) {
+        const syrupName = syrups[0].name.replace(' Syrup', '');
+        const teaType = base.replace(' tea', '');
+        return `${syrupName} ${teaType} Tea`;
+      }
+
+      return drinkState.base.name;
+    }
+
+    // Generic fallback with base + modifiers
+    if (syrups.length > 0) {
+      const syrupName = syrups[0].name.replace(' Syrup', '');
+      return `${syrupName} ${drinkState.base.name}`;
+    }
+
+    return drinkState.base.name;
+  };
+
   const renderVisualCup = () => {
     const cupHeight = getCupHeight();
     const components = [drinkState.base, ...drinkState.modifiers].filter(Boolean);
@@ -358,7 +441,7 @@ const DrinkBuilder: React.FC = () => {
             
             <div className="cup-info">
               <h3>{drinkState.cup?.name || 'Select a cup'}</h3>
-              {drinkState.base && <p className="base-name">{drinkState.base.name}</p>}
+              {drinkState.base && <p className="base-name">{generateDrinkName()}</p>}
             </div>
           </div>
 

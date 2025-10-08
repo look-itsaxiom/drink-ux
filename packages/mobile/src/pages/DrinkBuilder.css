@@ -34,16 +34,6 @@
 
 .visual-cup {
   filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.15));
-  animation: cupFloat 3s ease-in-out infinite;
-}
-
-@keyframes cupFloat {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
 }
 
 .empty-cup-hint {
