@@ -35,6 +35,86 @@ export interface CustomizationOption {
 }
 
 /**
+ * Visual Drink Builder - Component-based model
+ */
+export enum ComponentType {
+  CUP = 'cup',
+  BASE = 'base',
+  MODIFIER = 'modifier',
+}
+
+export enum CupSize {
+  SMALL = 'small',
+  MEDIUM = 'medium',
+  LARGE = 'large',
+}
+
+export enum CupType {
+  PAPER = 'paper',
+  CERAMIC = 'ceramic',
+  GLASS = 'glass',
+}
+
+export enum LidType {
+  NONE = 'none',
+  FLAT = 'flat',
+  DOME = 'dome',
+}
+
+export interface VisualProperties {
+  color: string;
+  opacity?: number;
+  layerOrder: number;
+}
+
+export interface DrinkComponent {
+  id: string;
+  name: string;
+  type: ComponentType;
+  category: string;
+  price: number;
+  visual: VisualProperties;
+  available: boolean;
+}
+
+export interface CupComponent extends DrinkComponent {
+  type: ComponentType.CUP;
+  size: CupSize;
+  cupType: CupType;
+  lidType: LidType;
+}
+
+export interface BaseComponent extends DrinkComponent {
+  type: ComponentType.BASE;
+  isHot: boolean;
+}
+
+export interface ModifierComponent extends DrinkComponent {
+  type: ComponentType.MODIFIER;
+  canTransformDrink: boolean;
+}
+
+export interface IntentClarification {
+  componentId: string;
+  prompt: string;
+  options: IntentOption[];
+}
+
+export interface IntentOption {
+  id: string;
+  label: string;
+  resultingComponents: string[];
+}
+
+export interface DrinkBuilderState {
+  cup?: CupComponent;
+  base?: BaseComponent;
+  modifiers: ModifierComponent[];
+  totalPrice: number;
+  clarificationNeeded?: IntentClarification;
+}
+
+/**
  * Drink types
  */
 export interface Drink {
