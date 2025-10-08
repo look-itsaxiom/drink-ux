@@ -77,6 +77,8 @@ npm run dev
 
 The mobile app will be available at `http://localhost:3000`
 
+**Live Demo**: The mobile drink builder is also available as a PWA at [https://look-itsaxiom.github.io/drink-ux/](https://look-itsaxiom.github.io/drink-ux/)
+
 #### Running the Admin Portal
 
 ```bash
@@ -126,6 +128,34 @@ npm run build
 npm start
 ```
 
+## Deployment
+
+### Mobile PWA (GitHub Pages)
+
+The mobile client is automatically deployed to GitHub Pages when changes are pushed to the `main` branch (specifically changes to `packages/mobile/` or `packages/shared/`).
+
+The PWA is available at: [https://look-itsaxiom.github.io/drink-ux/](https://look-itsaxiom.github.io/drink-ux/)
+
+#### Manual Deployment
+
+You can also manually trigger a deployment using GitHub Actions:
+
+1. Go to the repository on GitHub
+2. Navigate to "Actions" tab
+3. Select "Deploy Mobile PWA to GitHub Pages" workflow
+4. Click "Run workflow"
+
+#### Local Build for GitHub Pages
+
+To build the mobile app with GitHub Pages configuration locally:
+
+```bash
+cd packages/mobile
+GITHUB_PAGES=true npm run build
+```
+
+The production-ready files will be in `packages/mobile/dist/`.
+
 ## POS Integration
 
 Drink-UX supports integration with the following POS systems:
@@ -145,7 +175,11 @@ Drink-UX supports integration with the following POS systems:
 
 ## Features
 
-### Mobile App
+### Mobile App (Live Demo Available)
+
+The mobile drink builder is deployed as a Progressive Web App (PWA) at [https://look-itsaxiom.github.io/drink-ux/](https://look-itsaxiom.github.io/drink-ux/)
+
+Test the drink builder directly in your browser - no installation required!
 
 - **Visual Drink Builder**
   - Interactive, game-like interface with real-time visual feedback
