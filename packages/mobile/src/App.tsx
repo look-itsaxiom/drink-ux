@@ -25,7 +25,7 @@ setupIonicReact();
 
 const App: React.FC = () => (
   <IonApp>
-    <IonReactRouter>
+    <IonReactRouter basename={import.meta.env.BASE_URL}>
       <IonRouterOutlet>
         <Route path="/home" component={Home} exact />
         <Route path="/drink/:id" component={DrinkBuilder} exact />
