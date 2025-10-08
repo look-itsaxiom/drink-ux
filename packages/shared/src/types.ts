@@ -109,6 +109,7 @@ export interface IntentOption {
 export interface DrinkBuilderState {
   cup?: CupComponent;
   base?: BaseComponent;
+  icePreference?: 'none' | 'light' | 'regular' | 'extra';
   modifiers: ModifierComponent[];
   totalPrice: number;
   clarificationNeeded?: IntentClarification;

@@ -27,7 +27,6 @@ import {
   BaseComponent,
   ModifierComponent,
   DrinkBuilderState,
-  IntentClarification,
 } from '@drink-ux/shared';
 import './DrinkBuilder.css';
 
@@ -104,7 +103,8 @@ const availableBases: BaseComponent[] = [
   },
 ];
 
-const availableModifiers: ModifierComponent[] = [
+// Grouped modifiers by category
+const milkModifiers: ModifierComponent[] = [
   {
     id: 'mod-milk-whole',
     name: 'Whole Milk',
@@ -135,16 +135,9 @@ const availableModifiers: ModifierComponent[] = [
     visual: { color: '#f0e68c', opacity: 0.6, layerOrder: 2 },
     available: true,
   },
-  {
-    id: 'mod-ice',
-    name: 'Ice',
-    type: ComponentType.MODIFIER,
-    category: 'ice',
-    price: 0,
-    canTransformDrink: true,
-    visual: { color: '#e3f2fd', opacity: 0.5, layerOrder: 3 },
-    available: true,
-  },
+];
+
+const syrupModifiers: ModifierComponent[] = [
   {
     id: 'mod-vanilla',
     name: 'Vanilla Syrup',
@@ -166,6 +159,19 @@ const availableModifiers: ModifierComponent[] = [
     available: true,
   },
   {
+    id: 'mod-hazelnut',
+    name: 'Hazelnut Syrup',
+    type: ComponentType.MODIFIER,
+    category: 'syrup',
+    price: 0.5,
+    canTransformDrink: false,
+    visual: { color: '#c19a6b', opacity: 0.4, layerOrder: 3 },
+    available: true,
+  },
+];
+
+const toppingModifiers: ModifierComponent[] = [
+  {
     id: 'mod-whip',
     name: 'Whipped Cream',
     type: ComponentType.MODIFIER,
@@ -173,6 +179,16 @@ const availableModifiers: ModifierComponent[] = [
     price: 0.5,
     canTransformDrink: false,
     visual: { color: '#fffaf0', opacity: 0.9, layerOrder: 4 },
+    available: true,
+  },
+  {
+    id: 'mod-cinnamon',
+    name: 'Cinnamon Powder',
+    type: ComponentType.MODIFIER,
+    category: 'topping',
+    price: 0,
+    canTransformDrink: false,
+    visual: { color: '#8b4513', opacity: 0.5, layerOrder: 4 },
     available: true,
   },
 ];
@@ -188,7 +204,10 @@ const DrinkBuilder: React.FC = () => {
   
   const [showCupSelector, setShowCupSelector] = useState(false);
   const [showBaseSelector, setShowBaseSelector] = useState(false);
-  const [showModifierSelector, setShowModifierSelector] = useState(false);
+  const [showIceSelector, setShowIceSelector] = useState(false);
+  const [showMilkSelector, setShowMilkSelector] = useState(false);
+  const [showSyrupSelector, setShowSyrupSelector] = useState(false);
+  const [showToppingSelector, setShowToppingSelector] = useState(false);
   const [showIntentModal, setShowIntentModal] = useState(false);
 
   const calculateTotalPrice = () => {
@@ -216,39 +235,24 @@ const DrinkBuilder: React.FC = () => {
       totalPrice: drinkState.totalPrice - (drinkState.base?.price || 0) + base.price,
     });
     setShowBaseSelector(false);
+    // Prompt for ice preference after selecting base
+    setShowIceSelector(true);
+  };
+
+  const handleIceSelect = (icePreference: 'none' | 'light' | 'regular' | 'extra') => {
+    setDrinkState({
+      ...drinkState,
+      icePreference,
+    });
+    setShowIceSelector(false);
   };
 
   const handleModifierAdd = (modifier: ModifierComponent) => {
-    // Check for intent clarification needed
-    if (modifier.id === 'mod-ice' && drinkState.base?.isHot) {
-      const clarification: IntentClarification = {
-        componentId: modifier.id,
-        prompt: 'Adding ice to a hot drink. What would you like?',
-        options: [
-          {
-            id: 'light-ice',
-            label: 'Light ice to cool it down',
-            resultingComponents: ['mod-ice-light'],
-          },
-          {
-            id: 'iced-drink',
-            label: 'Make this an iced drink',
-            resultingComponents: ['mod-ice-full', 'base-iced'],
-          },
-        ],
-      };
-      setDrinkState({ ...drinkState, clarificationNeeded: clarification });
-      setShowIntentModal(true);
-      setShowModifierSelector(false);
-      return;
-    }
-
     setDrinkState({
       ...drinkState,
       modifiers: [...drinkState.modifiers, modifier],
       totalPrice: drinkState.totalPrice + modifier.price,
     });
-    setShowModifierSelector(false);
   };
 
   const handleModifierRemove = (modifierId: string) => {
@@ -465,7 +469,7 @@ const DrinkBuilder: React.FC = () => {
                   <IonLabel>{drinkState.base.name}</IonLabel>
                   <IonIcon 
                     icon={closeCircle} 
-                    onClick={() => setDrinkState({ ...drinkState, base: undefined, totalPrice: drinkState.totalPrice - (drinkState.base?.price || 0) })} 
+                    onClick={() => setDrinkState({ ...drinkState, base: undefined, icePreference: undefined, totalPrice: drinkState.totalPrice - (drinkState.base?.price || 0) })} 
                   />
                 </IonChip>
               ) : (
@@ -481,28 +485,103 @@ const DrinkBuilder: React.FC = () => {
               )}
             </div>
 
-            <div className="component-category">
-              <h4>Customize</h4>
-              <div className="modifiers-chips">
-                {drinkState.modifiers.map(modifier => (
-                  <IonChip key={modifier.id} color="secondary">
-                    <IonLabel>{modifier.name}</IonLabel>
+            {drinkState.base && (
+              <div className="component-category">
+                <h4>Ice Preference</h4>
+                {drinkState.icePreference ? (
+                  <IonChip color="tertiary">
+                    <IonLabel>{drinkState.icePreference === 'none' ? 'No Ice' : drinkState.icePreference.charAt(0).toUpperCase() + drinkState.icePreference.slice(1) + ' Ice'}</IonLabel>
                     <IonIcon 
                       icon={closeCircle} 
-                      onClick={() => handleModifierRemove(modifier.id)} 
+                      onClick={() => setShowIceSelector(true)} 
                     />
                   </IonChip>
-                ))}
-                <IonButton 
-                  size="small" 
-                  fill="outline"
-                  onClick={() => setShowModifierSelector(true)}
-                >
-                  <IonIcon slot="start" icon={addCircleOutline} />
-                  Add More
-                </IonButton>
+                ) : (
+                  <IonButton 
+                    size="small" 
+                    fill="solid"
+                    color="tertiary"
+                    onClick={() => setShowIceSelector(true)}
+                  >
+                    <IonIcon slot="start" icon={addCircleOutline} />
+                    Select Ice
+                  </IonButton>
+                )}
               </div>
-            </div>
+            )}
+
+            {drinkState.base && drinkState.icePreference && (
+              <>
+                <div className="component-category">
+                  <h4>Milk</h4>
+                  <div className="modifiers-chips">
+                    {drinkState.modifiers.filter(m => m.category === 'milk').map(modifier => (
+                      <IonChip key={modifier.id} color="secondary">
+                        <IonLabel>{modifier.name}</IonLabel>
+                        <IonIcon 
+                          icon={closeCircle} 
+                          onClick={() => handleModifierRemove(modifier.id)} 
+                        />
+                      </IonChip>
+                    ))}
+                    <IonButton 
+                      size="small" 
+                      fill="outline"
+                      onClick={() => setShowMilkSelector(true)}
+                    >
+                      <IonIcon slot="start" icon={addCircleOutline} />
+                      Add Milk
+                    </IonButton>
+                  </div>
+                </div>
+
+                <div className="component-category">
+                  <h4>Syrups</h4>
+                  <div className="modifiers-chips">
+                    {drinkState.modifiers.filter(m => m.category === 'syrup').map(modifier => (
+                      <IonChip key={modifier.id} color="secondary">
+                        <IonLabel>{modifier.name}</IonLabel>
+                        <IonIcon 
+                          icon={closeCircle} 
+                          onClick={() => handleModifierRemove(modifier.id)} 
+                        />
+                      </IonChip>
+                    ))}
+                    <IonButton 
+                      size="small" 
+                      fill="outline"
+                      onClick={() => setShowSyrupSelector(true)}
+                    >
+                      <IonIcon slot="start" icon={addCircleOutline} />
+                      Add Syrup
+                    </IonButton>
+                  </div>
+                </div>
+
+                <div className="component-category">
+                  <h4>Toppings</h4>
+                  <div className="modifiers-chips">
+                    {drinkState.modifiers.filter(m => m.category === 'topping').map(modifier => (
+                      <IonChip key={modifier.id} color="secondary">
+                        <IonLabel>{modifier.name}</IonLabel>
+                        <IonIcon 
+                          icon={closeCircle} 
+                          onClick={() => handleModifierRemove(modifier.id)} 
+                        />
+                      </IonChip>
+                    ))}
+                    <IonButton 
+                      size="small" 
+                      fill="outline"
+                      onClick={() => setShowToppingSelector(true)}
+                    >
+                      <IonIcon slot="start" icon={addCircleOutline} />
+                      Add Topping
+                    </IonButton>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -554,30 +633,151 @@ const DrinkBuilder: React.FC = () => {
           </IonContent>
         </IonModal>
 
-        {/* Modifier Selector Modal */}
-        <IonModal isOpen={showModifierSelector} onDidDismiss={() => setShowModifierSelector(false)}>
+        {/* Ice Selector Modal */}
+        <IonModal isOpen={showIceSelector} onDidDismiss={() => setShowIceSelector(false)}>
           <IonHeader>
             <IonToolbar>
-              <IonTitle>Add Customizations</IonTitle>
+              <IonTitle>Ice Preference</IonTitle>
               <IonButtons slot="end">
-                <IonButton onClick={() => setShowModifierSelector(false)}>Close</IonButton>
+                <IonButton onClick={() => setShowIceSelector(false)}>Close</IonButton>
               </IonButtons>
             </IonToolbar>
           </IonHeader>
           <IonContent>
             <IonList>
-              {availableModifiers.map(modifier => {
+              <IonItem button onClick={() => handleIceSelect('none')}>
+                <IonLabel>
+                  <h2>No Ice</h2>
+                  <p>Perfect for hot drinks or room temperature</p>
+                </IonLabel>
+              </IonItem>
+              <IonItem button onClick={() => handleIceSelect('light')}>
+                <IonLabel>
+                  <h2>Light Ice</h2>
+                  <p>Just a few cubes to cool it down</p>
+                </IonLabel>
+              </IonItem>
+              <IonItem button onClick={() => handleIceSelect('regular')}>
+                <IonLabel>
+                  <h2>Regular Ice</h2>
+                  <p>Standard amount of ice</p>
+                </IonLabel>
+              </IonItem>
+              <IonItem button onClick={() => handleIceSelect('extra')}>
+                <IonLabel>
+                  <h2>Extra Ice</h2>
+                  <p>Maximum ice for extra cold drinks</p>
+                </IonLabel>
+              </IonItem>
+            </IonList>
+          </IonContent>
+        </IonModal>
+
+        {/* Milk Selector Modal */}
+        <IonModal isOpen={showMilkSelector} onDidDismiss={() => setShowMilkSelector(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>Select Milk</IonTitle>
+              <IonButtons slot="end">
+                <IonButton onClick={() => setShowMilkSelector(false)}>Close</IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent>
+            <IonList>
+              {milkModifiers.map(modifier => {
                 const alreadyAdded = drinkState.modifiers.some(m => m.id === modifier.id);
                 return (
                   <IonItem 
                     key={modifier.id} 
                     button 
-                    onClick={() => !alreadyAdded && handleModifierAdd(modifier)}
+                    onClick={() => {
+                      if (!alreadyAdded) {
+                        handleModifierAdd(modifier);
+                        setShowMilkSelector(false);
+                      }
+                    }}
                     disabled={alreadyAdded}
                   >
                     <IonLabel>
                       <h2>{modifier.name}</h2>
-                      <p>{modifier.category} - ${modifier.price.toFixed(2)}</p>
+                      <p>${modifier.price.toFixed(2)}</p>
+                    </IonLabel>
+                    {alreadyAdded && <IonLabel slot="end" color="medium">Added</IonLabel>}
+                  </IonItem>
+                );
+              })}
+            </IonList>
+          </IonContent>
+        </IonModal>
+
+        {/* Syrup Selector Modal */}
+        <IonModal isOpen={showSyrupSelector} onDidDismiss={() => setShowSyrupSelector(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>Select Syrup</IonTitle>
+              <IonButtons slot="end">
+                <IonButton onClick={() => setShowSyrupSelector(false)}>Close</IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent>
+            <IonList>
+              {syrupModifiers.map(modifier => {
+                const alreadyAdded = drinkState.modifiers.some(m => m.id === modifier.id);
+                return (
+                  <IonItem 
+                    key={modifier.id} 
+                    button 
+                    onClick={() => {
+                      if (!alreadyAdded) {
+                        handleModifierAdd(modifier);
+                        setShowSyrupSelector(false);
+                      }
+                    }}
+                    disabled={alreadyAdded}
+                  >
+                    <IonLabel>
+                      <h2>{modifier.name}</h2>
+                      <p>${modifier.price.toFixed(2)}</p>
+                    </IonLabel>
+                    {alreadyAdded && <IonLabel slot="end" color="medium">Added</IonLabel>}
+                  </IonItem>
+                );
+              })}
+            </IonList>
+          </IonContent>
+        </IonModal>
+
+        {/* Topping Selector Modal */}
+        <IonModal isOpen={showToppingSelector} onDidDismiss={() => setShowToppingSelector(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>Select Topping</IonTitle>
+              <IonButtons slot="end">
+                <IonButton onClick={() => setShowToppingSelector(false)}>Close</IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent>
+            <IonList>
+              {toppingModifiers.map(modifier => {
+                const alreadyAdded = drinkState.modifiers.some(m => m.id === modifier.id);
+                return (
+                  <IonItem 
+                    key={modifier.id} 
+                    button 
+                    onClick={() => {
+                      if (!alreadyAdded) {
+                        handleModifierAdd(modifier);
+                        setShowToppingSelector(false);
+                      }
+                    }}
+                    disabled={alreadyAdded}
+                  >
+                    <IonLabel>
+                      <h2>{modifier.name}</h2>
+                      <p>${modifier.price.toFixed(2)}</p>
                     </IonLabel>
                     {alreadyAdded && <IonLabel slot="end" color="medium">Added</IonLabel>}
                   </IonItem>
@@ -620,7 +820,7 @@ const DrinkBuilder: React.FC = () => {
           <IonButton 
             expand="block" 
             onClick={handleAddToCart}
-            disabled={!drinkState.base}
+            disabled={!drinkState.base || !drinkState.icePreference}
           >
             Add to Cart - ${calculateTotalPrice()}
           </IonButton>
