@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace=@drink-ux/shared && npm run build --workspaces",
     "test": "npm run test --workspaces",
     "dev": "npm run dev --workspaces --if-present"
   },
