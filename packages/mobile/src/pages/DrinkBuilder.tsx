@@ -203,8 +203,8 @@ const DrinkBuilder: React.FC = () => {
   });
   
   const [showCupSelector, setShowCupSelector] = useState(false);
+  const [showTemperatureSelector, setShowTemperatureSelector] = useState(false);
   const [showBaseSelector, setShowBaseSelector] = useState(false);
-  const [showIceSelector, setShowIceSelector] = useState(false);
   const [showMilkSelector, setShowMilkSelector] = useState(false);
   const [showSyrupSelector, setShowSyrupSelector] = useState(false);
   const [showToppingSelector, setShowToppingSelector] = useState(false);
@@ -235,16 +235,14 @@ const DrinkBuilder: React.FC = () => {
       totalPrice: drinkState.totalPrice - (drinkState.base?.price || 0) + base.price,
     });
     setShowBaseSelector(false);
-    // Prompt for ice preference after selecting base
-    setShowIceSelector(true);
   };
 
-  const handleIceSelect = (icePreference: 'none' | 'light' | 'regular' | 'extra') => {
+  const handleTemperatureSelect = (isHot: boolean) => {
     setDrinkState({
       ...drinkState,
-      icePreference,
+      isHot,
     });
-    setShowIceSelector(false);
+    setShowTemperatureSelector(false);
   };
 
   const handleModifierAdd = (modifier: ModifierComponent) => {
@@ -419,7 +417,7 @@ const DrinkBuilder: React.FC = () => {
         
         {!drinkState.base && (
           <div className="empty-cup-hint">
-            <p>Start by selecting a base drink!</p>
+            <p>Start by selecting cup size and temperature!</p>
           </div>
         )}
       </div>
@@ -463,54 +461,54 @@ const DrinkBuilder: React.FC = () => {
             </div>
 
             <div className="component-category">
-              <h4>Base Drink</h4>
-              {drinkState.base ? (
-                <IonChip color="primary">
-                  <IonLabel>{drinkState.base.name}</IonLabel>
+              <h4>Temperature</h4>
+              {drinkState.isHot !== undefined ? (
+                <IonChip color="secondary">
+                  <IonLabel>{drinkState.isHot ? 'Hot' : 'Iced'}</IonLabel>
                   <IonIcon 
                     icon={closeCircle} 
-                    onClick={() => setDrinkState({ ...drinkState, base: undefined, icePreference: undefined, totalPrice: drinkState.totalPrice - (drinkState.base?.price || 0) })} 
+                    onClick={() => setDrinkState({ ...drinkState, isHot: undefined, base: undefined, totalPrice: drinkState.totalPrice - (drinkState.base?.price || 0) })} 
                   />
                 </IonChip>
               ) : (
                 <IonButton 
                   size="small" 
                   fill="solid"
-                  color="primary"
-                  onClick={() => setShowBaseSelector(true)}
+                  color="secondary"
+                  onClick={() => setShowTemperatureSelector(true)}
                 >
                   <IonIcon slot="start" icon={addCircleOutline} />
-                  Select Base
+                  Select Temperature
                 </IonButton>
               )}
             </div>
 
-            {drinkState.base && (
+            {drinkState.isHot !== undefined && (
               <div className="component-category">
-                <h4>Ice Preference</h4>
-                {drinkState.icePreference ? (
-                  <IonChip color="tertiary">
-                    <IonLabel>{drinkState.icePreference === 'none' ? 'No Ice' : drinkState.icePreference.charAt(0).toUpperCase() + drinkState.icePreference.slice(1) + ' Ice'}</IonLabel>
+                <h4>Base Drink</h4>
+                {drinkState.base ? (
+                  <IonChip color="primary">
+                    <IonLabel>{drinkState.base.name}</IonLabel>
                     <IonIcon 
                       icon={closeCircle} 
-                      onClick={() => setShowIceSelector(true)} 
+                      onClick={() => setDrinkState({ ...drinkState, base: undefined, totalPrice: drinkState.totalPrice - (drinkState.base?.price || 0) })} 
                     />
                   </IonChip>
                 ) : (
                   <IonButton 
                     size="small" 
                     fill="solid"
-                    color="tertiary"
-                    onClick={() => setShowIceSelector(true)}
+                    color="primary"
+                    onClick={() => setShowBaseSelector(true)}
                   >
                     <IonIcon slot="start" icon={addCircleOutline} />
-                    Select Ice
+                    Select Base
                   </IonButton>
                 )}
               </div>
             )}
 
-            {drinkState.base && drinkState.icePreference && (
+            {drinkState.base && (
               <>
                 <div className="component-category">
                   <h4>Milk</h4>
@@ -621,52 +619,42 @@ const DrinkBuilder: React.FC = () => {
           </IonHeader>
           <IonContent>
             <IonList>
-              {availableBases.map(base => (
-                <IonItem key={base.id} button onClick={() => handleBaseSelect(base)}>
-                  <IonLabel>
-                    <h2>{base.name}</h2>
-                    <p>{base.category} - ${base.price.toFixed(2)} ({base.isHot ? 'Hot' : 'Cold'})</p>
-                  </IonLabel>
-                </IonItem>
-              ))}
+              {availableBases
+                .filter(base => base.isHot === drinkState.isHot)
+                .map(base => (
+                  <IonItem key={base.id} button onClick={() => handleBaseSelect(base)}>
+                    <IonLabel>
+                      <h2>{base.name}</h2>
+                      <p>{base.category} - ${base.price.toFixed(2)}</p>
+                    </IonLabel>
+                  </IonItem>
+                ))}
             </IonList>
           </IonContent>
         </IonModal>
 
-        {/* Ice Selector Modal */}
-        <IonModal isOpen={showIceSelector} onDidDismiss={() => setShowIceSelector(false)}>
+        {/* Temperature Selector Modal */}
+        <IonModal isOpen={showTemperatureSelector} onDidDismiss={() => setShowTemperatureSelector(false)}>
           <IonHeader>
             <IonToolbar>
-              <IonTitle>Ice Preference</IonTitle>
+              <IonTitle>Select Temperature</IonTitle>
               <IonButtons slot="end">
-                <IonButton onClick={() => setShowIceSelector(false)}>Close</IonButton>
+                <IonButton onClick={() => setShowTemperatureSelector(false)}>Close</IonButton>
               </IonButtons>
             </IonToolbar>
           </IonHeader>
           <IonContent>
             <IonList>
-              <IonItem button onClick={() => handleIceSelect('none')}>
+              <IonItem button onClick={() => handleTemperatureSelect(true)}>
                 <IonLabel>
-                  <h2>No Ice</h2>
-                  <p>Perfect for hot drinks or room temperature</p>
+                  <h2>Hot</h2>
+                  <p>Perfect for espresso, lattes, and hot teas</p>
                 </IonLabel>
               </IonItem>
-              <IonItem button onClick={() => handleIceSelect('light')}>
+              <IonItem button onClick={() => handleTemperatureSelect(false)}>
                 <IonLabel>
-                  <h2>Light Ice</h2>
-                  <p>Just a few cubes to cool it down</p>
-                </IonLabel>
-              </IonItem>
-              <IonItem button onClick={() => handleIceSelect('regular')}>
-                <IonLabel>
-                  <h2>Regular Ice</h2>
-                  <p>Standard amount of ice</p>
-                </IonLabel>
-              </IonItem>
-              <IonItem button onClick={() => handleIceSelect('extra')}>
-                <IonLabel>
-                  <h2>Extra Ice</h2>
-                  <p>Maximum ice for extra cold drinks</p>
+                  <h2>Iced</h2>
+                  <p>Refreshing cold drinks with ice</p>
                 </IonLabel>
               </IonItem>
             </IonList>
@@ -820,7 +808,7 @@ const DrinkBuilder: React.FC = () => {
           <IonButton 
             expand="block" 
             onClick={handleAddToCart}
-            disabled={!drinkState.base || !drinkState.icePreference}
+            disabled={!drinkState.base}
           >
             Add to Cart - ${calculateTotalPrice()}
           </IonButton>

@@ -19,6 +19,9 @@
   align-items: center;
   gap: 16px;
   backdrop-filter: blur(10px);
+  position: sticky;
+  top: 16px;
+  z-index: 10;
 }
 
 .visual-cup-container {

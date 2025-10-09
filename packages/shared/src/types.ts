@@ -108,8 +108,8 @@ export interface IntentOption {
 
 export interface DrinkBuilderState {
   cup?: CupComponent;
+  isHot?: boolean; // true for hot, false for iced
   base?: BaseComponent;
-  icePreference?: 'none' | 'light' | 'regular' | 'extra';
   modifiers: ModifierComponent[];
   totalPrice: number;
   clarificationNeeded?: IntentClarification;
