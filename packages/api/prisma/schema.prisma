@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model ClientCompany {
+  id             String   @id @default(cuid())
+  name           String
+  pointOfContact String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  theme          ClientTheme?
+  posIntegration POSIntegration?
+}
+
+model ClientTheme {
+  id             String   @id @default(cuid())
+  primaryColor   String
+  secondaryColor String
+  logoUrl        String?
+  backgroundUrl  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  company   ClientCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String        @unique
+}
+
+model POSIntegration {
+  id        String   @id @default(cuid())
+  provider  String // POSProvider enum as string
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations - POSIntegration belongs to ClientCompany
+  company   ClientCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId String        @unique
+}

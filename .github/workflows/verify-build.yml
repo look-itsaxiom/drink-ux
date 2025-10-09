@@ -5,6 +5,9 @@ on:
     branches: [main, develop]
   push:
     branches: [main, develop]
+  # Also run on pushes to any branch that has an open PR
+  pull_request_target:
+    branches: [main, develop]
 
 jobs:
   verify-build:
@@ -75,14 +78,21 @@ jobs:
           fi
           echo "✅ Mobile package built successfully"
 
+      - name: Run API tests
+        run: npm run test --workspace=@drink-ux/api
+
+      - name: Verify API tests passed
+        run: |
+          echo "✅ API tests completed successfully"
+
       - name: Run tests (if any)
         run: npm run test --workspaces --if-present
 
       - name: Build summary
         run: |
-          echo "🎉 All packages built successfully!"
+          echo "🎉 All packages built and tested successfully!"
           echo "📦 Packages verified:"
-          echo "  - @drink-ux/shared"
-          echo "  - @drink-ux/api" 
-          echo "  - @drink-ux/admin"
-          echo "  - @drink-ux/mobile"
+          echo "  - @drink-ux/shared ✅"
+          echo "  - @drink-ux/api ✅ (with tests)"
+          echo "  - @drink-ux/admin ✅"
+          echo "  - @drink-ux/mobile ✅"

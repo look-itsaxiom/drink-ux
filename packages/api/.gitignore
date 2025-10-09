@@ -1,0 +1,35 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+# Prisma generated client
+/generated/prisma
+
+# Local development database (SQLite)
+prisma/*.db
+prisma/*.db-journal
+prisma/*.db-wal
+
+# Test coverage reports
+coverage/
+*.lcov
+
+# Jest cache
+.jest/
+
+# Build output
+dist/
+build/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

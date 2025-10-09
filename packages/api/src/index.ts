@@ -1,10 +1,10 @@
-import express, { Application, Request, Response } from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { drinkRoutes } from './routes/drinks';
-import { orderRoutes } from './routes/orders';
-import { posRoutes } from './routes/pos';
-import { businessRoutes } from './routes/business';
+import express, { Application, Request, Response } from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import { drinkRoutes } from "./routes/drinks";
+import { orderRoutes } from "./routes/orders";
+import { posRoutes } from "./routes/pos";
+import { clientCompanyRoutes } from "./routes/clientCompany";
 
 dotenv.config();
 
@@ -16,15 +16,15 @@ app.use(cors());
 app.use(express.json());
 
 // Health check
-app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get("/health", (req: Request, res: Response) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 // Routes
-app.use('/api/drinks', drinkRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/pos', posRoutes);
-app.use('/api/business', businessRoutes);
+app.use("/api/drinks", drinkRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/pos", posRoutes);
+app.use("/api/clientCompanies", clientCompanyRoutes);
 
 // Start server
 app.listen(PORT, () => {
