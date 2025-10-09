@@ -1,0 +1,88 @@
+import React from 'react';
+import { IonIcon } from '@ionic/react';
+import { arrowBack } from 'ionicons/icons';
+import { DrinkCategory, DrinkType } from '@drink-ux/shared';
+
+interface TypeSelectorProps {
+  category: DrinkCategory;
+  onSelect: (drinkType: DrinkType) => void;
+  onBack: () => void;
+}
+
+// Mock data - in production this would come from an API
+const getDrinkTypes = (category: DrinkCategory): DrinkType[] => {
+  switch (category) {
+    case DrinkCategory.COFFEE:
+      return [
+        { id: 'latte', name: 'Latte', category, basePrice: 4.5, isHot: undefined },
+        { id: 'americano', name: 'Americano', category, basePrice: 3.5, isHot: undefined },
+        { id: 'cappuccino', name: 'Cappuccino', category, basePrice: 4.0, isHot: true },
+        { id: 'cold-brew', name: 'Cold Brew', category, basePrice: 4.0, isHot: false },
+        { id: 'iced-coffee', name: 'Iced Coffee', category, basePrice: 3.5, isHot: false },
+        { id: 'drip-coffee', name: 'Drip Coffee', category, basePrice: 2.5, isHot: true },
+      ];
+    case DrinkCategory.TEA:
+      return [
+        { id: 'green-tea', name: 'Green Tea', category, basePrice: 3.0, isHot: undefined },
+        { id: 'black-tea', name: 'Black Tea', category, basePrice: 3.0, isHot: undefined },
+        { id: 'herbal-tea', name: 'Herbal Tea', category, basePrice: 3.0, isHot: true },
+        { id: 'chai-latte', name: 'Chai Latte', category, basePrice: 4.5, isHot: undefined },
+      ];
+    case DrinkCategory.ITALIAN_SODA:
+      return [
+        { id: 'italian-soda', name: 'Italian Soda', category, basePrice: 3.5, isHot: false },
+        { id: 'cream-soda', name: 'Italian Cream Soda', category, basePrice: 4.0, isHot: false },
+      ];
+    case DrinkCategory.JUICE:
+      return [
+        { id: 'orange-juice', name: 'Orange Juice', category, basePrice: 3.5, isHot: false },
+        { id: 'apple-juice', name: 'Apple Juice', category, basePrice: 3.5, isHot: false },
+      ];
+    case DrinkCategory.BLENDED:
+      return [
+        { id: 'smoothie', name: 'Smoothie', category, basePrice: 5.5, isHot: false },
+        { id: 'frappe', name: 'Frappé', category, basePrice: 5.0, isHot: false },
+      ];
+    case DrinkCategory.SPECIALTY:
+      return [
+        { id: 'hot-chocolate', name: 'Hot Chocolate', category, basePrice: 3.5, isHot: true },
+        { id: 'matcha-latte', name: 'Matcha Latte', category, basePrice: 4.5, isHot: undefined },
+      ];
+    default:
+      return [];
+  }
+};
+
+const TypeSelector: React.FC<TypeSelectorProps> = ({ category, onSelect, onBack }) => {
+  const drinkTypes = getDrinkTypes(category);
+
+  return (
+    <div className="type-selector">
+      <div className="selector-header">
+        <IonIcon icon={arrowBack} className="back-icon" onClick={onBack} />
+        <h2 className="selector-title">Choose your {category}</h2>
+      </div>
+      <div className="type-list">
+        {drinkTypes.map((drinkType) => (
+          <div
+            key={drinkType.id}
+            className="type-card"
+            onClick={() => onSelect(drinkType)}
+          >
+            <div className="type-info">
+              <h3>{drinkType.name}</h3>
+              <p className="type-price">${drinkType.basePrice.toFixed(2)}</p>
+            </div>
+            {drinkType.isHot !== undefined && (
+              <span className="type-badge">
+                {drinkType.isHot ? 'Hot only' : 'Iced only'}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default TypeSelector;
