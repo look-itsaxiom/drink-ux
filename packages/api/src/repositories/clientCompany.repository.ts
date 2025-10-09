@@ -1,7 +1,16 @@
 import { ClientCompany, ClientTheme, POSIntegration } from "../../generated/prisma";
 import prisma from "../database";
 
-export interface ClientCompanyWithRelations extends ClientCompany {
+// Base interface for ClientCompany data
+export interface ClientCompanyBase {
+  id: string;
+  name: string;
+  pointOfContact: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ClientCompanyWithRelations extends ClientCompanyBase {
   theme?: ClientTheme | null;
   posIntegration?: POSIntegration | null;
 }
