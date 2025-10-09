@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   IonContent,
   IonHeader,
@@ -7,23 +6,24 @@ import {
   IonToolbar,
   IonButton,
   IonIcon,
-  IonRadioGroup,
-  IonRadio,
-  IonItem,
-  IonLabel,
-  IonList,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
+  IonGrid,
+  IonRow,
+  IonCol,
 } from '@ionic/react';
-import { cartOutline, addCircleOutline } from 'ionicons/icons';
+import { cartOutline, addCircleOutline, cafeOutline, iceCreamOutline, waterOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router';
 import './Home.css';
 
 const Home: React.FC = () => {
   const history = useHistory();
-  const [selectedSize, setSelectedSize] = useState<string>('medium');
 
   const handleCreateDrink = () => {
-    // Navigate to drink builder with optional size parameter
-    history.push(`/drink/new?size=${selectedSize}`);
+    // Navigate to drink builder
+    history.push('/drink/new');
   };
 
   return (
@@ -43,35 +43,6 @@ const Home: React.FC = () => {
             <p>Create a custom drink exactly how you like it</p>
           </div>
 
-          <div className="size-selection-section">
-            <h2>Choose Your Cup Size</h2>
-            <IonList className="size-list">
-              <IonRadioGroup value={selectedSize} onIonChange={(e: CustomEvent) => setSelectedSize(e.detail.value)}>
-                <IonItem>
-                  <IonLabel>
-                    <h3>Small</h3>
-                    <p>8 oz - Perfect for a quick drink</p>
-                  </IonLabel>
-                  <IonRadio slot="start" value="small" />
-                </IonItem>
-                <IonItem>
-                  <IonLabel>
-                    <h3>Medium</h3>
-                    <p>12 oz - Most popular size</p>
-                  </IonLabel>
-                  <IonRadio slot="start" value="medium" />
-                </IonItem>
-                <IonItem>
-                  <IonLabel>
-                    <h3>Large</h3>
-                    <p>16 oz - Maximum refreshment</p>
-                  </IonLabel>
-                  <IonRadio slot="start" value="large" />
-                </IonItem>
-              </IonRadioGroup>
-            </IonList>
-          </div>
-
           <div className="action-section">
             <IonButton 
               expand="block" 
@@ -82,6 +53,53 @@ const Home: React.FC = () => {
               <IonIcon slot="start" icon={addCircleOutline} />
               Create Your Drink
             </IonButton>
+          </div>
+
+          <div className="promotional-section">
+            <h2>Featured Drinks</h2>
+            <IonGrid>
+              <IonRow>
+                <IonCol size="12" sizeMd="4">
+                  <IonCard className="promo-card">
+                    <IonCardHeader>
+                      <div className="promo-icon">
+                        <IonIcon icon={cafeOutline} />
+                      </div>
+                      <IonCardTitle>Classic Espresso</IonCardTitle>
+                    </IonCardHeader>
+                    <IonCardContent>
+                      Rich and bold espresso drinks crafted to perfection
+                    </IonCardContent>
+                  </IonCard>
+                </IonCol>
+                <IonCol size="12" sizeMd="4">
+                  <IonCard className="promo-card">
+                    <IonCardHeader>
+                      <div className="promo-icon">
+                        <IonIcon icon={iceCreamOutline} />
+                      </div>
+                      <IonCardTitle>Iced Delights</IonCardTitle>
+                    </IonCardHeader>
+                    <IonCardContent>
+                      Cool and refreshing drinks perfect for any time
+                    </IonCardContent>
+                  </IonCard>
+                </IonCol>
+                <IonCol size="12" sizeMd="4">
+                  <IonCard className="promo-card">
+                    <IonCardHeader>
+                      <div className="promo-icon">
+                        <IonIcon icon={waterOutline} />
+                      </div>
+                      <IonCardTitle>Specialty Teas</IonCardTitle>
+                    </IonCardHeader>
+                    <IonCardContent>
+                      Premium tea selections with custom flavors
+                    </IonCardContent>
+                  </IonCard>
+                </IonCol>
+              </IonRow>
+            </IonGrid>
           </div>
         </div>
       </IonContent>
