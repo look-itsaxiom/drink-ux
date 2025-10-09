@@ -107,11 +107,20 @@ export interface IntentOption {
 }
 
 export interface DrinkBuilderState {
-  cup?: CupComponent;
-  base?: BaseComponent;
-  modifiers: ModifierComponent[];
+  // Step 1: Category selection
+  category?: DrinkCategory;
+  
+  // Step 2: Type selection
+  drinkType?: DrinkType;
+  
+  // Step 3: Modifications
+  cupSize?: CupSize;
+  isHot?: boolean; // for drinks that support both
+  milk?: ModifierComponent;
+  syrups: ModifierComponent[];
+  toppings: ModifierComponent[];
+  
   totalPrice: number;
-  clarificationNeeded?: IntentClarification;
 }
 
 /**
@@ -129,11 +138,21 @@ export interface Drink {
 
 export enum DrinkCategory {
   COFFEE = 'coffee',
-  ESPRESSO = 'espresso',
   TEA = 'tea',
-  SPECIALTY = 'specialty',
-  COLD_BREW = 'cold_brew',
+  ITALIAN_SODA = 'italian_soda',
+  JUICE = 'juice',
   BLENDED = 'blended',
+  SPECIALTY = 'specialty',
+}
+
+export interface DrinkType {
+  id: string;
+  name: string;
+  category: DrinkCategory;
+  description?: string;
+  basePrice: number;
+  isHot?: boolean; // undefined means both hot/iced available
+  imageUrl?: string;
 }
 
 /**
