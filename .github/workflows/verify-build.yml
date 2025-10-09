@@ -1,0 +1,88 @@
+name: Verify Build
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  verify-build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared package first
+        run: npm run build --workspace=@drink-ux/shared
+
+      - name: Verify shared package build output
+        run: |
+          if [ ! -f "packages/shared/dist/index.js" ]; then
+            echo "❌ Shared package build failed - missing dist/index.js"
+            exit 1
+          fi
+          if [ ! -f "packages/shared/dist/index.d.ts" ]; then
+            echo "❌ Shared package build failed - missing dist/index.d.ts"
+            exit 1
+          fi
+          echo "✅ Shared package built successfully"
+
+      - name: Build API package
+        run: npm run build --workspace=@drink-ux/api
+
+      - name: Verify API package build
+        run: |
+          if [ ! -f "packages/api/dist/index.js" ]; then
+            echo "❌ API package build failed - missing dist/index.js"
+            exit 1
+          fi
+          echo "✅ API package built successfully"
+
+      - name: Build Admin package
+        run: npm run build --workspace=@drink-ux/admin
+
+      - name: Verify Admin package build
+        run: |
+          if [ ! -d "packages/admin/dist" ]; then
+            echo "❌ Admin package build failed - missing dist directory"
+            exit 1
+          fi
+          echo "✅ Admin package built successfully"
+
+      - name: Build Mobile package
+        run: npm run build --workspace=@drink-ux/mobile
+
+      - name: Verify Mobile package build
+        run: |
+          if [ ! -d "packages/mobile/dist" ]; then
+            echo "❌ Mobile package build failed - missing dist directory"
+            exit 1
+          fi
+          echo "✅ Mobile package built successfully"
+
+      - name: Run tests (if any)
+        run: npm run test --workspaces --if-present
+
+      - name: Build summary
+        run: |
+          echo "🎉 All packages built successfully!"
+          echo "📦 Packages verified:"
+          echo "  - @drink-ux/shared"
+          echo "  - @drink-ux/api" 
+          echo "  - @drink-ux/admin"
+          echo "  - @drink-ux/mobile"
