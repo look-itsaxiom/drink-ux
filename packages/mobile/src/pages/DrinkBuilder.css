@@ -1,5 +1,5 @@
 .drink-builder {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background: var(--theme-gradient-primary);
 }
 
 /* New Layout */
@@ -11,17 +11,17 @@
 }
 
 .visual-section-new {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--theme-surface);
   padding: 20px;
   margin: 12px 12px 0 12px;
   border-radius: 24px 24px 0 0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px var(--theme-shadow);
   flex-shrink: 0;
 }
 
 .content-section-new {
   flex: 1;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--theme-surface);
   margin: 0 12px 12px 12px;
   border-radius: 0 0 24px 24px;
   overflow-y: auto;
@@ -36,7 +36,7 @@
 .selector-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--theme-text);
   margin: 0 0 20px 0;
   text-align: center;
 }
@@ -48,7 +48,7 @@
 }
 
 .category-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-gradient-primary);
   border-radius: 16px;
   padding: 24px 16px;
   text-align: center;
@@ -94,7 +94,7 @@
 .back-icon {
   font-size: 28px;
   cursor: pointer;
-  color: #667eea;
+  color: var(--theme-accent);
 }
 
 .type-list {
@@ -105,7 +105,7 @@
 
 .type-card {
   background: white;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--theme-border);
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -117,19 +117,19 @@
 
 .type-card:active {
   transform: scale(0.98);
-  border-color: #667eea;
+  border-color: var(--theme-accent);
   background: #f8f9ff;
 }
 
 .type-info h3 {
   margin: 0 0 4px 0;
   font-size: 1.1rem;
-  color: #2c3e50;
+  color: var(--theme-text);
 }
 
 .type-price {
   margin: 0;
-  color: #667eea;
+  color: var(--theme-accent);
   font-weight: 600;
 }
 
@@ -156,7 +156,7 @@
 
 .mod-section {
   background: white;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--theme-border);
   border-radius: 12px;
   padding: 16px;
 }
@@ -165,7 +165,7 @@
   margin: 0 0 12px 0;
   font-size: 1rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--theme-text);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -208,15 +208,15 @@
   transform: translate(-50%, -50%);
   text-align: center;
   padding: 16px;
-  background: rgba(103, 126, 234, 0.1);
+  background: var(--theme-primary-light);
   border-radius: 12px;
-  border: 2px dashed rgba(103, 126, 234, 0.3);
+  border: 2px dashed var(--theme-primary-border);
   max-width: 200px;
 }
 
 .empty-cup-hint p {
   margin: 0;
-  color: #667eea;
+  color: var(--theme-accent);
   font-weight: 600;
   font-size: 0.9rem;
 }
@@ -229,13 +229,13 @@
 .cup-info h3 {
   font-size: 1.3rem;
   margin: 0 0 4px 0;
-  color: #2c3e50;
+  color: var(--theme-text);
   font-weight: 700;
 }
 
 .drink-name {
   font-size: 1rem;
-  color: #667eea;
+  color: var(--theme-accent);
   font-weight: 600;
   margin: 0;
 }
@@ -243,11 +243,11 @@
 /* Footer */
 ion-footer ion-button {
   margin: 8px;
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background: var(--theme-gradient-primary);
   font-weight: 700;
   font-size: 1.1rem;
   height: 56px;
-  --box-shadow: 0 4px 16px rgba(103, 126, 234, 0.4);
+  --box-shadow: 0 4px 16px var(--theme-primary-shadow);
 }
 
 /* Modal Styling */
@@ -257,7 +257,7 @@ ion-modal ion-list {
 }
 
 ion-modal ion-item {
-  --background: rgba(255, 255, 255, 0.95);
+  --background: var(--theme-surface);
   margin-bottom: 8px;
   border-radius: 12px;
   --padding-start: 16px;

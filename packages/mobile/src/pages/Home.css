@@ -1,5 +1,5 @@
 .home-page {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background: var(--theme-gradient-primary);
 }
 
 .home-container {
@@ -34,8 +34,8 @@
 }
 
 .create-drink-button {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --box-shadow: 0 8px 24px rgba(103, 126, 234, 0.5);
+  --background: var(--theme-gradient-primary);
+  --box-shadow: 0 8px 24px var(--theme-primary-shadow);
   height: 64px;
   font-size: 1.2rem;
   font-weight: 700;
@@ -44,7 +44,7 @@
 }
 
 .create-drink-button:hover {
-  --box-shadow: 0 12px 32px rgba(103, 126, 234, 0.6);
+  --box-shadow: 0 12px 32px var(--theme-primary-shadow-hover);
   transform: translateY(-2px);
 }
 
@@ -53,17 +53,17 @@
 }
 
 .promotional-section {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--theme-surface);
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px var(--theme-shadow);
   backdrop-filter: blur(10px);
   margin-bottom: 24px;
 }
 
 .promotional-section h2 {
   margin: 0 0 20px 0;
-  color: #2c3e50;
+  color: var(--theme-text);
   font-size: 1.3rem;
   font-weight: 700;
   text-align: center;
@@ -71,7 +71,7 @@
 
 .promo-card {
   margin: 8px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--theme-shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
 }
@@ -88,18 +88,18 @@
 .promo-card ion-card-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--theme-text);
 }
 
 .promo-card ion-card-content {
-  color: #7f8c8d;
+  color: var(--theme-textSecondary);
   font-size: 0.9rem;
   line-height: 1.4;
 }
 
 .promo-icon {
   font-size: 2.5rem;
-  color: #667eea;
+  color: var(--theme-accent);
   margin-bottom: 8px;
   display: flex;
   justify-content: center;
