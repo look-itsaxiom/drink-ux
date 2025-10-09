@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Theme, themes, defaultTheme } from './theme';
+import { Theme, defaultTheme } from './theme';
+import themeConfig from '../../theme.json';
 
 interface ThemeContextType {
   theme: Theme;
-  setTheme: (themeName: keyof typeof themes) => void;
-  availableThemes: typeof themes;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -47,9 +46,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       root.style.setProperty('--theme-primary-shadow', `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.4)`);
       root.style.setProperty('--theme-primary-shadow-hover', `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.6)`);
     }
-
-    // Store theme preference
-    localStorage.setItem('drink-ux-theme', theme.name);
   };
 
   // Helper function to convert hex to RGB
@@ -62,29 +58,17 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     } : null;
   };
 
-  const changeTheme = (themeName: keyof typeof themes) => {
-    const newTheme = themes[themeName];
-    setCurrentTheme(newTheme);
-    applyTheme(newTheme);
-  };
-
   useEffect(() => {
-    // Load saved theme or use default
-    const savedTheme = localStorage.getItem('drink-ux-theme');
-    const themeToApply = savedTheme && themes[savedTheme as keyof typeof themes] 
-      ? themes[savedTheme as keyof typeof themes] 
-      : defaultTheme;
-    
-    setCurrentTheme(themeToApply);
-    applyTheme(themeToApply);
+    // Load theme from theme.json file
+    const theme = themeConfig as Theme;
+    setCurrentTheme(theme);
+    applyTheme(theme);
   }, []);
 
   return (
     <ThemeContext.Provider
       value={{
         theme: currentTheme,
-        setTheme: changeTheme,
-        availableThemes: themes,
       }}
     >
       {children}

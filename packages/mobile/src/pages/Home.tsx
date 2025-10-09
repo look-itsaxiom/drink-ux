@@ -16,7 +16,6 @@ import {
 } from '@ionic/react';
 import { cartOutline, addCircleOutline, cafeOutline, iceCreamOutline, waterOutline } from 'ionicons/icons';
 import { useHistory } from 'react-router';
-import ThemeSwitcher from '../components/ThemeSwitcher/ThemeSwitcher';
 import './Home.css';
 
 const Home: React.FC = () => {
@@ -38,7 +37,6 @@ const Home: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen className="home-page">
-        <ThemeSwitcher />
         <div className="home-container">
           <div className="welcome-section">
             <h1>Build Your Perfect Drink</h1>
