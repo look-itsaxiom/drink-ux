@@ -1,7 +1,7 @@
 import React from 'react';
 import { IonButton, IonChip, IonIcon, IonLabel } from '@ionic/react';
 import { addCircleOutline, closeCircle, arrowBack } from 'ionicons/icons';
-import { DrinkBuilderState, DrinkType, CupSize, ModifierComponent } from '@drink-ux/shared';
+import { DrinkBuilderState, DrinkType, CupSize } from '@drink-ux/shared';
 
 interface ModificationPanelProps {
   drinkType: DrinkType;

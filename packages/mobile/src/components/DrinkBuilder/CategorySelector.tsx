@@ -1,5 +1,5 @@
 import React from 'react';
-import { IonButton, IonIcon, IonLabel } from '@ionic/react';
+import { IonIcon } from '@ionic/react';
 import { cafe, leaf, water, iceCream, sparkles, wine } from 'ionicons/icons';
 import { DrinkCategory } from '@drink-ux/shared';
 
