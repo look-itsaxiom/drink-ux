@@ -5,6 +5,9 @@ on:
     branches: [main, develop]
   push:
     branches: [main, develop]
+  # Also run on pushes to any branch that has an open PR
+  pull_request_target:
+    branches: [main, develop]
 
 jobs:
   verify-build:
@@ -27,6 +30,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma client for API
+        run: npx prisma generate --schema=packages/api/prisma/schema.prisma
+
+      - name: Setup test database for API
+        run: |
+          cd packages/api
+          npx prisma migrate deploy
+        env:
+          DATABASE_URL: "file:./prisma/test.db"
+
       - name: Build shared package first
         run: npm run build --workspace=@drink-ux/shared
 
@@ -44,6 +57,8 @@ jobs:
 
       - name: Build API package
         run: npm run build --workspace=@drink-ux/api
+        env:
+          DATABASE_URL: "file:./prisma/test.db"
 
       - name: Verify API package build
         run: |
@@ -75,14 +90,23 @@ jobs:
           fi
           echo "✅ Mobile package built successfully"
 
+      - name: Run API tests
+        run: npm run test --workspace=@drink-ux/api
+        env:
+          DATABASE_URL: "file:./prisma/test.db"
+
+      - name: Verify API tests passed
+        run: |
+          echo "✅ API tests completed successfully"
+
       - name: Run tests (if any)
         run: npm run test --workspaces --if-present
 
       - name: Build summary
         run: |
-          echo "🎉 All packages built successfully!"
+          echo "🎉 All packages built and tested successfully!"
           echo "📦 Packages verified:"
-          echo "  - @drink-ux/shared"
-          echo "  - @drink-ux/api" 
-          echo "  - @drink-ux/admin"
-          echo "  - @drink-ux/mobile"
+          echo "  - @drink-ux/shared ✅"
+          echo "  - @drink-ux/api ✅ (with tests)"
+          echo "  - @drink-ux/admin ✅"
+          echo "  - @drink-ux/mobile ✅"

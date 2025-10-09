@@ -2,9 +2,9 @@
  * POS Provider types
  */
 export enum POSProvider {
-  SQUARE = 'square',
-  TOAST = 'toast',
-  CLOVER = 'clover',
+  SQUARE = "square",
+  TOAST = "toast",
+  CLOVER = "clover",
 }
 
 /**
@@ -19,12 +19,12 @@ export interface DrinkCustomization {
 }
 
 export enum CustomizationCategory {
-  SIZE = 'size',
-  MILK = 'milk',
-  FLAVOR = 'flavor',
-  SWEETENER = 'sweetener',
-  TOPPING = 'topping',
-  TEMPERATURE = 'temperature',
+  SIZE = "size",
+  MILK = "milk",
+  FLAVOR = "flavor",
+  SWEETENER = "sweetener",
+  TOPPING = "topping",
+  TEMPERATURE = "temperature",
 }
 
 export interface CustomizationOption {
@@ -38,27 +38,27 @@ export interface CustomizationOption {
  * Visual Drink Builder - Component-based model
  */
 export enum ComponentType {
-  CUP = 'cup',
-  BASE = 'base',
-  MODIFIER = 'modifier',
+  CUP = "cup",
+  BASE = "base",
+  MODIFIER = "modifier",
 }
 
 export enum CupSize {
-  SMALL = 'small',
-  MEDIUM = 'medium',
-  LARGE = 'large',
+  SMALL = "small",
+  MEDIUM = "medium",
+  LARGE = "large",
 }
 
 export enum CupType {
-  PAPER = 'paper',
-  CERAMIC = 'ceramic',
-  GLASS = 'glass',
+  PAPER = "paper",
+  CERAMIC = "ceramic",
+  GLASS = "glass",
 }
 
 export enum LidType {
-  NONE = 'none',
-  FLAT = 'flat',
-  DOME = 'dome',
+  NONE = "none",
+  FLAT = "flat",
+  DOME = "dome",
 }
 
 export interface VisualProperties {
@@ -109,17 +109,17 @@ export interface IntentOption {
 export interface DrinkBuilderState {
   // Step 1: Category selection
   category?: DrinkCategory;
-  
+
   // Step 2: Type selection
   drinkType?: DrinkType;
-  
+
   // Step 3: Modifications
   cupSize?: CupSize;
   isHot?: boolean; // for drinks that support both
   milk?: ModifierComponent;
   syrups: ModifierComponent[];
   toppings: ModifierComponent[];
-  
+
   totalPrice: number;
 }
 
@@ -137,12 +137,12 @@ export interface Drink {
 }
 
 export enum DrinkCategory {
-  COFFEE = 'coffee',
-  TEA = 'tea',
-  ITALIAN_SODA = 'italian_soda',
-  JUICE = 'juice',
-  BLENDED = 'blended',
-  SPECIALTY = 'specialty',
+  COFFEE = "coffee",
+  TEA = "tea",
+  ITALIAN_SODA = "italian_soda",
+  JUICE = "juice",
+  BLENDED = "blended",
+  SPECIALTY = "specialty",
 }
 
 export interface DrinkType {
@@ -185,11 +185,11 @@ export interface SelectedCustomization {
 }
 
 export enum OrderStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  PROCESSING = 'processing',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
+  DRAFT = "draft",
+  PENDING = "pending",
+  PROCESSING = "processing",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
 }
 
 /**
@@ -219,17 +219,16 @@ export interface POSConfig {
 }
 
 /**
- * Business types
+ * Client types
  */
-export interface Business {
+export interface ClientCompany {
   id: string;
   name: string;
-  logo?: string;
-  theme?: BusinessTheme;
+  theme?: ClientTheme;
   posIntegration?: POSIntegration;
 }
 
-export interface BusinessTheme {
+export interface ClientTheme {
   primaryColor: string;
   secondaryColor: string;
   logoUrl?: string;
