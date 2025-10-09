@@ -1,0 +1,42 @@
+/* Theme CSS Variables */
+:root {
+  /* Default theme colors */
+  --theme-primary: #667eea;
+  --theme-primaryDark: #764ba2;
+  --theme-secondary: #6B4226;
+  --theme-background: #ffffff;
+  --theme-surface: rgba(255, 255, 255, 0.95);
+  --theme-text: #2c3e50;
+  --theme-textSecondary: #7f8c8d;
+  --theme-accent: #667eea;
+  --theme-border: #e0e0e0;
+  --theme-shadow: rgba(0, 0, 0, 0.1);
+  --theme-success: #4caf50;
+  --theme-warning: #ff9800;
+  --theme-error: #f44336;
+
+  /* Default gradients */
+  --theme-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --theme-gradient-secondary: linear-gradient(135deg, #6B4226 0%, #8B5A3C 100%);
+}
+
+/* Helper classes for quick theming */
+.theme-bg-primary {
+  background: var(--theme-gradient-primary);
+}
+
+.theme-bg-surface {
+  background: var(--theme-surface);
+}
+
+.theme-text-primary {
+  color: var(--theme-primary);
+}
+
+.theme-text {
+  color: var(--theme-text);
+}
+
+.theme-text-secondary {
+  color: var(--theme-textSecondary);
+}

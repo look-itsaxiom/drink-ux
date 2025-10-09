@@ -7,5 +7,5 @@
 
 ion-footer ion-button {
   margin: 8px;
-  --background: #6B4226;
+  --background: var(--theme-secondary);
 }

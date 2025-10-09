@@ -4,6 +4,7 @@ import { IonReactRouter } from '@ionic/react-router';
 import Home from './pages/Home';
 import DrinkBuilder from './pages/DrinkBuilder';
 import Cart from './pages/Cart';
+import { ThemeProvider } from './theme';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -21,21 +22,26 @@ import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 
+/* Theme CSS */
+import './theme/theme.css';
+
 setupIonicReact();
 
 const App: React.FC = () => (
-  <IonApp>
-    <IonReactRouter basename={import.meta.env.BASE_URL}>
-      <IonRouterOutlet>
-        <Route path="/home" component={Home} exact />
-        <Route path="/drink/:id" component={DrinkBuilder} exact />
-        <Route path="/cart" component={Cart} exact />
-        <Route path="/" exact>
-          <Redirect to="/home" />
-        </Route>
-      </IonRouterOutlet>
-    </IonReactRouter>
-  </IonApp>
+  <ThemeProvider>
+    <IonApp>
+      <IonReactRouter basename={import.meta.env.BASE_URL}>
+        <IonRouterOutlet>
+          <Route path="/home" component={Home} exact />
+          <Route path="/drink/:id" component={DrinkBuilder} exact />
+          <Route path="/cart" component={Cart} exact />
+          <Route path="/" exact>
+            <Redirect to="/home" />
+          </Route>
+        </IonRouterOutlet>
+      </IonReactRouter>
+    </IonApp>
+  </ThemeProvider>
 );
 
 export default App;
