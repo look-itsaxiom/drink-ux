@@ -114,11 +114,11 @@ const DrinkBuilder: React.FC = () => {
     const stepOrder = { category: 1, type: 2, modifications: 3 };
     const currentStepOrder = stepOrder[step];
     const targetStepOrder = stepOrder[stepName];
-    
+
     if (currentStepOrder > targetStepOrder) {
       return `${baseClass} completed`;
     }
-    
+
     return baseClass;
   };
 
@@ -136,20 +136,11 @@ const DrinkBuilder: React.FC = () => {
           </IonButtons>
           <IonTitle>Build Your Drink</IonTitle>
         </IonToolbar>
-        <IonProgressBar 
-          value={getProgressValue()} 
-          color="light"
-        />
+        <IonProgressBar value={getProgressValue()} color="light" />
         <div className="progress-steps">
-          <span className={getStepClass("category")}>
-            Category
-          </span>
-          <span className={getStepClass("type")}>
-            Type
-          </span>
-          <span className={getStepClass("modifications")}>
-            Customize
-          </span>
+          <span className={getStepClass("category")}>Category</span>
+          <span className={getStepClass("type")}>Type</span>
+          <span className={getStepClass("modifications")}>Customize</span>
         </div>
       </IonHeader>
 
