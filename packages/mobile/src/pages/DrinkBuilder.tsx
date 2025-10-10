@@ -1,36 +1,22 @@
-import React, { useState } from 'react';
-import { useHistory } from 'react-router';
-import {
-  IonContent,
-  IonHeader,
-  IonPage,
-  IonTitle,
-  IonToolbar,
-  IonButtons,
-  IonBackButton,
-  IonButton,
-  IonFooter,
-} from '@ionic/react';
-import { DrinkBuilderState, DrinkCategory, DrinkType, CupSize } from '@drink-ux/shared';
+import React, { useState } from "react";
+import { useHistory } from "react-router";
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButtons, IonBackButton, IonButton, IonFooter, IonProgressBar } from "@ionic/react";
+import { DrinkBuilderState, DrinkCategory, DrinkType, CupSize } from "@drink-ux/shared";
 
-import CategorySelector from '../components/DrinkBuilder/CategorySelector';
-import TypeSelector from '../components/DrinkBuilder/TypeSelector';
-import ModificationPanel from '../components/DrinkBuilder/ModificationPanel';
-import DrinkVisual from '../components/DrinkBuilder/DrinkVisual';
-import ModifierSelector, {
-  milkModifiers,
-  syrupModifiers,
-  toppingModifiers,
-} from '../components/DrinkBuilder/ModifierSelector';
+import CategorySelector from "../components/DrinkBuilder/CategorySelector";
+import TypeSelector from "../components/DrinkBuilder/TypeSelector";
+import ModificationPanel from "../components/DrinkBuilder/ModificationPanel";
+import DrinkVisual from "../components/DrinkBuilder/DrinkVisual";
+import ModifierSelector, { milkModifiers, syrupModifiers, toppingModifiers } from "../components/DrinkBuilder/ModifierSelector";
 
-import './DrinkBuilder.css';
+import "./DrinkBuilder.css";
 
-type BuilderStep = 'category' | 'type' | 'modifications';
+type BuilderStep = "category" | "type" | "modifications";
 
 const DrinkBuilder: React.FC = () => {
   const history = useHistory();
 
-  const [step, setStep] = useState<BuilderStep>('category');
+  const [step, setStep] = useState<BuilderStep>("category");
   const [drinkState, setDrinkState] = useState<DrinkBuilderState>({
     syrups: [],
     toppings: [],
@@ -44,19 +30,19 @@ const DrinkBuilder: React.FC = () => {
 
   const handleCategorySelect = (category: DrinkCategory) => {
     setDrinkState({ ...drinkState, category });
-    setStep('type');
+    setStep("type");
   };
 
   const handleTypeSelect = (drinkType: DrinkType) => {
     const newState = { ...drinkState, drinkType };
-    
+
     // Set temperature based on drink type constraints
     if (drinkType.isHot !== undefined) {
       newState.isHot = drinkType.isHot;
     }
-    
+
     setDrinkState(newState);
-    setStep('modifications');
+    setStep("modifications");
   };
 
   const handleStateUpdate = (updates: Partial<DrinkBuilderState>) => {
@@ -77,17 +63,17 @@ const DrinkBuilder: React.FC = () => {
 
   const handleBackFromType = () => {
     setDrinkState({ ...drinkState, category: undefined });
-    setStep('category');
+    setStep("category");
   };
 
   const handleBackFromMods = () => {
     setDrinkState({ ...drinkState, drinkType: undefined, milk: undefined, syrups: [], toppings: [] });
-    setStep('type');
+    setStep("type");
   };
 
   const calculateTotalPrice = () => {
     let total = drinkState.drinkType?.basePrice || 0;
-    
+
     // Cup size premium
     switch (drinkState.cupSize) {
       case CupSize.MEDIUM:
@@ -100,15 +86,45 @@ const DrinkBuilder: React.FC = () => {
 
     // Add modifier prices
     if (drinkState.milk) total += drinkState.milk.price;
-    drinkState.syrups.forEach(s => total += s.price);
-    drinkState.toppings.forEach(t => total += t.price);
+    drinkState.syrups.forEach((s) => (total += s.price));
+    drinkState.toppings.forEach((t) => (total += t.price));
 
     return total.toFixed(2);
   };
 
+  const getProgressValue = () => {
+    switch (step) {
+      case "category":
+        return 0.33;
+      case "type":
+        return 0.66;
+      case "modifications":
+        return 1.0;
+      default:
+        return 0;
+    }
+  };
+
+  const getStepClass = (stepName: BuilderStep) => {
+    const baseClass = "step";
+    if (step === stepName) {
+      return `${baseClass} active`;
+    }
+    // Check if step is completed
+    const stepOrder = { category: 1, type: 2, modifications: 3 };
+    const currentStepOrder = stepOrder[step];
+    const targetStepOrder = stepOrder[stepName];
+    
+    if (currentStepOrder > targetStepOrder) {
+      return `${baseClass} completed`;
+    }
+    
+    return baseClass;
+  };
+
   const handleAddToCart = () => {
-    console.log('Adding to cart:', drinkState);
-    history.push('/cart');
+    console.log("Adding to cart:", drinkState);
+    history.push("/cart");
   };
 
   return (
@@ -120,30 +136,39 @@ const DrinkBuilder: React.FC = () => {
           </IonButtons>
           <IonTitle>Build Your Drink</IonTitle>
         </IonToolbar>
+        <IonProgressBar 
+          value={getProgressValue()} 
+          color="light"
+        />
+        <div className="progress-steps">
+          <span className={getStepClass("category")}>
+            Category
+          </span>
+          <span className={getStepClass("type")}>
+            Type
+          </span>
+          <span className={getStepClass("modifications")}>
+            Customize
+          </span>
+        </div>
       </IonHeader>
 
       <IonContent fullscreen className="drink-builder">
         <div className="builder-container-new">
-          {/* Visual Section - Always Visible */}
-          <div className="visual-section-new">
-            <DrinkVisual state={drinkState} />
-          </div>
+          {/* Visual Section - Only visible on modifications step */}
+          {step === "modifications" && (
+            <div className="visual-section-new">
+              <DrinkVisual state={drinkState} />
+            </div>
+          )}
 
           {/* Content Section - Changes based on step */}
-          <div className="content-section-new">
-            {step === 'category' && (
-              <CategorySelector onSelect={handleCategorySelect} />
-            )}
+          <div className={`content-section-new ${step !== "modifications" ? "full-width" : ""}`}>
+            {step === "category" && <CategorySelector onSelect={handleCategorySelect} />}
 
-            {step === 'type' && drinkState.category && (
-              <TypeSelector
-                category={drinkState.category}
-                onSelect={handleTypeSelect}
-                onBack={handleBackFromType}
-              />
-            )}
+            {step === "type" && drinkState.category && <TypeSelector category={drinkState.category} onSelect={handleTypeSelect} onBack={handleBackFromType} />}
 
-            {step === 'modifications' && drinkState.drinkType && (
+            {step === "modifications" && drinkState.drinkType && (
               <ModificationPanel
                 drinkType={drinkState.drinkType}
                 state={drinkState}
@@ -173,7 +198,7 @@ const DrinkBuilder: React.FC = () => {
           modifiers={syrupModifiers}
           onSelect={handleSyrupSelect}
           onDismiss={() => setShowSyrupSelector(false)}
-          selectedIds={drinkState.syrups.map(s => s.id)}
+          selectedIds={drinkState.syrups.map((s) => s.id)}
         />
 
         <ModifierSelector
@@ -182,18 +207,14 @@ const DrinkBuilder: React.FC = () => {
           modifiers={toppingModifiers}
           onSelect={handleToppingSelect}
           onDismiss={() => setShowToppingSelector(false)}
-          selectedIds={drinkState.toppings.map(t => t.id)}
+          selectedIds={drinkState.toppings.map((t) => t.id)}
         />
       </IonContent>
 
-      {step === 'modifications' && (
+      {step === "modifications" && (
         <IonFooter>
           <IonToolbar>
-            <IonButton
-              expand="block"
-              onClick={handleAddToCart}
-              disabled={!drinkState.drinkType}
-            >
+            <IonButton expand="block" onClick={handleAddToCart} disabled={!drinkState.drinkType}>
               Add to Cart - ${calculateTotalPrice()}
             </IonButton>
           </IonToolbar>
