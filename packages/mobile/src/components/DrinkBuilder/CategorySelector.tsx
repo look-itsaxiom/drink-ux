@@ -56,9 +56,9 @@ const categories = [
 
 const CategorySelector: React.FC<CategorySelectorProps> = ({ onSelect }) => {
   return (
-    <div className="category-selector">
+    <div className="category-selector section">
       <IonText>
-        <h2 className="selector-title">What would you like?</h2>
+        <h2 className="section-title">What would you like?</h2>
       </IonText>
       <IonList className="category-list" lines="none">
         {categories.map((category, index) => (
@@ -66,7 +66,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({ onSelect }) => {
             key={category.id}
             button
             onClick={() => onSelect(category.id)}
-            className="category-item"
+            className="category-item interactive-item interactive-item-large slide-in-up"
             style={
               {
                 "--animation-delay": `${index * 0.1}s`,

@@ -1,6 +1,8 @@
 /* Theme CSS Variables */
 :root {
-  /* Default theme colors */
+  /* FALLBACK VALUES - These provide defaults before API theme loads */
+  /* When ThemeProvider loads theme from API, these will be overridden */
+  
   --theme-primary: #667eea;
   --theme-primaryDark: #764ba2;
   --theme-secondary: #6B4226;
@@ -15,14 +17,223 @@
   --theme-warning: #ff9800;
   --theme-error: #f44336;
 
-  /* Default gradients */
+  /* Fallback gradients */
   --theme-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --theme-gradient-secondary: linear-gradient(135deg, #6B4226 0%, #8B5A3C 100%);
+  
+  /* Derived colors - will be calculated by ThemeProvider from API theme */
+  --theme-primary-light: rgba(102, 126, 234, 0.1);
+  --theme-secondary-shadow: rgba(107, 66, 38, 0.3);
+  --theme-secondary-shadow-hover: rgba(107, 66, 38, 0.4);
+}
+
+/* Header Styles */
+.app-header {
+  --background: #ffffff;
+  --color: var(--theme-text);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  position: relative;
+  z-index: 10;
+}
+
+.app-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
+}
+
+.app-header ion-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.app-header ion-button {
+  --color: var(--theme-primary);
+}
+
+/* Progress Steps for DrinkBuilder */
+.progress-steps {
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 24px;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.progress-steps .step {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--theme-textSecondary);
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.progress-steps .step.active {
+  color: var(--theme-primary);
+  opacity: 1;
+  font-weight: 600;
+}
+
+.progress-steps .step.completed {
+  color: var(--theme-success);
+  opacity: 0.8;
+}
+
+/* Base Layout Classes */
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 24px;
+  gap: 24px;
+}
+
+.container-compact {
+  padding: 16px;
+  gap: 16px;
+}
+
+.section {
+  background: var(--theme-surface);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px var(--theme-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.section-compact {
+  padding: 16px;
+  border-radius: 12px;
+}
+
+/* Common Interactive Item Styles */
+.interactive-item {
+  --background: var(--theme-surface);
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  --min-height: 60px;
+  --ripple-color: var(--theme-primary);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  margin: 6px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive-item:hover {
+  --background: var(--theme-primary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border-color: var(--theme-primary);
+}
+
+.interactive-item:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+.interactive-item-large {
+  --border-radius: 16px;
+  --padding-start: 20px;
+  --padding-end: 20px;
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  --min-height: 80px;
+  margin: 8px 0;
+}
+
+/* Animation Classes */
+.slide-in-up {
+  animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: var(--animation-delay, 0s);
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.slide-in-up-fast {
+  animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: var(--animation-delay, 0s);
+  opacity: 0;
+  transform: translateY(15px);
+}
+
+@keyframes slideInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Button Enhancement Classes */
+.button-elevated {
+  --box-shadow: 0 8px 24px var(--theme-secondary-shadow);
+  height: 64px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 12px;
+}
+
+.button-elevated:hover {
+  --box-shadow: 0 12px 32px var(--theme-secondary-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.button-elevated:active {
+  transform: scale(0.98);
+}
+
+/* Card Enhancement Classes */
+.card-elevated {
+  box-shadow: 0 2px 8px var(--theme-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.card-elevated:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Typography Classes */
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--theme-text);
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.page-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.95;
+  margin: 0;
 }
 
 /* Helper classes for quick theming */
 .theme-bg-primary {
   background: var(--theme-gradient-primary);
+}
+
+.theme-bg-secondary {
+  background: var(--theme-gradient-secondary);
+  box-shadow: 0 2px 8px var(--theme-secondary-shadow);
 }
 
 .theme-bg-surface {

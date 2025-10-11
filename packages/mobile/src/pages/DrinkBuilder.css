@@ -1,46 +1,29 @@
 .drink-builder {
-  --background: var(--theme-gradient-primary);
+  --background: var(--theme-surface);
   max-width: 100vw;
   overflow-x: hidden;
 }
 
-/* New Layout */
-.builder-container-new {
+/* Split Layout for modifications step */
+.builder-container-split {
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  padding: 12px;
+  gap: 12px;
 }
 
-.visual-section-new {
-  background: var(--theme-surface);
-  padding: 20px;
-  margin: 12px 12px 0 12px;
-  border-radius: 24px 24px 0 0;
-  box-shadow: 0 4px 16px var(--theme-shadow);
+.visual-section {
   flex-shrink: 0;
 }
 
-.content-section-new {
+.content-section {
   flex: 1;
-  background: var(--theme-surface);
-  margin: 0 12px 12px 12px;
-  border-radius: 0 0 24px 24px;
   overflow-y: auto;
-  padding: 20px;
 }
 
-/* Full width content when visual section is hidden */
-.content-section-new.full-width {
-  margin: 12px;
-  border-radius: 24px;
-}
-
-/* Type Selector */
-.type-selector {
-  padding: 10px 0;
-}
-
+/* Selector Header */
 .selector-header {
   display: flex;
   align-items: center;
@@ -186,40 +169,4 @@ ion-progress-bar {
   margin: 0;
   border-radius: 0;
   transition: all 0.3s ease;
-}
-
-/* Progress Steps */
-.progress-steps {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 16px;
-  background: var(--ion-color-primary);
-  font-size: 12px;
-  font-weight: 500;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.progress-steps .step {
-  color: rgba(255, 255, 255, 0.6);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: color 0.3s ease;
-}
-
-.progress-steps .step.active {
-  color: rgba(255, 255, 255, 1);
-  font-weight: 600;
-}
-
-.progress-steps .step.completed {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-/* Responsive Progress Steps */
-@media (min-width: 768px) {
-  .progress-steps {
-    font-size: 14px;
-    padding: 12px 24px;
-  }
 }

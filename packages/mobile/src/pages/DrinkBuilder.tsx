@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useHistory } from "react-router";
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButtons, IonBackButton, IonButton, IonFooter, IonProgressBar } from "@ionic/react";
+import { IonContent, IonPage, IonButton, IonFooter, IonToolbar } from "@ionic/react";
 import { DrinkBuilderState, DrinkCategory, DrinkType, CupSize } from "@drink-ux/shared";
 
+import AppHeader from "../components/AppHeader";
 import CategorySelector from "../components/DrinkBuilder/CategorySelector";
 import TypeSelector from "../components/DrinkBuilder/TypeSelector";
 import ModificationPanel from "../components/DrinkBuilder/ModificationPanel";
@@ -105,56 +106,55 @@ const DrinkBuilder: React.FC = () => {
     }
   };
 
-  const getStepClass = (stepName: BuilderStep) => {
-    const baseClass = "step";
-    if (step === stepName) {
-      return `${baseClass} active`;
-    }
-    // Check if step is completed
-    const stepOrder = { category: 1, type: 2, modifications: 3 };
-    const currentStepOrder = stepOrder[step];
-    const targetStepOrder = stepOrder[stepName];
-
-    if (currentStepOrder > targetStepOrder) {
-      return `${baseClass} completed`;
-    }
-
-    return baseClass;
-  };
-
   const handleAddToCart = () => {
     console.log("Adding to cart:", drinkState);
     history.push("/cart");
   };
 
+  // Progress steps data for AppHeader
+  const progressSteps = [
+    {
+      key: "category",
+      label: "Category",
+      isActive: step === "category",
+      isCompleted: step === "type" || step === "modifications",
+    },
+    {
+      key: "type", 
+      label: "Type",
+      isActive: step === "type",
+      isCompleted: step === "modifications",
+    },
+    {
+      key: "modifications",
+      label: "Customize", 
+      isActive: step === "modifications",
+      isCompleted: false,
+    },
+  ];
+
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/home" />
-          </IonButtons>
-          <IonTitle>Build Your Drink</IonTitle>
-        </IonToolbar>
-        <IonProgressBar value={getProgressValue()} color="light" />
-        <div className="progress-steps">
-          <span className={getStepClass("category")}>Category</span>
-          <span className={getStepClass("type")}>Type</span>
-          <span className={getStepClass("modifications")}>Customize</span>
-        </div>
-      </IonHeader>
+      <AppHeader 
+        title="Build Your Drink"
+        showBackButton={true}
+        backHref="/home"
+        showProgress={true}
+        progressValue={getProgressValue()}
+        progressSteps={progressSteps}
+      />
 
       <IonContent fullscreen className="drink-builder">
-        <div className="builder-container-new">
+        <div className={step === "modifications" ? "builder-container-split" : "container"}>
           {/* Visual Section - Only visible on modifications step */}
           {step === "modifications" && (
-            <div className="visual-section-new">
+            <div className="visual-section section section-compact">
               <DrinkVisual state={drinkState} />
             </div>
           )}
 
           {/* Content Section - Changes based on step */}
-          <div className={`content-section-new ${step !== "modifications" ? "full-width" : ""}`}>
+          <div className={step === "modifications" ? "content-section section" : ""}>
             {step === "category" && <CategorySelector onSelect={handleCategorySelect} />}
 
             {step === "type" && drinkState.category && <TypeSelector category={drinkState.category} onSelect={handleTypeSelect} onBack={handleBackFromType} />}

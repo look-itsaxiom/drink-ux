@@ -161,7 +161,7 @@ const ModifierSelector: React.FC<ModifierSelectorProps> = ({ isOpen, title, modi
                   }
                 }}
                 disabled={isSelected}
-                className={`modifier-item ${isSelected ? "selected" : ""}`}
+                className={`modifier-item interactive-item ${isSelected ? "selected" : ""}`}
                 style={
                   {
                     "--animation-delay": `${index * 0.05}s`,

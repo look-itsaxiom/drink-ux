@@ -1,64 +1,14 @@
 /* Type Selector Component Styles */
 
-.type-selector {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.type-header {
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.type-header ion-toolbar {
-  --background: var(--theme-surface);
-  --color: var(--theme-text);
-}
-
-.type-header ion-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-.type-header ion-button {
-  --color: var(--theme-primary);
-}
-
 .type-list {
   background: transparent;
   padding: 12px 0;
 }
 
 .type-item {
-  --background: var(--theme-surface);
-  --border-radius: 16px;
-  --padding-start: 20px;
-  --padding-end: 20px;
-  --padding-top: 16px;
-  --padding-bottom: 16px;
-  --min-height: 70px;
-  --ripple-color: var(--theme-primary);
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
+  /* Use interactive-item-large base styles with custom margins */
   margin: 8px 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   animation-delay: var(--animation-delay, 0s);
-  opacity: 0;
-  transform: translateY(20px);
-  border: 2px solid transparent;
-}
-
-.type-item:hover {
-  --background: var(--theme-primary-light);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  border-color: var(--theme-primary);
-}
-
-.type-item:active {
-  transform: translateY(0px) scale(0.98);
 }
 
 .type-item::part(native) {

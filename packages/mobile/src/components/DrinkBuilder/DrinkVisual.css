@@ -1,0 +1,297 @@
+.drink-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.visual-cup {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+}
+
+.cup-outline {
+  fill: #ffffff;
+  stroke: #d0d0d0;
+  stroke-width: 2;
+}
+
+/* Drink Layer Animations */
+.drink-layer {
+  /* Make transform/clip-path operate in the path's own box */
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  transition: opacity 0.3s ease;
+  will-change: transform, opacity, clip-path;
+}
+
+.drink-layer.hidden {
+  opacity: 0;
+}
+
+.drink-layer.visible {
+  opacity: var(--layer-opacity, 0.8);
+}
+
+.fill-layer.visible {
+  animation: fillAnimation 0.8s ease-out forwards;
+  animation-delay: var(--layer-delay, 0ms);
+  animation-fill-mode: both; /* apply 0% styles during delay, keep 100% after */
+  /* Hold at 'empty' until animation runs to avoid flash of full content */
+  clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
+  opacity: 0;
+}
+
+.foam-layer.visible {
+  animation: foamAnimation 0.7s ease-out forwards;
+  animation-delay: var(--layer-delay, 0ms);
+  animation-fill-mode: both;
+}
+
+.drizzle-layer {
+  transform-box: fill-box;
+  transform-origin: top center;
+}
+
+.drizzle-layer.visible {
+  /* Reveal downward from the top for a more natural syrup look */
+  animation: drizzleReveal 0.5s ease-out forwards;
+  animation-delay: var(--layer-delay, 0ms);
+  animation-fill-mode: both;
+}
+
+/* Fill Animation - Liquid pouring in */
+@keyframes fillAnimation {
+  0% {
+    clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.3;
+  }
+  100% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+    opacity: var(--layer-opacity, 0.8);
+  }
+}
+
+/* Make light-colored top layers visible against light backgrounds */
+.drink-layer.foam-layer,
+.drink-layer.whipped-layer {
+  stroke: rgba(0,0,0,0.08);
+  stroke-width: 0.75;
+}
+
+/* Foam Animation - Bubbling effect */
+/* Make foam grow from the top so it appears at the drink surface */
+.foam-layer {
+  transform-origin: top center;
+}
+
+@keyframes foamAnimation {
+  0% {
+    transform: scaleY(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scaleY(1.03);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: var(--layer-opacity, 0.8);
+  }
+}
+
+/* Drizzle Animation - Syrup swirling in */
+@keyframes drizzleAnimation {
+  0% {
+    transform: scale(0.8) rotate(-5deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) rotate(2deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: var(--layer-opacity, 0.3);
+  }
+}
+
+/* Top-down clip reveal for syrup/drizzle */
+@keyframes drizzleReveal {
+  0% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%);
+    opacity: 0;
+  }
+  20% { opacity: 0.2; }
+  100% {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+    opacity: var(--layer-opacity, 0.3);
+  }
+}
+
+/* Topping Animations */
+.foam-bubble {
+  animation: bubblePop 2.2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes bubblePop {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+.sprinkle {
+  animation: sprinkleFall 2.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes sprinkleFall {
+  0% {
+    transform: translateY(-3px) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(0px) rotate(160deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-3px) rotate(320deg);
+    opacity: 1;
+  }
+}
+
+.dust-particle {
+  animation: dustFloat 4s ease-in-out infinite;
+}
+
+@keyframes dustFloat {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0.6;
+  }
+  25% {
+    transform: translate(1px, -1px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-1px, 1px);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translate(1px, 1px);
+    opacity: 0.7;
+  }
+}
+
+/* Legacy classes for backward compatibility */
+.drink-fill-cold {
+  fill: #8b4513;
+  opacity: 0.8;
+}
+
+.drink-fill-hot {
+  fill: #3e2723;
+  opacity: 0.8;
+}
+
+.milk-layer {
+  fill: #fff9e6;
+  opacity: 0.7;
+}
+
+.cup-lid {
+  fill: #f5f5f5;
+  stroke: #d0d0d0;
+  stroke-width: 2;
+}
+
+.large-cup-lid-top {
+  fill: #f5f5f5;
+  stroke: #d0d0d0;
+  stroke-width: 2;
+}
+
+/* Cup Information Styling */
+.empty-cup-hint {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.empty-cup-hint p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.cup-info {
+  text-align: center;
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cup-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.drink-name {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.drink-name:hover {
+  color: #333;
+}
+
+.layer-count {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.75rem;
+  color: #999;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .visual-cup {
+    max-width: 250px;
+  }
+  
+  .cup-info h3 {
+    font-size: 1rem;
+  }
+  
+  .drink-name {
+    font-size: 0.8rem;
+  }
+}
