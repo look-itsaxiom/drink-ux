@@ -91,15 +91,40 @@ src/
 
 ```
 src/
-├── routes/          # API route handlers
+├── routes/              # API route handlers
 │   ├── drinks.ts
 │   ├── orders.ts
-│   ├── pos.ts
+│   ├── pos.ts          # POS integration endpoints
+│   ├── clientCompany.ts
 │   └── business.ts
-├── services/        # Business logic
-├── middleware/      # Express middleware
-└── index.ts         # Server entry point
+├── managers/            # Business logic layer
+│   ├── clientCompany.manager.ts
+│   └── pos.manager.ts  # POS operations orchestration
+├── repositories/        # Data access layer
+│   ├── clientCompany.repository.ts
+│   └── posIntegration.repository.ts
+├── services/            # Service layer
+│   └── pos/            # POS abstraction layer
+│       ├── interfaces/
+│       │   └── IPOSProvider.ts
+│       ├── adapters/
+│       │   └── BasePOSAdapter.ts
+│       ├── providers/
+│       │   ├── SquarePOSProvider.ts
+│       │   ├── ToastPOSProvider.ts
+│       │   └── CloverPOSProvider.ts
+│       └── POSProviderFactory.ts
+├── middleware/          # Express middleware
+├── database.ts          # Prisma client
+└── index.ts            # Server entry point
 ```
+
+**Key Architectural Patterns:**
+- **Layered Architecture** - Routes → Managers → Repositories/Services
+- **Dependency Injection** - Loose coupling between layers
+- **Factory Pattern** - POS provider instantiation
+- **Adapter Pattern** - Unified interface for multiple POS systems
+- **Repository Pattern** - Data access abstraction
 
 ### Shared (`packages/shared`)
 
@@ -136,6 +161,75 @@ router.get('/', (req, res) => {
 
 export const exampleRoutes = router;
 ```
+
+### Adding a New POS Provider
+
+The POS abstraction layer makes it easy to add support for new POS systems:
+
+1. **Add Provider to Enum**
+   ```typescript
+   // packages/shared/src/types.ts
+   export enum POSProvider {
+     SQUARE = "square",
+     TOAST = "toast",
+     CLOVER = "clover",
+     NEW_PROVIDER = "new_provider", // Add here
+   }
+   ```
+
+2. **Create Provider Adapter**
+   ```typescript
+   // packages/api/src/services/pos/providers/NewProviderPOSProvider.ts
+   import { BasePOSAdapter } from "../adapters/BasePOSAdapter";
+   import { POSProvider } from "@drink-ux/shared";
+
+   export class NewProviderPOSProvider extends BasePOSAdapter {
+     constructor() {
+       super(POSProvider.NEW_PROVIDER);
+     }
+
+     async testConnection(credentials, config) {
+       // Validate credentials with provider API
+     }
+
+     async fetchMenu(credentials, config) {
+       // Fetch and transform menu items
+     }
+
+     async submitOrder(order, credentials, config) {
+       // Submit order to provider
+     }
+
+     async syncMenu(credentials, config) {
+       // Sync menu and return results
+     }
+
+     async getOrderStatus(orderId, credentials, config) {
+       // Get order status from provider
+     }
+   }
+   ```
+
+3. **Register in Factory**
+   ```typescript
+   // packages/api/src/services/pos/POSProviderFactory.ts
+   case POSProvider.NEW_PROVIDER:
+     providerInstance = new NewProviderPOSProvider();
+     break;
+   ```
+
+4. **Add Tests**
+   ```typescript
+   // packages/api/src/services/pos/__tests__/NewProviderPOSProvider.test.ts
+   describe("NewProviderPOSProvider", () => {
+     // Test each method
+   });
+   ```
+
+5. **Update Documentation**
+   Add provider-specific setup instructions to `docs/api/POS_INTEGRATION.md`
+
+See [POS Architecture Documentation](./api/POS_ARCHITECTURE.md) for detailed information.
 
 ### Adding a New Mobile Page
 

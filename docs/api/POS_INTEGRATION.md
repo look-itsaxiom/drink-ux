@@ -2,7 +2,25 @@
 
 ## Overview
 
-Drink-UX provides seamless integration with major POS systems. This guide covers setup and configuration for each supported provider.
+Drink-UX provides seamless integration with major POS systems through a unified abstraction layer. This guide covers setup and configuration for each supported provider.
+
+> **📚 For technical architecture details**, see [POS Architecture Documentation](./POS_ARCHITECTURE.md)
+
+## Quick Start
+
+### For Coffee Shop Owners
+
+1. **Choose Your POS Provider** - We support Square, Toast, and Clover
+2. **Gather Credentials** - Get API keys from your POS dashboard
+3. **Test Connection** - Use our admin portal to verify connectivity
+4. **Sync Menu** - Import your existing menu with one click
+5. **Start Taking Orders** - Your menu is now live in the mobile app!
+
+### API Integration Flow
+
+```
+1. Test Connection → 2. Configure Integration → 3. Sync Menu → 4. Accept Orders
+```
 
 ## Supported POS Systems
 
