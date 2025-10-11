@@ -158,11 +158,33 @@ The production-ready files will be in `packages/mobile/dist/`.
 
 ## POS Integration
 
-Drink-UX supports integration with the following POS systems:
+Drink-UX features a **plug-and-play POS integration architecture** using the Decorator and Factory patterns, allowing seamless integration with multiple Point of Sale systems.
 
-- **Square** - Full menu sync and order management
-- **Toast** - Real-time menu updates
-- **Clover** - Seamless order integration
+### Currently Supported
+- **Square** - Full implementation with menu sync and order management
+
+### Architecture
+- **Extensible Design** - Easy to add new POS providers without modifying existing code
+- **Universal Data Format** - Converts POS-specific formats to a common structure
+- **Type-Safe** - Full TypeScript support with comprehensive interfaces
+- **Well-Tested** - 100+ unit tests ensuring reliability
+
+For detailed architecture documentation, see [POS Integration Architecture](docs/architecture/POS_INTEGRATION_ARCHITECTURE.md).
+
+### Square Integration Features
+- ✅ Connection testing and credential validation
+- ✅ Menu synchronization (items, variations, modifiers)
+- ✅ Order submission
+- ✅ Location management
+- ✅ Automatic sandbox/production detection
+
+### Adding New Providers
+The system is designed for easy extensibility. Future providers can be added by:
+1. Creating a new adapter class that implements `IPOSAdapter`
+2. Registering the adapter with the factory
+3. No changes to existing code required!
+
+Planned providers: Toast, Clover
 
 ### Configuration
 
@@ -230,7 +252,10 @@ Test the drink builder directly in your browser - no installation required!
 ### POS Integration
 - `GET /api/pos/integration/:businessId` - Get integration status
 - `POST /api/pos/integration` - Configure integration
-- `POST /api/pos/sync/:businessId` - Sync menu
+- `POST /api/pos/integration/test` - Test POS connection
+- `POST /api/pos/sync/:businessId` - Sync menu from POS
+- `POST /api/pos/order/:businessId` - Submit order to POS
+- `GET /api/pos/providers` - Get supported POS providers
 
 ### Business
 - `GET /api/business/:id` - Get business details
