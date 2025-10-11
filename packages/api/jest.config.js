@@ -12,6 +12,7 @@ module.exports = {
   setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^@drink-ux/shared$": "<rootDir>/../shared/src/index.ts",
   },
   testTimeout: 10000,
   clearMocks: true,

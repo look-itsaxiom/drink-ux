@@ -1,6 +1,17 @@
 import { ClientCompany, ClientTheme, POSIntegration } from "../../generated/prisma";
 import { ClientCompany as SharedClientCompany } from "@drink-ux/shared";
 import { jest, expect } from "@jest/globals";
+import { PrismaClient } from "@prisma/client";
+import { mockDeep, mockReset, DeepMockProxy } from "jest-mock-extended";
+
+/**
+ * Mock Prisma Client for testing
+ */
+export const prismaMock = mockDeep<PrismaClient>() as unknown as DeepMockProxy<PrismaClient>;
+
+beforeEach(() => {
+  mockReset(prismaMock);
+});
 
 /**
  * Test data factories for creating mock data
