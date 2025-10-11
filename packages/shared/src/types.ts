@@ -219,6 +219,73 @@ export interface POSConfig {
 }
 
 /**
+ * POS Menu and Product types for universal mapping
+ */
+export interface POSProduct {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  basePrice: number;
+  available: boolean;
+  variations?: POSProductVariation[];
+  modifiers?: POSModifierList[];
+  imageUrl?: string;
+}
+
+export interface POSProductVariation {
+  id: string;
+  name: string;
+  price: number;
+  available: boolean;
+}
+
+export interface POSModifierList {
+  id: string;
+  name: string;
+  modifiers: POSModifier[];
+  selectionType: 'single' | 'multiple';
+  minSelections?: number;
+  maxSelections?: number;
+}
+
+export interface POSModifier {
+  id: string;
+  name: string;
+  price: number;
+  available: boolean;
+}
+
+/**
+ * POS Order types
+ */
+export interface POSOrder {
+  externalId?: string;
+  locationId: string;
+  lineItems: POSOrderLineItem[];
+  note?: string;
+}
+
+export interface POSOrderLineItem {
+  catalogItemId: string;
+  quantity: number;
+  variationId?: string;
+  modifiers?: POSOrderModifier[];
+  note?: string;
+}
+
+export interface POSOrderModifier {
+  catalogItemId: string;
+  quantity?: number;
+}
+
+export interface POSOrderResult {
+  success: boolean;
+  orderId?: string;
+  error?: string;
+}
+
+/**
  * Client types
  */
 export interface ClientCompany {
