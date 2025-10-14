@@ -30,34 +30,12 @@
 }
 
 .modifier-item {
-  --background: var(--theme-surface);
-  --border-radius: 12px;
-  --padding-start: 16px;
-  --padding-end: 16px;
-  --padding-top: 12px;
-  --padding-bottom: 12px;
-  --min-height: 60px;
-  --ripple-color: var(--theme-primary);
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
+  /* Use interactive-item base styles with custom animation */
   margin: 6px 16px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   animation-delay: var(--animation-delay, 0s);
   opacity: 0;
   transform: translateY(15px);
-  border: 2px solid transparent;
-}
-
-.modifier-item:hover {
-  --background: var(--theme-primary-light);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  border-color: var(--theme-primary);
-}
-
-.modifier-item:active {
-  transform: translateY(0px) scale(0.98);
 }
 
 .modifier-item.selected {

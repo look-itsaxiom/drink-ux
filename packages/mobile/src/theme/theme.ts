@@ -21,6 +21,7 @@ export interface Theme {
   };
 }
 
+// Fallback theme for initial render and error scenarios
 export const defaultTheme: Theme = {
   name: 'default',
   colors: {

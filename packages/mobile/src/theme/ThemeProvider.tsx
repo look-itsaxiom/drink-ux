@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Theme, defaultTheme } from './theme';
+// Import theme.json directly for now (placeholder for API)
 import themeConfig from '../../theme.json';
 
 interface ThemeContextType {
   theme: Theme;
+  loadTheme: (theme: Theme) => void;
+  isLoading: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -22,6 +25,7 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [currentTheme, setCurrentTheme] = useState<Theme>(defaultTheme);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const applyTheme = (theme: Theme) => {
     const root = document.documentElement;
@@ -46,6 +50,20 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       root.style.setProperty('--theme-primary-shadow', `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.4)`);
       root.style.setProperty('--theme-primary-shadow-hover', `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.6)`);
     }
+
+    // Extract RGB from secondary color for alpha variations
+    const secondaryColor = theme.colors.secondary;
+    const secondaryRgb = hexToRgb(secondaryColor);
+    if (secondaryRgb) {
+      root.style.setProperty('--theme-secondary-shadow', `rgba(${secondaryRgb.r}, ${secondaryRgb.g}, ${secondaryRgb.b}, 0.3)`);
+      root.style.setProperty('--theme-secondary-shadow-hover', `rgba(${secondaryRgb.r}, ${secondaryRgb.g}, ${secondaryRgb.b}, 0.4)`);
+    }
+  };
+
+  // Function to manually load a theme (for API integration)
+  const loadTheme = (theme: Theme) => {
+    setCurrentTheme(theme);
+    applyTheme(theme);
   };
 
   // Helper function to convert hex to RGB
@@ -59,16 +77,37 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    // Load theme from theme.json file
-    const theme = themeConfig as Theme;
-    setCurrentTheme(theme);
-    applyTheme(theme);
+    // TODO: Replace with actual API call when ready
+    // For now, simulate API call with theme.json as placeholder
+    const loadThemeFromAPI = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Use theme.json as placeholder for API response
+        const theme = themeConfig as Theme;
+        setCurrentTheme(theme);
+        applyTheme(theme);
+      } catch (error) {
+        console.warn('Failed to load theme from API, using default theme:', error);
+        // defaultTheme is already set as initial state, so fallback is automatic
+        applyTheme(defaultTheme);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadThemeFromAPI();
   }, []);
 
   return (
     <ThemeContext.Provider
       value={{
         theme: currentTheme,
+        loadTheme,
+        isLoading,
       }}
     >
       {children}

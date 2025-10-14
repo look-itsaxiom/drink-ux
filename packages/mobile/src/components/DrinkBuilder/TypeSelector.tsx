@@ -1,5 +1,5 @@
 import React from "react";
-import { IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel, IonNote, IonButtons, IonButton, IonIcon } from "@ionic/react";
+import { IonList, IonItem, IonLabel, IonNote, IonIcon } from "@ionic/react";
 import { arrowBack } from "ionicons/icons";
 import { DrinkCategory, DrinkType } from "@drink-ux/shared";
 import "./TypeSelector.css";
@@ -58,45 +58,37 @@ const TypeSelector: React.FC<TypeSelectorProps> = ({ category, onSelect, onBack 
   const drinkTypes = getDrinkTypes(category);
 
   return (
-    <div className="type-selector">
-      <IonHeader className="type-header">
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton fill="clear" onClick={onBack}>
-              <IonIcon icon={arrowBack} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Choose your {category}</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+    <div className="section">
+      <div className="selector-header">
+        <IonIcon icon={arrowBack} className="back-icon" onClick={onBack} />
+        <h2 className="section-title">Choose your {category}</h2>
+      </div>
 
-      <IonContent>
-        <IonList className="type-list" lines="none">
-          {drinkTypes.map((drinkType, index) => (
-            <IonItem
-              key={drinkType.id}
-              button
-              onClick={() => onSelect(drinkType)}
-              className="type-item"
-              style={
-                {
-                  "--animation-delay": `${index * 0.05}s`,
-                } as React.CSSProperties
-              }
-            >
-              <IonLabel>
-                <h2 className="type-name">{drinkType.name}</h2>
-                <IonNote className="type-price">${drinkType.basePrice.toFixed(2)}</IonNote>
-              </IonLabel>
-              {drinkType.isHot !== undefined && (
-                <IonNote slot="end" className="type-badge" color={drinkType.isHot ? "warning" : "primary"}>
-                  {drinkType.isHot ? "Hot only" : "Iced only"}
-                </IonNote>
-              )}
-            </IonItem>
-          ))}
-        </IonList>
-      </IonContent>
+      <IonList className="type-list" lines="none">
+        {drinkTypes.map((drinkType, index) => (
+          <IonItem
+            key={drinkType.id}
+            button
+            onClick={() => onSelect(drinkType)}
+            className="type-item interactive-item interactive-item-large slide-in-up"
+            style={
+              {
+                "--animation-delay": `${index * 0.05}s`,
+              } as React.CSSProperties
+            }
+          >
+            <IonLabel>
+              <h2 className="type-name">{drinkType.name}</h2>
+              <IonNote className="type-price">${drinkType.basePrice.toFixed(2)}</IonNote>
+            </IonLabel>
+            {drinkType.isHot !== undefined && (
+              <IonNote slot="end" className="type-badge" color={drinkType.isHot ? "warning" : "primary"}>
+                {drinkType.isHot ? "Hot only" : "Iced only"}
+              </IonNote>
+            )}
+          </IonItem>
+        ))}
+      </IonList>
     </div>
   );
 };

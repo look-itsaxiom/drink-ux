@@ -1,17 +1,14 @@
 import {
   IonContent,
-  IonHeader,
   IonPage,
-  IonTitle,
-  IonToolbar,
-  IonButtons,
-  IonBackButton,
   IonList,
   IonItem,
   IonLabel,
   IonButton,
   IonFooter,
+  IonToolbar,
 } from '@ionic/react';
+import AppHeader from '../components/AppHeader';
 import './Cart.css';
 
 const Cart: React.FC = () => {
@@ -24,14 +21,7 @@ const Cart: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/home" />
-          </IonButtons>
-          <IonTitle>Your Cart</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      <AppHeader title="Your Cart" showBackButton={true} backHref="/home" />
       <IonContent fullscreen>
         <IonList>
           {cartItems.map((item) => (
