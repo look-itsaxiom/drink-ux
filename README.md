@@ -97,6 +97,35 @@ npm run dev
 
 The API server will be available at `http://localhost:3001`
 
+### Square POS Integration Setup
+
+This project includes Square POS integration through an MCP (Model Context Protocol) server.
+
+#### Environment Configuration
+
+1. Copy the environment template:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Get your Square credentials:
+   - Visit [Square Developer Dashboard](https://developer.squareup.com/apps)
+   - Select your application
+   - For development, use the **Sandbox** tab
+   - Copy your Sandbox Access Token
+
+3. Update your `.env` file:
+   ```bash
+   SQUARE_ACCESS_TOKEN=your_sandbox_access_token_here
+   SQUARE_SANDBOX=true
+   ```
+
+#### MCP Server Configuration
+
+The Square MCP server is configured in `.vscode/mcp.json` and uses environment variables for credentials. This allows you to commit the configuration without exposing sensitive tokens.
+
+**Note**: Never commit your actual access tokens to the repository. The `.env` file is gitignored for security.
+
 ### Building for Production
 
 #### Mobile App
