@@ -13,17 +13,20 @@ This is a monorepo project built with modern web technologies:
 ### Packages
 
 - **`@drink-ux/mobile`** - Ionic/React/Capacitor mobile app (PWA/Android/iOS)
+
   - Custom drink builder interface
   - Real-time order management
   - Responsive design for all devices
 
 - **`@drink-ux/admin`** - React admin portal
+
   - Business dashboard
   - Menu management
   - POS integration configuration
   - Analytics and reporting
 
 - **`@drink-ux/api`** - TypeScript Express API backend
+
   - RESTful API endpoints
   - POS integration services
   - Order management
@@ -51,12 +54,14 @@ This is a monorepo project built with modern web technologies:
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/look-itsaxiom/drink-ux.git
    cd drink-ux
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -104,11 +109,13 @@ This project includes Square POS integration through an MCP (Model Context Proto
 #### Environment Configuration
 
 1. Copy the environment template:
+
    ```bash
    cp .env.example .env
    ```
 
 2. Get your Square credentials:
+
    - Visit [Square Developer Dashboard](https://developer.squareup.com/apps)
    - Select your application
    - For development, use the **Sandbox** tab
@@ -136,6 +143,7 @@ npm run build
 ```
 
 To build for iOS/Android:
+
 ```bash
 npx cap add ios
 npx cap add android
@@ -211,6 +219,7 @@ The mobile drink builder is deployed as a Progressive Web App (PWA) at [https://
 Test the drink builder directly in your browser - no installation required!
 
 - **Visual Drink Builder**
+
   - Interactive, game-like interface with real-time visual feedback
   - Component-based drink construction (Cup → Base → Modifiers)
   - SVG-rendered cup that fills as ingredients are added
@@ -230,11 +239,13 @@ Test the drink builder directly in your browser - no installation required!
 ### Admin Portal
 
 - **Dashboard**
+
   - Order analytics
   - Revenue tracking
   - Performance metrics
 
 - **Menu Management**
+
   - Add/edit drinks
   - Manage customization options
   - Set pricing
@@ -249,19 +260,23 @@ Test the drink builder directly in your browser - no installation required!
 ## API Endpoints
 
 ### Drinks
+
 - `GET /api/drinks` - List all drinks
 - `GET /api/drinks/:id` - Get drink details
 
 ### Orders
+
 - `GET /api/orders` - List all orders
 - `POST /api/orders` - Create new order
 
 ### POS Integration
+
 - `GET /api/pos/integration/:businessId` - Get integration status
 - `POST /api/pos/integration` - Configure integration
 - `POST /api/pos/sync/:businessId` - Sync menu
 
 ### Business
+
 - `GET /api/business/:id` - Get business details
 - `PUT /api/business/:id` - Update business settings
 
