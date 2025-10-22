@@ -127,11 +127,23 @@ This project includes Square POS integration through an MCP (Model Context Proto
    SQUARE_SANDBOX=true
    ```
 
-#### MCP Server Configuration
+#### MCP Server Configuration for VS Code Copilot
 
-The Square MCP server is configured in `.vscode/mcp.json` and uses environment variables for credentials. This allows you to commit the configuration without exposing sensitive tokens.
+The Square MCP server enables GitHub Copilot to interact directly with your Square sandbox account. To set it up:
 
-**Note**: Never commit your actual access tokens to the repository. The `.env` file is gitignored for security.
+1. Copy the MCP configuration template:
+
+   ```bash
+   cp .vscode/mcp.json.example .vscode/mcp.json
+   ```
+
+2. Open `.vscode/mcp.json` and replace `YOUR_SQUARE_SANDBOX_ACCESS_TOKEN_HERE` with your actual Square Sandbox Access Token (from step 2 above).
+
+3. Restart VS Code or reload the window for the MCP server to connect.
+
+**Important**: The `.vscode/mcp.json` file contains sensitive credentials and is gitignored. Never commit this file to version control. Always use the `.vscode/mcp.json.example` template for reference.
+
+**Note**: Never commit your actual access tokens to the repository. Both `.env` and `.vscode/mcp.json` are gitignored for security.
 
 ### Building for Production
 

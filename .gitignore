@@ -32,6 +32,9 @@ lerna-debug.log*
 *.swo
 *~
 
+# MCP Configuration (contains sensitive tokens)
+.vscode/mcp.json
+
 # Capacitor
 .capacitor/
 android/
