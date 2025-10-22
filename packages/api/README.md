@@ -38,6 +38,7 @@ BasePOSAdapter (Abstract Class)
 ```
 
 **Key Benefits:**
+
 - Unified API for all POS systems
 - Easy to add new providers
 - Provider-agnostic business logic
@@ -65,6 +66,58 @@ npm test
 
 # Run tests with coverage
 npm run test:coverage
+
+# Open database REPL for testing queries
+npm run db:repl
+```
+
+### Database REPL
+
+For quick database testing and exploration, use the interactive REPL:
+
+```bash
+npm run db:repl
+# or
+npm run db:cli
+```
+
+The REPL provides:
+
+- **Full Prisma Client access** - Run any Prisma query
+- **Auto-complete** - Tab completion for queries
+- **Pretty printing** - Colorized, formatted output
+- **Model shortcuts** - Quick access via `models.clientCompany`, etc.
+- **Custom commands** - `.schema`, `.count`, `.help`
+
+**Examples:**
+
+```javascript
+// Find all client companies
+db> await prisma.clientCompany.findMany()
+
+// Create a new company with theme
+db> await models.clientCompany.create({
+  data: {
+    name: "Test Coffee Shop",
+    pointOfContact: "john@example.com",
+    theme: {
+      create: {
+        primaryColor: "#FF6B6B",
+        secondaryColor: "#4ECDC4"
+      }
+    }
+  },
+  include: { theme: true }
+})
+
+// Count records
+db> .count
+
+// Show schema
+db> .schema
+
+// Exit
+db> .exit
 ```
 
 ### Environment Variables
@@ -273,6 +326,7 @@ All endpoints follow a consistent error response format:
 ```
 
 Common error codes:
+
 - `BAD_REQUEST` - Invalid request parameters
 - `NOT_FOUND` - Resource not found
 - `INTERNAL_SERVER_ERROR` - Server error
