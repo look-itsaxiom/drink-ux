@@ -219,16 +219,16 @@ export interface POSConfig {
 }
 
 /**
- * Client types
+ * Partner types
  */
-export interface ClientCompany {
+export interface Partner {
   id: string;
   name: string;
-  theme?: ClientTheme;
+  theme?: PartnerTheme;
   posIntegration?: POSIntegration;
 }
 
-export interface ClientTheme {
+export interface PartnerTheme {
   primaryColor: string;
   secondaryColor: string;
   logoUrl?: string;

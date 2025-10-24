@@ -40,11 +40,11 @@ npm run db:repl
 ### Quick Examples
 
 ```javascript
-// View all companies
-db> await prisma.clientCompany.findMany()
+// View all partners
+db> await prisma.partner.findMany()
 
 // Use shortcuts
-db> await models.clientCompany.create({ data: {...} })
+db> await models.partner.create({ data: {...} })
 
 // Built-in commands
 db> .schema

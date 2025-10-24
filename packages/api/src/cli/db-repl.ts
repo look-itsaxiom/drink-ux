@@ -48,8 +48,8 @@ replServer.context.db = prisma;
 
 // Add convenient shortcuts for all models
 replServer.context.models = {
-  clientCompany: prisma.clientCompany,
-  clientTheme: prisma.clientTheme,
+  partner: prisma.partner,
+  partnerTheme: prisma.partnerTheme,
   posIntegration: prisma.pOSIntegration,
   // Add more models as they're defined in your schema
 };
@@ -77,9 +77,7 @@ replServer.defineCommand("schema", {
     console.log("   • ClientCompany    (prisma.clientCompany)");
     console.log("   • ClientTheme      (prisma.clientTheme)");
     console.log("   • POSIntegration   (prisma.pOSIntegration)");
-    console.log(
-      "\n💡 Use shortcuts: models.clientCompany, models.clientTheme, models.posIntegration\n"
-    );
+    console.log("\n💡 Use shortcuts: models.clientCompany, models.clientTheme, models.posIntegration\n");
     this.displayPrompt();
   },
 });
@@ -89,13 +87,9 @@ replServer.defineCommand("count", {
   async action() {
     try {
       console.log("\n📊 Record Counts:");
-      const counts = await Promise.all([
-        prisma.clientCompany.count(),
-        prisma.clientTheme.count(),
-        prisma.pOSIntegration.count(),
-      ]);
-      console.log(`   • ClientCompany:  ${counts[0]}`);
-      console.log(`   • ClientTheme:    ${counts[1]}`);
+      const counts = await Promise.all([prisma.partner.count(), prisma.partnerTheme.count(), prisma.pOSIntegration.count()]);
+      console.log(`   • Partner:        ${counts[0]}`);
+      console.log(`   • PartnerTheme:   ${counts[1]}`);
       console.log(`   • POSIntegration: ${counts[2]}`);
       console.log("");
     } catch (error) {

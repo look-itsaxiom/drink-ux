@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import { drinkRoutes } from "./routes/drinks";
 import { orderRoutes } from "./routes/orders";
 import { posRoutes } from "./routes/pos";
-import { clientCompanyRoutes } from "./routes/clientCompany";
+import { partnerRoutes } from "./routes/partner";
 
 dotenv.config();
 
@@ -24,7 +24,7 @@ app.get("/health", (req: Request, res: Response) => {
 app.use("/api/drinks", drinkRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/pos", posRoutes);
-app.use("/api/clientCompanies", clientCompanyRoutes);
+app.use("/api/partners", partnerRoutes);
 
 // Start server
 app.listen(PORT, () => {

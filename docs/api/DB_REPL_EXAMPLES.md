@@ -10,10 +10,10 @@ npm run db:repl
 
 ## Common Queries
 
-### View All Companies
+### View All Partners
 
 ```javascript
-await prisma.clientCompany.findMany({
+await prisma.partner.findMany({
   include: {
     theme: true,
     posIntegration: true,
@@ -21,10 +21,10 @@ await prisma.clientCompany.findMany({
 });
 ```
 
-### Create a Test Company
+### Create a Test Partner
 
 ```javascript
-await models.clientCompany.create({
+await models.partner.create({
   data: {
     name: "Test Coffee Shop",
     pointOfContact: "test@example.com",
@@ -40,26 +40,26 @@ await models.clientCompany.create({
 });
 ```
 
-### Add POS Integration to Existing Company
+### Add POS Integration to Existing Partner
 
 ```javascript
-// First, get a company ID
-const company = await prisma.clientCompany.findFirst();
+// First, get a partner ID
+const partner = await prisma.partner.findFirst();
 
 // Then add POS integration
 await prisma.pOSIntegration.create({
   data: {
     provider: "SQUARE",
     isActive: true,
-    companyId: company.id,
+    partnerId: partner.id,
   },
 });
 ```
 
-### Find Company by Name
+### Find Partner by Name
 
 ```javascript
-await prisma.clientCompany.findFirst({
+await prisma.partner.findFirst({
   where: {
     name: {
       contains: "Coffee",
@@ -72,12 +72,12 @@ await prisma.clientCompany.findFirst({
 });
 ```
 
-### Update Company Theme
+### Update Partner Theme
 
 ```javascript
-await prisma.clientTheme.update({
+await prisma.partnerTheme.update({
   where: {
-    companyId: "your-company-id-here",
+    partnerId: "your-partner-id-here",
   },
   data: {
     primaryColor: "#00FF00",
@@ -86,12 +86,12 @@ await prisma.clientTheme.update({
 });
 ```
 
-### Delete a Company (cascades to theme and POS integration)
+### Delete a Partner (cascades to theme and POS integration)
 
 ```javascript
-await prisma.clientCompany.delete({
+await prisma.partner.delete({
   where: {
-    id: "company-id-here",
+    id: "partner-id-here",
   },
 });
 ```
@@ -104,8 +104,8 @@ await prisma.clientCompany.delete({
 
 // Or manually
 const counts = {
-  companies: await prisma.clientCompany.count(),
-  themes: await prisma.clientTheme.count(),
+  partners: await prisma.partner.count(),
+  themes: await prisma.partnerTheme.count(),
   integrations: await prisma.pOSIntegration.count()
 }
 console.table(counts)
@@ -119,7 +119,7 @@ await prisma.pOSIntegration.findMany({
     isActive: true,
   },
   include: {
-    company: {
+    partner: {
       include: {
         theme: true,
       },
@@ -128,10 +128,10 @@ await prisma.pOSIntegration.findMany({
 });
 ```
 
-### Create Complete Company Setup
+### Create Complete Partner Setup
 
 ```javascript
-await prisma.clientCompany.create({
+await prisma.partner.create({
   data: {
     name: "Awesome Coffee Co.",
     pointOfContact: "owner@awesomecoffee.com",
@@ -161,10 +161,10 @@ await prisma.clientCompany.create({
 
 ```javascript
 // Execute raw SQL
-await prisma.$queryRaw`SELECT * FROM ClientCompany WHERE name LIKE ${"%Coffee%"}`;
+await prisma.$queryRaw`SELECT * FROM Partner WHERE name LIKE ${"%Coffee%"}`;
 
 // Execute raw SQL with parameters
-await prisma.$executeRaw`UPDATE ClientCompany SET pointOfContact = ${"new@email.com"} WHERE id = ${"some-id"}`;
+await prisma.$executeRaw`UPDATE Partner SET pointOfContact = ${"new@email.com"} WHERE id = ${"some-id"}`;
 ```
 
 ## Built-in REPL Commands
@@ -189,7 +189,7 @@ await prisma.$executeRaw`UPDATE ClientCompany SET pointOfContact = ${"new@email.
 Check the last query result:
 
 ```javascript
-const result = await prisma.clientCompany.findMany();
+const result = await prisma.partner.findMany();
 console.log(JSON.stringify(result, null, 2));
 ```
 

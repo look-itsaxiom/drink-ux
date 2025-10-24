@@ -2,7 +2,7 @@ import { POSIntegration } from "../../generated/prisma";
 import prisma from "../database";
 
 export interface CreatePOSIntegrationData {
-  companyId: string;
+  partnerId: string;
   provider: string;
   isActive: boolean;
 }
@@ -17,11 +17,11 @@ export interface UpdatePOSIntegrationData {
  */
 export class POSIntegrationRepository {
   /**
-   * Find POS integration by company ID
+   * Find POS integration by partner ID
    */
-  async findByCompanyId(companyId: string): Promise<POSIntegration | null> {
+  async findByPartnerId(partnerId: string): Promise<POSIntegration | null> {
     return await prisma.pOSIntegration.findFirst({
-      where: { companyId },
+      where: { partnerId },
     });
   }
 
@@ -62,10 +62,10 @@ export class POSIntegrationRepository {
   }
 
   /**
-   * Update last sync time for a company's POS integration
+   * Update last sync time for a partner's POS integration
    */
-  async updateLastSyncTime(companyId: string): Promise<POSIntegration | null> {
-    const integration = await this.findByCompanyId(companyId);
+  async updateLastSyncTime(partnerId: string): Promise<POSIntegration | null> {
+    const integration = await this.findByPartnerId(partnerId);
     if (!integration) {
       return null;
     }
@@ -95,11 +95,11 @@ export class POSIntegrationRepository {
   }
 
   /**
-   * Check if a POS integration exists for a company
+   * Check if a POS integration exists for a partner
    */
-  async existsByCompanyId(companyId: string): Promise<boolean> {
+  async existsByPartnerId(partnerId: string): Promise<boolean> {
     const count = await prisma.pOSIntegration.count({
-      where: { companyId },
+      where: { partnerId },
     });
     return count > 0;
   }

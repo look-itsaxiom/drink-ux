@@ -16,11 +16,11 @@ describe("POSIntegrationRepository", () => {
     jest.clearAllMocks();
   });
 
-  describe("findByCompanyId", () => {
-    it("should find POS integration by company ID", async () => {
+  describe("findByPartnerId", () => {
+    it("should find POS integration by partner ID", async () => {
       const mockIntegration = {
         id: "integration-1",
-        companyId: "company-1",
+        partnerId: "company-1",
         provider: "square",
         isActive: true,
         createdAt: new Date(),
@@ -29,10 +29,10 @@ describe("POSIntegrationRepository", () => {
 
       prismaMock.pOSIntegration.findFirst.mockResolvedValue(mockIntegration);
 
-      const result = await repository.findByCompanyId("company-1");
+      const result = await repository.findByPartnerId("company-1");
 
       expect(prismaMock.pOSIntegration.findFirst).toHaveBeenCalledWith({
-        where: { companyId: "company-1" },
+        where: { partnerId: "company-1" },
       });
       expect(result).toEqual(mockIntegration);
     });
@@ -40,7 +40,7 @@ describe("POSIntegrationRepository", () => {
     it("should return null when integration not found", async () => {
       prismaMock.pOSIntegration.findFirst.mockResolvedValue(null);
 
-      const result = await repository.findByCompanyId("non-existent");
+      const result = await repository.findByPartnerId("non-existent");
 
       expect(result).toBeNull();
     });
@@ -50,7 +50,7 @@ describe("POSIntegrationRepository", () => {
     it("should find POS integration by ID", async () => {
       const mockIntegration = {
         id: "integration-1",
-        companyId: "company-1",
+        partnerId: "company-1",
         provider: "square",
         isActive: true,
         createdAt: new Date(),
@@ -79,7 +79,7 @@ describe("POSIntegrationRepository", () => {
   describe("create", () => {
     it("should create a new POS integration", async () => {
       const createData = {
-        companyId: "company-1",
+        partnerId: "company-1",
         provider: "square",
         isActive: true,
       };
@@ -111,7 +111,7 @@ describe("POSIntegrationRepository", () => {
 
       const mockUpdatedIntegration = {
         id: "integration-1",
-        companyId: "company-1",
+        partnerId: "company-1",
         provider: "toast",
         isActive: false,
         createdAt: new Date(),
@@ -144,9 +144,7 @@ describe("POSIntegrationRepository", () => {
 
       prismaMock.pOSIntegration.update.mockRejectedValue(new Error("Database error"));
 
-      await expect(repository.update("integration-1", updateData)).rejects.toThrow(
-        "Database error"
-      );
+      await expect(repository.update("integration-1", updateData)).rejects.toThrow("Database error");
     });
   });
 
@@ -154,7 +152,7 @@ describe("POSIntegrationRepository", () => {
     it("should update last sync time for a company", async () => {
       const mockIntegration = {
         id: "integration-1",
-        companyId: "company-1",
+        partnerId: "company-1",
         provider: "square",
         isActive: true,
         createdAt: new Date(),
@@ -172,7 +170,7 @@ describe("POSIntegrationRepository", () => {
       const result = await repository.updateLastSyncTime("company-1");
 
       expect(prismaMock.pOSIntegration.findFirst).toHaveBeenCalledWith({
-        where: { companyId: "company-1" },
+        where: { partnerId: "company-1" },
       });
       expect(prismaMock.pOSIntegration.update).toHaveBeenCalled();
       expect(result).toEqual(mockUpdatedIntegration);
@@ -192,7 +190,7 @@ describe("POSIntegrationRepository", () => {
     it("should delete a POS integration", async () => {
       prismaMock.pOSIntegration.delete.mockResolvedValue({
         id: "integration-1",
-        companyId: "company-1",
+        partnerId: "company-1",
         provider: "square",
         isActive: true,
         createdAt: new Date(),
@@ -222,14 +220,14 @@ describe("POSIntegrationRepository", () => {
     });
   });
 
-  describe("existsByCompanyId", () => {
+  describe("existsByPartnerId", () => {
     it("should return true when integration exists", async () => {
       prismaMock.pOSIntegration.count.mockResolvedValue(1);
 
-      const result = await repository.existsByCompanyId("company-1");
+      const result = await repository.existsByPartnerId("company-1");
 
       expect(prismaMock.pOSIntegration.count).toHaveBeenCalledWith({
-        where: { companyId: "company-1" },
+        where: { partnerId: "company-1" },
       });
       expect(result).toBe(true);
     });
@@ -237,7 +235,7 @@ describe("POSIntegrationRepository", () => {
     it("should return false when integration does not exist", async () => {
       prismaMock.pOSIntegration.count.mockResolvedValue(0);
 
-      const result = await repository.existsByCompanyId("non-existent");
+      const result = await repository.existsByPartnerId("non-existent");
 
       expect(result).toBe(false);
     });

@@ -6,13 +6,13 @@ import { POSManager } from "../pos.manager";
 jest.mock("../../repositories/posIntegration.repository", () => ({
   POSIntegrationRepository: jest.fn(),
   posIntegrationRepository: {
-    findByCompanyId: jest.fn(),
+    findByPartnerId: jest.fn(),
     findById: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     updateLastSyncTime: jest.fn(),
     delete: jest.fn(),
-    existsByCompanyId: jest.fn(),
+    existsByPartnerId: jest.fn(),
   },
 }));
 
@@ -20,11 +20,7 @@ jest.mock("../../repositories/posIntegration.repository", () => ({
 jest.mock("../../services/pos/POSProviderFactory", () => ({
   POSProviderFactory: {
     getProvider: jest.fn(),
-    getSupportedProviders: jest.fn(() => [
-      "square",
-      "toast",
-      "clover",
-    ]),
+    getSupportedProviders: jest.fn(() => ["square", "toast", "clover"]),
   },
 }));
 
@@ -68,11 +64,7 @@ describe("POSManager", () => {
 
       mockProvider.testConnection.mockResolvedValue(expectedStatus);
 
-      const result = await manager.testConnection(
-        POSProvider.SQUARE,
-        credentials,
-        config
-      );
+      const result = await manager.testConnection(POSProvider.SQUARE, credentials, config);
 
       expect(mockProviderFactory.getProvider).toHaveBeenCalledWith(POSProvider.SQUARE);
       expect(mockProvider.testConnection).toHaveBeenCalledWith(credentials, config);
@@ -84,17 +76,11 @@ describe("POSManager", () => {
     it("should fetch menu using the appropriate provider", async () => {
       const credentials: POSCredentials = { accessToken: "test-token" };
       const config: POSConfig = { locationId: "test-location" };
-      const expectedMenu = [
-        { id: "1", name: "Coffee", price: 3.5, available: true },
-      ];
+      const expectedMenu = [{ id: "1", name: "Coffee", price: 3.5, available: true }];
 
       mockProvider.fetchMenu.mockResolvedValue(expectedMenu);
 
-      const result = await manager.fetchMenu(
-        POSProvider.SQUARE,
-        credentials,
-        config
-      );
+      const result = await manager.fetchMenu(POSProvider.SQUARE, credentials, config);
 
       expect(mockProviderFactory.getProvider).toHaveBeenCalledWith(POSProvider.SQUARE);
       expect(mockProvider.fetchMenu).toHaveBeenCalledWith(credentials, config);
@@ -118,12 +104,7 @@ describe("POSManager", () => {
 
       mockProvider.submitOrder.mockResolvedValue(expectedResult);
 
-      const result = await manager.submitOrder(
-        POSProvider.SQUARE,
-        order,
-        credentials,
-        config
-      );
+      const result = await manager.submitOrder(POSProvider.SQUARE, order, credentials, config);
 
       expect(mockProviderFactory.getProvider).toHaveBeenCalledWith(POSProvider.SQUARE);
       expect(mockProvider.submitOrder).toHaveBeenCalledWith(order, credentials, config);
@@ -147,19 +128,14 @@ describe("POSManager", () => {
       mockProvider.syncMenu.mockResolvedValue(expectedSyncResult);
       mockRepository.updateLastSyncTime.mockResolvedValue({
         id: "integration-1",
-        companyId,
+        partnerId: companyId,
         provider: "square",
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
 
-      const result = await manager.syncMenu(
-        companyId,
-        POSProvider.SQUARE,
-        credentials,
-        config
-      );
+      const result = await manager.syncMenu(companyId, POSProvider.SQUARE, credentials, config);
 
       expect(mockProviderFactory.getProvider).toHaveBeenCalledWith(POSProvider.SQUARE);
       expect(mockProvider.syncMenu).toHaveBeenCalledWith(credentials, config);
@@ -180,7 +156,7 @@ describe("POSManager", () => {
       };
       const newIntegration = {
         id: "integration-1",
-        companyId,
+        partnerId: companyId,
         provider: "square",
         isActive: true,
         createdAt: new Date(),
@@ -188,20 +164,15 @@ describe("POSManager", () => {
       };
 
       mockProvider.testConnection.mockResolvedValue(connectionStatus);
-      mockRepository.findByCompanyId.mockResolvedValue(null);
+      mockRepository.findByPartnerId.mockResolvedValue(null);
       mockRepository.create.mockResolvedValue(newIntegration);
 
-      const result = await manager.upsertIntegration(
-        companyId,
-        POSProvider.SQUARE,
-        credentials,
-        config
-      );
+      const result = await manager.upsertIntegration(companyId, POSProvider.SQUARE, credentials, config);
 
       expect(mockProvider.testConnection).toHaveBeenCalledWith(credentials, config);
-      expect(mockRepository.findByCompanyId).toHaveBeenCalledWith(companyId);
+      expect(mockRepository.findByPartnerId).toHaveBeenCalledWith(companyId);
       expect(mockRepository.create).toHaveBeenCalledWith({
-        companyId,
+        partnerId: companyId,
         provider: "square",
         isActive: true,
       });
@@ -219,7 +190,7 @@ describe("POSManager", () => {
       };
       const existingIntegration = {
         id: "integration-1",
-        companyId,
+        partnerId: companyId,
         provider: "square",
         isActive: false,
         createdAt: new Date(),
@@ -232,15 +203,10 @@ describe("POSManager", () => {
       };
 
       mockProvider.testConnection.mockResolvedValue(connectionStatus);
-      mockRepository.findByCompanyId.mockResolvedValue(existingIntegration);
+      mockRepository.findByPartnerId.mockResolvedValue(existingIntegration);
       mockRepository.update.mockResolvedValue(updatedIntegration);
 
-      const result = await manager.upsertIntegration(
-        companyId,
-        POSProvider.TOAST,
-        credentials,
-        config
-      );
+      const result = await manager.upsertIntegration(companyId, POSProvider.TOAST, credentials, config);
 
       expect(mockRepository.update).toHaveBeenCalledWith(existingIntegration.id, {
         provider: "toast",
@@ -261,9 +227,7 @@ describe("POSManager", () => {
 
       mockProvider.testConnection.mockResolvedValue(connectionStatus);
 
-      await expect(
-        manager.upsertIntegration(companyId, POSProvider.SQUARE, credentials, config)
-      ).rejects.toThrow("Failed to connect to square");
+      await expect(manager.upsertIntegration(companyId, POSProvider.SQUARE, credentials, config)).rejects.toThrow("Failed to connect to square");
     });
   });
 
@@ -272,7 +236,7 @@ describe("POSManager", () => {
       const companyId = "company-1";
       const integration = {
         id: "integration-1",
-        companyId,
+        partnerId: companyId,
         provider: "square",
         isActive: true,
         createdAt: new Date(),
@@ -280,12 +244,12 @@ describe("POSManager", () => {
       };
       const deactivatedIntegration = { ...integration, isActive: false };
 
-      mockRepository.findByCompanyId.mockResolvedValue(integration);
+      mockRepository.findByPartnerId.mockResolvedValue(integration);
       mockRepository.update.mockResolvedValue(deactivatedIntegration);
 
       const result = await manager.deactivateIntegration(companyId);
 
-      expect(mockRepository.findByCompanyId).toHaveBeenCalledWith(companyId);
+      expect(mockRepository.findByPartnerId).toHaveBeenCalledWith(companyId);
       expect(mockRepository.update).toHaveBeenCalledWith(integration.id, {
         isActive: false,
       });
@@ -295,11 +259,9 @@ describe("POSManager", () => {
     it("should throw error when integration not found", async () => {
       const companyId = "company-1";
 
-      mockRepository.findByCompanyId.mockResolvedValue(null);
+      mockRepository.findByPartnerId.mockResolvedValue(null);
 
-      await expect(manager.deactivateIntegration(companyId)).rejects.toThrow(
-        "POS integration not found"
-      );
+      await expect(manager.deactivateIntegration(companyId)).rejects.toThrow("POS integration not found");
     });
   });
 

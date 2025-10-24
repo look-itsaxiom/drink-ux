@@ -1,14 +1,5 @@
 import { Router, Request, Response } from "express";
-import {
-  POSProvider,
-  ApiResponse,
-  POSCredentials,
-  POSConfig,
-  POSConnectionStatus,
-  POSSyncResult,
-  POSMenuItem,
-  POSOrder,
-} from "@drink-ux/shared";
+import { POSProvider, ApiResponse, POSCredentials, POSConfig, POSConnectionStatus, POSSyncResult, POSMenuItem, POSOrder } from "@drink-ux/shared";
 import { posManager } from "../managers/pos.manager";
 
 const router = Router();
@@ -27,20 +18,20 @@ router.get("/providers", (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/pos/integration/:companyId
- * Get POS integration for a company
+ * GET /api/pos/integration/:partnerId
+ * Get POS integration for a partner
  */
-router.get("/integration/:companyId", async (req: Request, res: Response) => {
+router.get("/integration/:partnerId", async (req: Request, res: Response) => {
   try {
-    const { companyId } = req.params;
-    const integration = await posManager.getIntegrationByCompanyId(companyId);
+    const { partnerId } = req.params;
+    const integration = await posManager.getIntegrationByPartnerId(partnerId);
 
     if (!integration) {
       res.status(404).json({
         success: false,
         error: {
           code: "NOT_FOUND",
-          message: "POS integration not found for this company",
+          message: "POS integration not found for this partner",
         },
       });
       return;
@@ -50,7 +41,7 @@ router.get("/integration/:companyId", async (req: Request, res: Response) => {
       success: true,
       data: {
         id: integration.id,
-        businessId: companyId,
+        businessId: partnerId,
         provider: integration.provider as POSProvider,
         credentials: {}, // Don't expose credentials
         config: {},
@@ -115,34 +106,29 @@ router.post("/test-connection", async (req: Request, res: Response) => {
 
 /**
  * POST /api/pos/integration
- * Create or update POS integration for a company
+ * Create or update POS integration for a partner
  */
 router.post("/integration", async (req: Request, res: Response) => {
   try {
-    const { companyId, provider, credentials, config } = req.body as {
-      companyId: string;
+    const { partnerId, provider, credentials, config } = req.body as {
+      partnerId: string;
       provider: POSProvider;
       credentials: POSCredentials;
       config: POSConfig;
     };
 
-    if (!companyId || !provider || !credentials || !config) {
+    if (!partnerId || !provider || !credentials || !config) {
       res.status(400).json({
         success: false,
         error: {
           code: "BAD_REQUEST",
-          message: "Company ID, provider, credentials, and config are required",
+          message: "Partner ID, provider, credentials, and config are required",
         },
       });
       return;
     }
 
-    const integration = await posManager.upsertIntegration(
-      companyId,
-      provider,
-      credentials,
-      config
-    );
+    const integration = await posManager.upsertIntegration(partnerId, provider, credentials, config);
 
     if (!integration) {
       res.status(500).json({
@@ -159,7 +145,7 @@ router.post("/integration", async (req: Request, res: Response) => {
       success: true,
       data: {
         id: integration.id,
-        businessId: companyId,
+        businessId: partnerId,
         provider: integration.provider as POSProvider,
         credentials: {}, // Don't expose credentials
         config: {},
@@ -180,12 +166,12 @@ router.post("/integration", async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/pos/sync/:companyId
+ * POST /api/pos/sync/:partnerId
  * Sync menu from POS system
  */
-router.post("/sync/:companyId", async (req: Request, res: Response) => {
+router.post("/sync/:partnerId", async (req: Request, res: Response) => {
   try {
-    const { companyId } = req.params;
+    const { partnerId } = req.params;
     const { provider, credentials, config } = req.body as {
       provider: POSProvider;
       credentials: POSCredentials;
@@ -203,12 +189,7 @@ router.post("/sync/:companyId", async (req: Request, res: Response) => {
       return;
     }
 
-    const syncResult = await posManager.syncMenu(
-      companyId,
-      provider,
-      credentials,
-      config
-    );
+    const syncResult = await posManager.syncMenu(partnerId, provider, credentials, config);
 
     const response: ApiResponse<POSSyncResult> = {
       success: true,
@@ -295,12 +276,7 @@ router.post("/order", async (req: Request, res: Response) => {
       return;
     }
 
-    const result = await posManager.submitOrder(
-      provider,
-      order,
-      credentials,
-      config
-    );
+    const result = await posManager.submitOrder(provider, order, credentials, config);
 
     const response: ApiResponse<{ orderId: string; status: string }> = {
       success: true,
@@ -347,12 +323,7 @@ router.get("/order/:orderId/status", async (req: Request, res: Response) => {
     const parsedCredentials: POSCredentials = JSON.parse(credentials);
     const parsedConfig: POSConfig = JSON.parse(config);
 
-    const status = await posManager.getOrderStatus(
-      provider,
-      orderId,
-      parsedCredentials,
-      parsedConfig
-    );
+    const status = await posManager.getOrderStatus(provider, orderId, parsedCredentials, parsedConfig);
 
     const response: ApiResponse<{ status: string; details?: any }> = {
       success: true,
@@ -373,13 +344,13 @@ router.get("/order/:orderId/status", async (req: Request, res: Response) => {
 });
 
 /**
- * DELETE /api/pos/integration/:companyId
- * Deactivate POS integration for a company
+ * DELETE /api/pos/integration/:partnerId
+ * Deactivate POS integration for a partner
  */
-router.delete("/integration/:companyId", async (req: Request, res: Response) => {
+router.delete("/integration/:partnerId", async (req: Request, res: Response) => {
   try {
-    const { companyId } = req.params;
-    await posManager.deactivateIntegration(companyId);
+    const { partnerId } = req.params;
+    await posManager.deactivateIntegration(partnerId);
 
     res.json({
       success: true,

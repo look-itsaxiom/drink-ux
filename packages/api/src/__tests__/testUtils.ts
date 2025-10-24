@@ -1,7 +1,6 @@
-import { ClientCompany, ClientTheme, POSIntegration } from "../../generated/prisma";
-import { ClientCompany as SharedClientCompany } from "@drink-ux/shared";
+import { Partner, PartnerTheme, POSIntegration, PrismaClient } from "../../generated/prisma";
+import { Partner as SharedPartner } from "@drink-ux/shared";
 import { jest, expect } from "@jest/globals";
-import { PrismaClient } from "@prisma/client";
 import { mockDeep, mockReset, DeepMockProxy } from "jest-mock-extended";
 
 /**
@@ -17,10 +16,10 @@ beforeEach(() => {
  * Test data factories for creating mock data
  */
 export class TestDataFactory {
-  static createMockClientCompany(overrides: Partial<ClientCompany> = {}): ClientCompany {
+  static createMockPartner(overrides: Partial<Partner> = {}): Partner {
     return {
-      id: "test-company-id",
-      name: "Test Company",
+      id: "test-partner-id",
+      name: "Test Partner",
       pointOfContact: "John Doe",
       createdAt: new Date("2024-01-01"),
       updatedAt: new Date("2024-01-01"),
@@ -28,14 +27,14 @@ export class TestDataFactory {
     };
   }
 
-  static createMockClientTheme(overrides: Partial<ClientTheme> = {}): ClientTheme {
+  static createMockPartnerTheme(overrides: Partial<PartnerTheme> = {}): PartnerTheme {
     return {
       id: "test-theme-id",
       primaryColor: "#FF0000",
       secondaryColor: "#00FF00",
       logoUrl: "https://example.com/logo.png",
       backgroundUrl: "https://example.com/bg.png",
-      companyId: "test-company-id",
+      partnerId: "test-partner-id",
       createdAt: new Date("2024-01-01"),
       updatedAt: new Date("2024-01-01"),
       ...overrides,
@@ -47,33 +46,33 @@ export class TestDataFactory {
       id: "test-pos-id",
       provider: "square",
       isActive: true,
-      companyId: "test-company-id",
+      partnerId: "test-partner-id",
       createdAt: new Date("2024-01-01"),
       updatedAt: new Date("2024-01-01"),
       ...overrides,
     };
   }
 
-  static createMockClientCompanyWithRelations(
-    companyOverrides: Partial<ClientCompany> = {},
-    themeOverrides: Partial<ClientTheme> | null = {},
+  static createMockPartnerWithRelations(
+    partnerOverrides: Partial<Partner> = {},
+    themeOverrides: Partial<PartnerTheme> | null = {},
     posOverrides: Partial<POSIntegration> | null = {}
   ) {
-    const company = this.createMockClientCompany(companyOverrides);
-    const theme = themeOverrides === null ? null : this.createMockClientTheme({ companyId: company.id, ...themeOverrides });
-    const posIntegration = posOverrides === null ? null : this.createMockPOSIntegration({ companyId: company.id, ...posOverrides });
+    const partner = this.createMockPartner(partnerOverrides);
+    const theme = themeOverrides === null ? null : this.createMockPartnerTheme({ partnerId: partner.id, ...themeOverrides });
+    const posIntegration = posOverrides === null ? null : this.createMockPOSIntegration({ partnerId: partner.id, ...posOverrides });
 
     return {
-      ...company,
+      ...partner,
       theme,
       posIntegration,
     };
   }
 
-  static createMockSharedClientCompany(overrides: Partial<SharedClientCompany> = {}): SharedClientCompany {
+  static createMockSharedPartner(overrides: Partial<SharedPartner> = {}): SharedPartner {
     return {
-      id: "test-company-id",
-      name: "Test Company",
+      id: "test-partner-id",
+      name: "Test Partner",
       theme: {
         primaryColor: "#FF0000",
         secondaryColor: "#00FF00",
@@ -82,7 +81,7 @@ export class TestDataFactory {
       },
       posIntegration: {
         id: "test-pos-id",
-        businessId: "test-company-id",
+        businessId: "test-partner-id",
         provider: "square" as any,
         credentials: {},
         config: {},
@@ -91,6 +90,12 @@ export class TestDataFactory {
       ...overrides,
     };
   }
+
+  // Legacy methods for backward compatibility during transition
+  static createMockClientCompany = this.createMockPartner;
+  static createMockClientTheme = this.createMockPartnerTheme;
+  static createMockClientCompanyWithRelations = this.createMockPartnerWithRelations;
+  static createMockSharedClientCompany = this.createMockSharedPartner;
 }
 
 /**
@@ -133,14 +138,19 @@ export class TestUtils {
  */
 export class TestAssertions {
   /**
-   * Assert that an object matches the expected client company structure
+   * Assert that an object matches the expected partner structure
    */
-  static assertClientCompanyStructure(company: any) {
-    expect(company).toHaveProperty("id");
-    expect(company).toHaveProperty("name");
-    expect(typeof company.id).toBe("string");
-    expect(typeof company.name).toBe("string");
+  static assertPartnerStructure(partner: any) {
+    expect(partner).toHaveProperty("id");
+    expect(partner).toHaveProperty("name");
+    expect(typeof partner.id).toBe("string");
+    expect(typeof partner.name).toBe("string");
   }
+
+  /**
+   * Assert that an object matches the expected client company structure (legacy)
+   */
+  static assertClientCompanyStructure = this.assertPartnerStructure;
 
   /**
    * Assert that an API response has the correct structure
