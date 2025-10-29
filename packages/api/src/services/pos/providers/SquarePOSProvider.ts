@@ -8,10 +8,15 @@ import {
   POSProvider,
 } from "@drink-ux/shared";
 import { BasePOSAdapter } from "../adapters/BasePOSAdapter";
+import { SquareClient } from "../clients/SquareClient";
+import { SquareMapper } from "../mappers/SquareMapper";
 
 /**
  * Square POS Provider Implementation
- * Integrates with Square's Catalog, Orders, and Locations APIs
+ * Integrates with Square's Catalog, Orders, and Locations APIs using the official Square SDK
+ * 
+ * This implementation makes it easy to onboard new partners by automatically
+ * mapping their Square configuration to our common drink model.
  */
 export class SquarePOSProvider extends BasePOSAdapter {
   constructor() {
@@ -19,14 +24,14 @@ export class SquarePOSProvider extends BasePOSAdapter {
   }
 
   /**
-   * Test connection to Square API
+   * Test connection to Square API by retrieving location details
+   * This verifies that credentials are valid and the location exists
    */
   async testConnection(credentials: POSCredentials, config: POSConfig): Promise<POSConnectionStatus> {
     this.validateCredentials(credentials);
 
     try {
-      // In a real implementation, this would call Square's API to verify credentials
-      // For now, we'll validate that required credentials are present
+      // Validate required fields
       if (!credentials.accessToken) {
         return {
           connected: false,
@@ -43,11 +48,25 @@ export class SquarePOSProvider extends BasePOSAdapter {
         };
       }
 
-      // Mock successful connection
+      // Create Square client and test connection
+      const client = SquareClient.createClient(credentials, config);
+      const { locations } = client;
+
+      // Retrieve location to verify credentials and location access
+      const response = await locations.get({ locationId: config.locationId });
+
+      if (response.location) {
+        return {
+          connected: true,
+          provider: this.providerName,
+          message: `Successfully connected to Square location: ${response.location.name || config.locationId}`,
+        };
+      }
+
       return {
-        connected: true,
+        connected: false,
         provider: this.providerName,
-        message: "Successfully connected to Square POS",
+        message: "Location not found",
       };
     } catch (error) {
       return {
@@ -60,51 +79,37 @@ export class SquarePOSProvider extends BasePOSAdapter {
 
   /**
    * Fetch menu items from Square Catalog API
+   * Uses the SquareMapper to transform Square catalog into our common model
+   * This makes onboarding new partners seamless - their existing menu just works
    */
   async fetchMenu(credentials: POSCredentials, config: POSConfig): Promise<POSMenuItem[]> {
     this.validateCredentials(credentials);
     this.validateConfig(config);
 
-    // In a real implementation, this would:
-    // 1. Call Square's Catalog API to list items
-    // 2. Transform Square catalog items to our POSMenuItem format
-    // 3. Handle pagination if needed
+    try {
+      // Create Square client
+      const client = SquareClient.createClient(credentials, config);
+      const { catalog } = client;
 
-    // Mock implementation returning sample menu items
-    return [
-      {
-        id: "square-item-1",
-        name: "Espresso",
-        description: "Rich and bold espresso shot",
-        price: 3.5,
-        category: "Coffee",
-        available: true,
-        modifiers: [
-          {
-            id: "square-mod-1",
-            name: "Size",
-            required: true,
-            options: [
-              { id: "square-opt-1", name: "Single Shot", price: 0, available: true },
-              { id: "square-opt-2", name: "Double Shot", price: 1.5, available: true },
-            ],
-          },
-        ],
-      },
-      {
-        id: "square-item-2",
-        name: "Latte",
-        description: "Smooth espresso with steamed milk",
-        price: 4.5,
-        category: "Coffee",
-        available: true,
-        modifiers: [],
-      },
-    ];
+      // List all catalog objects (items, modifiers, etc.)
+      const page = await catalog.list({ types: "ITEM,MODIFIER_LIST" });
+
+      const catalogObjects = page.data || [];
+
+      // Use SquareMapper to convert Square catalog to our model
+      // This is where the magic happens for partner onboarding
+      const menuItems = SquareMapper.mapSquareCatalogToMenuItems(catalogObjects);
+
+      return menuItems;
+    } catch (error) {
+      console.error("Error fetching menu from Square:", error);
+      throw new Error(`Failed to fetch menu: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
   }
 
   /**
    * Submit order to Square Orders API
+   * Transforms our order format to Square's format and creates the order
    */
   async submitOrder(
     order: POSOrder,
@@ -114,43 +119,85 @@ export class SquarePOSProvider extends BasePOSAdapter {
     this.validateCredentials(credentials);
     this.validateConfig(config);
 
-    // In a real implementation, this would:
-    // 1. Transform our order format to Square's order format
-    // 2. Call Square's Orders API to create the order
-    // 3. Return the Square order ID and status
+    try {
+      // Create Square client
+      const client = SquareClient.createClient(credentials, config);
+      const { orders } = client;
 
-    // Mock implementation
-    return {
-      orderId: `square-order-${Date.now()}`,
-      status: "PENDING",
-    };
+      // Transform our order to Square's format
+      const squareOrder = {
+        locationId: config.locationId!,
+        lineItems: order.items.map((item) => ({
+          catalogObjectId: item.menuItemId,
+          quantity: item.quantity.toString(),
+          modifiers: item.modifiers.map((mod) => ({
+            catalogObjectId: mod.optionId,
+          })),
+          note: item.specialInstructions,
+        })),
+      };
+
+      // Create order in Square
+      const response = await orders.create({
+        order: squareOrder,
+        idempotencyKey: order.id, // Use our order ID for idempotency
+      });
+
+      if (response.order) {
+        return {
+          orderId: response.order.id || order.id,
+          status: response.order.state || "PENDING",
+        };
+      }
+
+      throw new Error("Failed to create order - no order returned");
+    } catch (error) {
+      console.error("Error submitting order to Square:", error);
+      throw new Error(`Failed to submit order: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
   }
 
   /**
    * Sync menu from Square to our database
+   * Fetches complete catalog and returns sync statistics
    */
   async syncMenu(credentials: POSCredentials, config: POSConfig): Promise<POSSyncResult> {
     this.validateCredentials(credentials);
     this.validateConfig(config);
 
-    // In a real implementation, this would:
-    // 1. Fetch all menu items from Square
-    // 2. Compare with existing items in our database
-    // 3. Add new items, update existing ones, deactivate removed ones
-    // 4. Return sync statistics
+    try {
+      // Fetch current menu from Square
+      const menuItems = await this.fetchMenu(credentials, config);
 
-    // Mock implementation
-    return {
-      itemsSynced: 15,
-      itemsAdded: 5,
-      itemsUpdated: 8,
-      itemsDeactivated: 2,
-      errors: [],
-    };
+      // In a complete implementation, this would:
+      // 1. Compare with existing items in database
+      // 2. Add new items
+      // 3. Update existing ones
+      // 4. Deactivate removed ones
+      // For now, return statistics based on fetched items
+
+      return {
+        itemsSynced: menuItems.length,
+        itemsAdded: menuItems.length,
+        itemsUpdated: 0,
+        itemsDeactivated: 0,
+        errors: [],
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      return {
+        itemsSynced: 0,
+        itemsAdded: 0,
+        itemsUpdated: 0,
+        itemsDeactivated: 0,
+        errors: [errorMessage],
+      };
+    }
   }
 
   /**
-   * Get order status from Square
+   * Get order status from Square Orders API
+   * Retrieves current order state and details
    */
   async getOrderStatus(
     orderId: string,
@@ -159,16 +206,31 @@ export class SquarePOSProvider extends BasePOSAdapter {
   ): Promise<{ status: string; details?: any }> {
     this.validateCredentials(credentials);
 
-    // In a real implementation, this would call Square's Orders API
-    // to retrieve the order status
+    try {
+      // Create Square client
+      const client = SquareClient.createClient(credentials, config);
+      const { orders } = client;
 
-    // Mock implementation
-    return {
-      status: "COMPLETED",
-      details: {
-        createdAt: new Date().toISOString(),
-        totalMoney: { amount: 450, currency: "USD" },
-      },
-    };
+      // Retrieve order from Square
+      const response = await orders.get({ orderId });
+
+      if (response.order) {
+        const order = response.order;
+        return {
+          status: order.state || "UNKNOWN",
+          details: {
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
+            totalMoney: order.totalMoney,
+            lineItems: order.lineItems,
+          },
+        };
+      }
+
+      throw new Error("Order not found");
+    } catch (error) {
+      console.error("Error getting order status from Square:", error);
+      throw new Error(`Failed to get order status: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
   }
 }
