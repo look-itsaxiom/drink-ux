@@ -12,12 +12,14 @@
 ### First Time Setup
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/look-itsaxiom/drink-ux.git
    cd drink-ux
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -36,18 +38,21 @@
 Open 3 terminal windows:
 
 **Terminal 1 - API Server:**
+
 ```bash
 cd packages/api
 npm run dev
 ```
 
 **Terminal 2 - Mobile App:**
+
 ```bash
 cd packages/mobile
 npm run dev
 ```
 
 **Terminal 3 - Admin Portal:**
+
 ```bash
 cd packages/admin
 npm run dev
@@ -91,15 +96,41 @@ src/
 
 ```
 src/
-├── routes/          # API route handlers
+├── routes/              # API route handlers
 │   ├── drinks.ts
 │   ├── orders.ts
-│   ├── pos.ts
+│   ├── pos.ts          # POS integration endpoints
+│   ├── partner.ts
 │   └── business.ts
-├── services/        # Business logic
-├── middleware/      # Express middleware
-└── index.ts         # Server entry point
+├── managers/            # Business logic layer
+│   ├── partner.manager.ts
+│   └── pos.manager.ts  # POS operations orchestration
+├── repositories/        # Data access layer
+│   ├── partner.repository.ts
+│   └── posIntegration.repository.ts
+├── services/            # Service layer
+│   └── pos/            # POS abstraction layer
+│       ├── interfaces/
+│       │   └── IPOSProvider.ts
+│       ├── adapters/
+│       │   └── BasePOSAdapter.ts
+│       ├── providers/
+│       │   ├── SquarePOSProvider.ts
+│       │   ├── ToastPOSProvider.ts
+│       │   └── CloverPOSProvider.ts
+│       └── POSProviderFactory.ts
+├── middleware/          # Express middleware
+├── database.ts          # Prisma client
+└── index.ts            # Server entry point
 ```
+
+**Key Architectural Patterns:**
+
+- **Layered Architecture** - Routes → Managers → Repositories/Services
+- **Dependency Injection** - Loose coupling between layers
+- **Factory Pattern** - POS provider instantiation
+- **Adapter Pattern** - Unified interface for multiple POS systems
+- **Repository Pattern** - Data access abstraction
 
 ### Shared (`packages/shared`)
 
@@ -119,23 +150,97 @@ src/
 4. Test endpoint
 
 Example:
+
 ```typescript
 // packages/api/src/routes/example.ts
-import { Router } from 'express';
-import { ApiResponse } from '@drink-ux/shared';
+import { Router } from "express";
+import { ApiResponse } from "@drink-ux/shared";
 
 const router = Router();
 
-router.get('/', (req, res) => {
+router.get("/", (req, res) => {
   const response: ApiResponse<string> = {
     success: true,
-    data: 'Hello World',
+    data: "Hello World",
   };
   res.json(response);
 });
 
 export const exampleRoutes = router;
 ```
+
+### Adding a New POS Provider
+
+The POS abstraction layer makes it easy to add support for new POS systems:
+
+1. **Add Provider to Enum**
+
+   ```typescript
+   // packages/shared/src/types.ts
+   export enum POSProvider {
+     SQUARE = "square",
+     TOAST = "toast",
+     CLOVER = "clover",
+     NEW_PROVIDER = "new_provider", // Add here
+   }
+   ```
+
+2. **Create Provider Adapter**
+
+   ```typescript
+   // packages/api/src/services/pos/providers/NewProviderPOSProvider.ts
+   import { BasePOSAdapter } from "../adapters/BasePOSAdapter";
+   import { POSProvider } from "@drink-ux/shared";
+
+   export class NewProviderPOSProvider extends BasePOSAdapter {
+     constructor() {
+       super(POSProvider.NEW_PROVIDER);
+     }
+
+     async testConnection(credentials, config) {
+       // Validate credentials with provider API
+     }
+
+     async fetchMenu(credentials, config) {
+       // Fetch and transform menu items
+     }
+
+     async submitOrder(order, credentials, config) {
+       // Submit order to provider
+     }
+
+     async syncMenu(credentials, config) {
+       // Sync menu and return results
+     }
+
+     async getOrderStatus(orderId, credentials, config) {
+       // Get order status from provider
+     }
+   }
+   ```
+
+3. **Register in Factory**
+
+   ```typescript
+   // packages/api/src/services/pos/POSProviderFactory.ts
+   case POSProvider.NEW_PROVIDER:
+     providerInstance = new NewProviderPOSProvider();
+     break;
+   ```
+
+4. **Add Tests**
+
+   ```typescript
+   // packages/api/src/services/pos/__tests__/NewProviderPOSProvider.test.ts
+   describe("NewProviderPOSProvider", () => {
+     // Test each method
+   });
+   ```
+
+5. **Update Documentation**
+   Add provider-specific setup instructions to `docs/api/POS_INTEGRATION.md`
+
+See [POS Architecture Documentation](./api/POS_ARCHITECTURE.md) for detailed information.
 
 ### Adding a New Mobile Page
 
@@ -144,9 +249,10 @@ export const exampleRoutes = router;
 3. Add navigation link
 
 Example:
+
 ```tsx
 // packages/mobile/src/pages/NewPage.tsx
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent } from "@ionic/react";
 
 const NewPage: React.FC = () => {
   return (
@@ -156,9 +262,7 @@ const NewPage: React.FC = () => {
           <IonTitle>New Page</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent>
-        {/* Page content */}
-      </IonContent>
+      <IonContent>{/* Page content */}</IonContent>
     </IonPage>
   );
 };
@@ -184,6 +288,7 @@ export default NewPage;
 ### Mobile Testing
 
 **iOS (requires macOS):**
+
 ```bash
 cd packages/mobile
 npx cap add ios
@@ -192,6 +297,7 @@ npx cap open ios
 ```
 
 **Android:**
+
 ```bash
 cd packages/mobile
 npx cap add android
@@ -278,17 +384,20 @@ npm install
 ## Git Workflow
 
 1. Create feature branch:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 2. Make changes and commit:
+
    ```bash
    git add .
    git commit -m "Description of changes"
    ```
 
 3. Push to GitHub:
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -322,6 +431,7 @@ VITE_API_URL=http://localhost:3001
 ## VS Code Configuration
 
 Recommended extensions:
+
 - ESLint
 - Prettier
 - TypeScript and JavaScript Language Features

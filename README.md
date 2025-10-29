@@ -13,17 +13,20 @@ This is a monorepo project built with modern web technologies:
 ### Packages
 
 - **`@drink-ux/mobile`** - Ionic/React/Capacitor mobile app (PWA/Android/iOS)
+
   - Custom drink builder interface
   - Real-time order management
   - Responsive design for all devices
 
 - **`@drink-ux/admin`** - React admin portal
+
   - Business dashboard
   - Menu management
   - POS integration configuration
   - Analytics and reporting
 
 - **`@drink-ux/api`** - TypeScript Express API backend
+
   - RESTful API endpoints
   - POS integration services
   - Order management
@@ -51,12 +54,14 @@ This is a monorepo project built with modern web technologies:
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/look-itsaxiom/drink-ux.git
    cd drink-ux
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -97,6 +102,49 @@ npm run dev
 
 The API server will be available at `http://localhost:3001`
 
+### Square POS Integration Setup
+
+This project includes Square POS integration through an MCP (Model Context Protocol) server.
+
+#### Environment Configuration
+
+1. Copy the environment template:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Get your Square credentials:
+
+   - Visit [Square Developer Dashboard](https://developer.squareup.com/apps)
+   - Select your application
+   - For development, use the **Sandbox** tab
+   - Copy your Sandbox Access Token
+
+3. Update your `.env` file:
+   ```bash
+   SQUARE_ACCESS_TOKEN=your_sandbox_access_token_here
+   SQUARE_SANDBOX=true
+   ```
+
+#### MCP Server Configuration for VS Code Copilot
+
+The Square MCP server enables GitHub Copilot to interact directly with your Square sandbox account. To set it up:
+
+1. Copy the MCP configuration template:
+
+   ```bash
+   cp .vscode/mcp.json.example .vscode/mcp.json
+   ```
+
+2. Open `.vscode/mcp.json` and replace `YOUR_SQUARE_SANDBOX_ACCESS_TOKEN_HERE` with your actual Square Sandbox Access Token (from step 2 above).
+
+3. Restart VS Code or reload the window for the MCP server to connect.
+
+**Important**: The `.vscode/mcp.json` file contains sensitive credentials and is gitignored. Never commit this file to version control. Always use the `.vscode/mcp.json.example` template for reference.
+
+**Note**: Never commit your actual access tokens to the repository. Both `.env` and `.vscode/mcp.json` are gitignored for security.
+
 ### Building for Production
 
 #### Mobile App
@@ -107,6 +155,7 @@ npm run build
 ```
 
 To build for iOS/Android:
+
 ```bash
 npx cap add ios
 npx cap add android
@@ -182,6 +231,7 @@ The mobile drink builder is deployed as a Progressive Web App (PWA) at [https://
 Test the drink builder directly in your browser - no installation required!
 
 - **Visual Drink Builder**
+
   - Interactive, game-like interface with real-time visual feedback
   - Component-based drink construction (Cup → Base → Modifiers)
   - SVG-rendered cup that fills as ingredients are added
@@ -201,11 +251,13 @@ Test the drink builder directly in your browser - no installation required!
 ### Admin Portal
 
 - **Dashboard**
+
   - Order analytics
   - Revenue tracking
   - Performance metrics
 
 - **Menu Management**
+
   - Add/edit drinks
   - Manage customization options
   - Set pricing
@@ -220,19 +272,23 @@ Test the drink builder directly in your browser - no installation required!
 ## API Endpoints
 
 ### Drinks
+
 - `GET /api/drinks` - List all drinks
 - `GET /api/drinks/:id` - Get drink details
 
 ### Orders
+
 - `GET /api/orders` - List all orders
 - `POST /api/orders` - Create new order
 
 ### POS Integration
+
 - `GET /api/pos/integration/:businessId` - Get integration status
 - `POST /api/pos/integration` - Configure integration
 - `POST /api/pos/sync/:businessId` - Sync menu
 
 ### Business
+
 - `GET /api/business/:id` - Get business details
 - `PUT /api/business/:id` - Update business settings
 

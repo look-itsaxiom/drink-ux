@@ -1,29 +1,29 @@
 import { Router, Request, Response } from "express";
-import { ApiResponse, ClientCompany } from "@drink-ux/shared";
-import { clientCompanyManager, CreateClientCompanyInput, UpdateClientCompanyInput } from "../managers/clientCompany.manager";
+import { ApiResponse, Partner } from "@drink-ux/shared";
+import { partnerManager, CreatePartnerInput, UpdatePartnerInput } from "../managers/partner.manager";
 
 const router = Router();
 
 /**
- * GET /client-companies
- * Get all client companies
+ * GET /partners
+ * Get all partners
  */
-router.get("/", async (req: Request, res: Response<ApiResponse<ClientCompany[]>>) => {
+router.get("/", async (req: Request, res: Response<ApiResponse<Partner[]>>) => {
   try {
     const includeRelations = req.query.includeRelations !== "false";
-    const companies = await clientCompanyManager.getAllClientCompanies({ includeRelations });
+    const partners = await partnerManager.getAllPartners({ includeRelations });
 
     res.status(200).json({
       success: true,
-      data: companies,
+      data: partners,
     });
   } catch (error) {
-    console.error("Error fetching client companies:", error);
+    console.error("Error fetching partners:", error);
     res.status(500).json({
       success: false,
       error: {
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch client companies",
+        message: "Failed to fetch partners",
         details: error instanceof Error ? error.message : "Unknown error",
       },
     });
@@ -31,24 +31,24 @@ router.get("/", async (req: Request, res: Response<ApiResponse<ClientCompany[]>>
 });
 
 /**
- * GET /client-companies/stats
- * Get client company statistics
+ * GET /partners/stats
+ * Get partner statistics
  */
-router.get("/stats", async (req: Request, res: Response<ApiResponse<{ totalCompanies: number; companiesWithThemes: number; companiesWithPOS: number }>>) => {
+router.get("/stats", async (req: Request, res: Response<ApiResponse<{ totalPartners: number; partnersWithThemes: number; partnersWithPOS: number }>>) => {
   try {
-    const stats = await clientCompanyManager.getClientCompanyStats();
+    const stats = await partnerManager.getPartnerStats();
 
     res.status(200).json({
       success: true,
       data: stats,
     });
   } catch (error) {
-    console.error("Error fetching client company stats:", error);
+    console.error("Error fetching partner stats:", error);
     res.status(500).json({
       success: false,
       error: {
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch client company statistics",
+        message: "Failed to fetch partner statistics",
         details: error instanceof Error ? error.message : "Unknown error",
       },
     });
@@ -56,38 +56,38 @@ router.get("/stats", async (req: Request, res: Response<ApiResponse<{ totalCompa
 });
 
 /**
- * GET /client-companies/:id
- * Get a client company by ID
+ * GET /partners/:id
+ * Get a partner by ID
  */
-router.get("/:id", async (req: Request, res: Response<ApiResponse<ClientCompany>>) => {
+router.get("/:id", async (req: Request, res: Response<ApiResponse<Partner>>) => {
   try {
     const { id } = req.params;
     const includeRelations = req.query.includeRelations !== "false";
 
-    const company = await clientCompanyManager.getClientCompanyById(id, { includeRelations });
+    const partner = await partnerManager.getPartnerById(id, { includeRelations });
 
-    if (!company) {
+    if (!partner) {
       return res.status(404).json({
         success: false,
         error: {
-          code: "CLIENT_COMPANY_NOT_FOUND",
-          message: `Client company with ID "${id}" not found`,
+          code: "PARTNER_NOT_FOUND",
+          message: `Partner with ID "${id}" not found`,
         },
       });
     }
 
     res.status(200).json({
       success: true,
-      data: company,
+      data: partner,
     });
   } catch (error) {
-    console.error("Error fetching client company:", error);
+    console.error("Error fetching partner:", error);
 
-    if (error instanceof Error && error.message.includes("Valid client company ID is required")) {
+    if (error instanceof Error && error.message.includes("Valid partner ID is required")) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_CLIENT_COMPANY_ID",
+          code: "INVALID_PARTNER_ID",
           message: error.message,
         },
       });
@@ -97,7 +97,7 @@ router.get("/:id", async (req: Request, res: Response<ApiResponse<ClientCompany>
       success: false,
       error: {
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch client company",
+        message: "Failed to fetch partner",
         details: error instanceof Error ? error.message : "Unknown error",
       },
     });
@@ -105,20 +105,20 @@ router.get("/:id", async (req: Request, res: Response<ApiResponse<ClientCompany>
 });
 
 /**
- * POST /client-companies
- * Create a new client company
+ * POST /partners
+ * Create a new partner
  */
-router.post("/", async (req: Request<{}, ApiResponse<ClientCompany>, CreateClientCompanyInput>, res: Response<ApiResponse<ClientCompany>>) => {
+router.post("/", async (req: Request<{}, ApiResponse<Partner>, CreatePartnerInput>, res: Response<ApiResponse<Partner>>) => {
   try {
     const input = req.body;
-    const company = await clientCompanyManager.createClientCompany(input);
+    const partner = await partnerManager.createPartner(input);
 
     res.status(201).json({
       success: true,
-      data: company,
+      data: partner,
     });
   } catch (error) {
-    console.error("Error creating client company:", error);
+    console.error("Error creating partner:", error);
 
     if (error instanceof Error) {
       // Handle validation errors and conflicts
@@ -136,7 +136,7 @@ router.post("/", async (req: Request<{}, ApiResponse<ClientCompany>, CreateClien
         return res.status(409).json({
           success: false,
           error: {
-            code: "CLIENT_COMPANY_ALREADY_EXISTS",
+            code: "PARTNER_ALREADY_EXISTS",
             message: error.message,
           },
         });
@@ -147,7 +147,7 @@ router.post("/", async (req: Request<{}, ApiResponse<ClientCompany>, CreateClien
       success: false,
       error: {
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to create client company",
+        message: "Failed to create partner",
         details: error instanceof Error ? error.message : "Unknown error",
       },
     });
@@ -155,40 +155,40 @@ router.post("/", async (req: Request<{}, ApiResponse<ClientCompany>, CreateClien
 });
 
 /**
- * PUT /client-companies/:id
- * Update a client company
+ * PUT /partners/:id
+ * Update a partner
  */
-router.put("/:id", async (req: Request<{ id: string }, ApiResponse<ClientCompany>, UpdateClientCompanyInput>, res: Response<ApiResponse<ClientCompany>>) => {
+router.put("/:id", async (req: Request<{ id: string }, ApiResponse<Partner>, UpdatePartnerInput>, res: Response<ApiResponse<Partner>>) => {
   try {
     const { id } = req.params;
     const input = req.body;
 
-    const company = await clientCompanyManager.updateClientCompany(id, input);
+    const partner = await partnerManager.updatePartner(id, input);
 
-    if (!company) {
+    if (!partner) {
       return res.status(404).json({
         success: false,
         error: {
-          code: "CLIENT_COMPANY_NOT_FOUND",
-          message: `Client company with ID "${id}" not found`,
+          code: "PARTNER_NOT_FOUND",
+          message: `Partner with ID "${id}" not found`,
         },
       });
     }
 
     res.status(200).json({
       success: true,
-      data: company,
+      data: partner,
     });
   } catch (error) {
-    console.error("Error updating client company:", error);
+    console.error("Error updating partner:", error);
 
     if (error instanceof Error) {
       // Handle validation errors and conflicts
-      if (error.message.includes("Valid client company ID is required")) {
+      if (error.message.includes("Valid partner ID is required")) {
         return res.status(400).json({
           success: false,
           error: {
-            code: "INVALID_CLIENT_COMPANY_ID",
+            code: "INVALID_PARTNER_ID",
             message: error.message,
           },
         });
@@ -208,7 +208,7 @@ router.put("/:id", async (req: Request<{ id: string }, ApiResponse<ClientCompany
         return res.status(409).json({
           success: false,
           error: {
-            code: "CLIENT_COMPANY_ALREADY_EXISTS",
+            code: "PARTNER_ALREADY_EXISTS",
             message: error.message,
           },
         });
@@ -219,7 +219,7 @@ router.put("/:id", async (req: Request<{ id: string }, ApiResponse<ClientCompany
       success: false,
       error: {
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to update client company",
+        message: "Failed to update partner",
         details: error instanceof Error ? error.message : "Unknown error",
       },
     });
@@ -227,20 +227,20 @@ router.put("/:id", async (req: Request<{ id: string }, ApiResponse<ClientCompany
 });
 
 /**
- * DELETE /client-companies/:id
- * Delete a client company
+ * DELETE /partners/:id
+ * Delete a partner
  */
 router.delete("/:id", async (req: Request, res: Response<ApiResponse<{ deleted: boolean }>>) => {
   try {
     const { id } = req.params;
-    const deleted = await clientCompanyManager.deleteClientCompany(id);
+    const deleted = await partnerManager.deletePartner(id);
 
     if (!deleted) {
       return res.status(404).json({
         success: false,
         error: {
-          code: "CLIENT_COMPANY_NOT_FOUND",
-          message: `Client company with ID "${id}" not found`,
+          code: "PARTNER_NOT_FOUND",
+          message: `Partner with ID "${id}" not found`,
         },
       });
     }
@@ -250,13 +250,13 @@ router.delete("/:id", async (req: Request, res: Response<ApiResponse<{ deleted: 
       data: { deleted: true },
     });
   } catch (error) {
-    console.error("Error deleting client company:", error);
+    console.error("Error deleting partner:", error);
 
-    if (error instanceof Error && error.message.includes("Valid client company ID is required")) {
+    if (error instanceof Error && error.message.includes("Valid partner ID is required")) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_CLIENT_COMPANY_ID",
+          code: "INVALID_PARTNER_ID",
           message: error.message,
         },
       });
@@ -266,11 +266,11 @@ router.delete("/:id", async (req: Request, res: Response<ApiResponse<{ deleted: 
       success: false,
       error: {
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to delete client company",
+        message: "Failed to delete partner",
         details: error instanceof Error ? error.message : "Unknown error",
       },
     });
   }
 });
 
-export const clientCompanyRoutes = router;
+export const partnerRoutes = router;

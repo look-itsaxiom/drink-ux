@@ -28,10 +28,12 @@ lerna-debug.log*
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
 *~
+
+# MCP Configuration (contains sensitive tokens)
+.vscode/mcp.json
 
 # Capacitor
 .capacitor/

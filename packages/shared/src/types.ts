@@ -219,16 +219,16 @@ export interface POSConfig {
 }
 
 /**
- * Client types
+ * Partner types
  */
-export interface ClientCompany {
+export interface Partner {
   id: string;
   name: string;
-  theme?: ClientTheme;
+  theme?: PartnerTheme;
   posIntegration?: POSIntegration;
 }
 
-export interface ClientTheme {
+export interface PartnerTheme {
   primaryColor: string;
   secondaryColor: string;
   logoUrl?: string;
@@ -248,4 +248,72 @@ export interface ApiError {
   code: string;
   message: string;
   details?: any;
+}
+
+/**
+ * POS Operations types
+ */
+export interface POSMenuItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  category?: string;
+  modifiers?: POSModifier[];
+  available: boolean;
+}
+
+export interface POSModifier {
+  id: string;
+  name: string;
+  options: POSModifierOption[];
+  required: boolean;
+  minSelections?: number;
+  maxSelections?: number;
+}
+
+export interface POSModifierOption {
+  id: string;
+  name: string;
+  price: number;
+  available: boolean;
+}
+
+export interface POSOrder {
+  id: string;
+  items: POSOrderItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  customerId?: string;
+  customerName?: string;
+  status: string;
+}
+
+export interface POSOrderItem {
+  menuItemId: string;
+  quantity: number;
+  modifiers: POSOrderModifier[];
+  specialInstructions?: string;
+  itemTotal: number;
+}
+
+export interface POSOrderModifier {
+  modifierId: string;
+  optionId: string;
+}
+
+export interface POSSyncResult {
+  itemsSynced: number;
+  itemsAdded: number;
+  itemsUpdated: number;
+  itemsDeactivated: number;
+  errors: string[];
+}
+
+export interface POSConnectionStatus {
+  connected: boolean;
+  provider: POSProvider;
+  lastSyncAt?: Date;
+  message?: string;
 }

@@ -1,0 +1,18 @@
+{
+  "servers": {
+    "awesome-ionic-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "awesome-ionic-mcp@latest"]
+    },
+    "mcp_square_api": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["square-mcp-server", "start"],
+      "env": {
+        "ACCESS_TOKEN": "EAAAl2SyjUquuXyK9JWaLePixqriPqqo38Y1d6Zepaeusi3rndKQBZxeC1cCt4Ab",
+        "SANDBOX": "true"
+      }
+    }
+  }
+}

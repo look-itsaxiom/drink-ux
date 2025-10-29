@@ -11,7 +11,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model ClientCompany {
+model Partner {
   id             String   @id @default(cuid())
   name           String
   pointOfContact String
@@ -19,11 +19,11 @@ model ClientCompany {
   updatedAt      DateTime @updatedAt
 
   // Relations
-  theme          ClientTheme?
+  theme          PartnerTheme?
   posIntegration POSIntegration?
 }
 
-model ClientTheme {
+model PartnerTheme {
   id             String   @id @default(cuid())
   primaryColor   String
   secondaryColor String
@@ -33,8 +33,8 @@ model ClientTheme {
   updatedAt      DateTime @updatedAt
 
   // Relations
-  company   ClientCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  companyId String        @unique
+  partner   Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId String  @unique
 }
 
 model POSIntegration {
@@ -44,7 +44,7 @@ model POSIntegration {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations - POSIntegration belongs to ClientCompany
-  company   ClientCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  companyId String        @unique
+  // Relations - POSIntegration belongs to Partner
+  partner   Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId String  @unique
 }
