@@ -97,40 +97,21 @@ src/
 ```
 src/
 ├── routes/              # API route handlers
-│   ├── drinks.ts
-│   ├── orders.ts
-│   ├── pos.ts          # POS integration endpoints
-│   ├── partner.ts
-│   └── business.ts
-├── managers/            # Business logic layer
-│   ├── partner.manager.ts
-│   └── pos.manager.ts  # POS operations orchestration
-├── repositories/        # Data access layer
-│   ├── partner.repository.ts
-│   └── posIntegration.repository.ts
-├── services/            # Service layer
-│   └── pos/            # POS abstraction layer
-│       ├── interfaces/
-│       │   └── IPOSProvider.ts
-│       ├── adapters/
-│       │   └── BasePOSAdapter.ts
-│       ├── providers/
-│       │   ├── SquarePOSProvider.ts
-│       │   ├── ToastPOSProvider.ts
-│       │   └── CloverPOSProvider.ts
-│       └── POSProviderFactory.ts
-├── middleware/          # Express middleware
+│   └── example.ts       # Example routes
 ├── database.ts          # Prisma client
-└── index.ts            # Server entry point
+└── index.ts             # Server entry point
+
+prisma/
+├── schema.prisma        # Database schema
+└── migrations/          # Database migrations
 ```
 
-**Key Architectural Patterns:**
+**Key Patterns:**
 
-- **Layered Architecture** - Routes → Managers → Repositories/Services
-- **Dependency Injection** - Loose coupling between layers
-- **Factory Pattern** - POS provider instantiation
-- **Adapter Pattern** - Unified interface for multiple POS systems
-- **Repository Pattern** - Data access abstraction
+- **RESTful API** - Standard REST endpoints
+- **Prisma ORM** - Type-safe database access
+- **Express Middleware** - CORS, JSON parsing
+- **Shared Types** - Integration with @drink-ux/shared
 
 ### Shared (`packages/shared`)
 
@@ -152,95 +133,72 @@ src/
 Example:
 
 ```typescript
-// packages/api/src/routes/example.ts
-import { Router } from "express";
+// packages/api/src/routes/items.ts
+import { Router, Request, Response } from "express";
 import { ApiResponse } from "@drink-ux/shared";
+import prisma from "../database";
 
 const router = Router();
 
-router.get("/", (req, res) => {
-  const response: ApiResponse<string> = {
-    success: true,
-    data: "Hello World",
-  };
-  res.json(response);
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const items = await prisma.item.findMany();
+    const response: ApiResponse<typeof items> = {
+      success: true,
+      data: items,
+    };
+    res.json(response);
+  } catch (error) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch items",
+      },
+    };
+    res.status(500).json(response);
+  }
 });
 
-export const exampleRoutes = router;
+export const itemRoutes = router;
 ```
 
-### Adding a New POS Provider
+```typescript
+// packages/api/src/index.ts
+import { itemRoutes } from "./routes/items";
+// ...
+app.use("/api/items", itemRoutes);
+```
 
-The POS abstraction layer makes it easy to add support for new POS systems:
+### Adding Database Models
 
-1. **Add Provider to Enum**
+1. Update `prisma/schema.prisma` with your new model:
 
-   ```typescript
-   // packages/shared/src/types.ts
-   export enum POSProvider {
-     SQUARE = "square",
-     TOAST = "toast",
-     CLOVER = "clover",
-     NEW_PROVIDER = "new_provider", // Add here
+   ```prisma
+   model Item {
+     id          String   @id @default(cuid())
+     name        String
+     description String?
+     price       Float
+     createdAt   DateTime @default(now())
+     updatedAt   DateTime @updatedAt
    }
    ```
 
-2. **Create Provider Adapter**
+2. Create and apply migration:
 
-   ```typescript
-   // packages/api/src/services/pos/providers/NewProviderPOSProvider.ts
-   import { BasePOSAdapter } from "../adapters/BasePOSAdapter";
-   import { POSProvider } from "@drink-ux/shared";
-
-   export class NewProviderPOSProvider extends BasePOSAdapter {
-     constructor() {
-       super(POSProvider.NEW_PROVIDER);
-     }
-
-     async testConnection(credentials, config) {
-       // Validate credentials with provider API
-     }
-
-     async fetchMenu(credentials, config) {
-       // Fetch and transform menu items
-     }
-
-     async submitOrder(order, credentials, config) {
-       // Submit order to provider
-     }
-
-     async syncMenu(credentials, config) {
-       // Sync menu and return results
-     }
-
-     async getOrderStatus(orderId, credentials, config) {
-       // Get order status from provider
-     }
-   }
+   ```bash
+   cd packages/api
+   npx prisma migrate dev --name add_item_model
    ```
 
-3. **Register in Factory**
+3. Use the model in your routes:
 
    ```typescript
-   // packages/api/src/services/pos/POSProviderFactory.ts
-   case POSProvider.NEW_PROVIDER:
-     providerInstance = new NewProviderPOSProvider();
-     break;
+   import prisma from "../database";
+
+   const items = await prisma.item.findMany();
    ```
-
-4. **Add Tests**
-
-   ```typescript
-   // packages/api/src/services/pos/__tests__/NewProviderPOSProvider.test.ts
-   describe("NewProviderPOSProvider", () => {
-     // Test each method
-   });
-   ```
-
-5. **Update Documentation**
-   Add provider-specific setup instructions to `docs/api/POS_INTEGRATION.md`
-
-See [POS Architecture Documentation](./api/POS_ARCHITECTURE.md) for detailed information.
 
 ### Adding a New Mobile Page
 
@@ -410,10 +368,7 @@ npm install
 
 ```
 PORT=3001
-DATABASE_URL=
-SQUARE_ACCESS_TOKEN=
-TOAST_API_KEY=
-CLOVER_API_KEY=
+DATABASE_URL="file:./dev.db"
 ```
 
 ### Mobile (`packages/mobile/.env`)
