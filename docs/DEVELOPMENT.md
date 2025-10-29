@@ -130,7 +130,7 @@ src/
 3. Add route to `packages/api/src/index.ts`
 4. Test endpoint
 
-Example:
+Example (creating a new items endpoint):
 
 ```typescript
 // packages/api/src/routes/items.ts
@@ -142,6 +142,7 @@ const router = Router();
 
 router.get("/", async (req: Request, res: Response) => {
   try {
+    // After adding Item model to your schema
     const items = await prisma.item.findMany();
     const response: ApiResponse<typeof items> = {
       success: true,
@@ -172,9 +173,12 @@ app.use("/api/items", itemRoutes);
 
 ### Adding Database Models
 
+To add a new model to your database:
+
 1. Update `prisma/schema.prisma` with your new model:
 
    ```prisma
+   // Example: Adding an Item model
    model Item {
      id          String   @id @default(cuid())
      name        String
@@ -192,13 +196,15 @@ app.use("/api/items", itemRoutes);
    npx prisma migrate dev --name add_item_model
    ```
 
-3. Use the model in your routes:
+3. Use the new model in your routes:
 
    ```typescript
    import prisma from "../database";
 
    const items = await prisma.item.findMany();
    ```
+
+The current schema includes a `User` model as a starter example. See `packages/api/src/routes/example.ts` for working examples of CRUD operations.
 
 ### Adding a New Mobile Page
 
