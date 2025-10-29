@@ -11,40 +11,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Partner {
-  id             String   @id @default(cuid())
-  name           String
-  pointOfContact String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relations
-  theme          PartnerTheme?
-  posIntegration POSIntegration?
-}
-
-model PartnerTheme {
-  id             String   @id @default(cuid())
-  primaryColor   String
-  secondaryColor String
-  logoUrl        String?
-  backgroundUrl  String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relations
-  partner   Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
-  partnerId String  @unique
-}
-
-model POSIntegration {
+// Example model - customize based on your needs
+model User {
   id        String   @id @default(cuid())
-  provider  String // POSProvider enum as string
-  isActive  Boolean  @default(true)
+  email     String   @unique
+  name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations - POSIntegration belongs to Partner
-  partner   Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
-  partnerId String  @unique
 }

@@ -1,10 +1,7 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { drinkRoutes } from "./routes/drinks";
-import { orderRoutes } from "./routes/orders";
-import { posRoutes } from "./routes/pos";
-import { partnerRoutes } from "./routes/partner";
+import { exampleRoutes } from "./routes/example";
 
 dotenv.config();
 
@@ -20,15 +17,14 @@ app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Routes
-app.use("/api/drinks", drinkRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/pos", posRoutes);
-app.use("/api/partners", partnerRoutes);
+// Example routes
+app.use("/api/example", exampleRoutes);
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Drink-UX API server running on port ${PORT}`);
-});
+// Start server only if not in test mode
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`API server running on port ${PORT}`);
+  });
+}
 
 export default app;

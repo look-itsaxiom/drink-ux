@@ -9,7 +9,6 @@ module.exports = {
   collectCoverageFrom: ["src/**/*.ts", "!src/**/*.d.ts", "!src/**/__tests__/**", "!src/**/index.ts"],
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov", "html"],
-  setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^@drink-ux/shared$": "<rootDir>/../shared/src/index.ts",
@@ -18,7 +17,6 @@ module.exports = {
   testTimeout: 10000,
   clearMocks: true,
   restoreMocks: true,
-  extensionsToTreatAsEsm: [".ts"],
   globals: {
     "ts-jest": {
       useESM: false,
@@ -27,4 +25,5 @@ module.exports = {
       },
     },
   },
+  setupFiles: ["<rootDir>/jest.setup.js"],
 };
