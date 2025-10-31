@@ -1,13 +1,4 @@
 /**
- * POS Provider types
- */
-export enum POSProvider {
-  SQUARE = "square",
-  TOAST = "toast",
-  CLOVER = "clover",
-}
-
-/**
  * Drink customization types
  */
 export interface DrinkCustomization {
@@ -193,49 +184,6 @@ export enum OrderStatus {
 }
 
 /**
- * POS Integration types
- */
-export interface POSIntegration {
-  id: string;
-  businessId: string;
-  provider: POSProvider;
-  credentials: POSCredentials;
-  config: POSConfig;
-  isActive: boolean;
-}
-
-export interface POSCredentials {
-  apiKey?: string;
-  accessToken?: string;
-  refreshToken?: string;
-  merchantId?: string;
-}
-
-export interface POSConfig {
-  locationId?: string;
-  syncInterval?: number; // in minutes
-  autoSyncMenu?: boolean;
-  webhookUrl?: string;
-}
-
-/**
- * Partner types
- */
-export interface Partner {
-  id: string;
-  name: string;
-  theme?: PartnerTheme;
-  posIntegration?: POSIntegration;
-}
-
-export interface PartnerTheme {
-  primaryColor: string;
-  secondaryColor: string;
-  logoUrl?: string;
-  backgroundUrl?: string;
-}
-
-/**
  * API Response types
  */
 export interface ApiResponse<T> {
@@ -248,72 +196,4 @@ export interface ApiError {
   code: string;
   message: string;
   details?: any;
-}
-
-/**
- * POS Operations types
- */
-export interface POSMenuItem {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  category?: string;
-  modifiers?: POSModifier[];
-  available: boolean;
-}
-
-export interface POSModifier {
-  id: string;
-  name: string;
-  options: POSModifierOption[];
-  required: boolean;
-  minSelections?: number;
-  maxSelections?: number;
-}
-
-export interface POSModifierOption {
-  id: string;
-  name: string;
-  price: number;
-  available: boolean;
-}
-
-export interface POSOrder {
-  id: string;
-  items: POSOrderItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  customerId?: string;
-  customerName?: string;
-  status: string;
-}
-
-export interface POSOrderItem {
-  menuItemId: string;
-  quantity: number;
-  modifiers: POSOrderModifier[];
-  specialInstructions?: string;
-  itemTotal: number;
-}
-
-export interface POSOrderModifier {
-  modifierId: string;
-  optionId: string;
-}
-
-export interface POSSyncResult {
-  itemsSynced: number;
-  itemsAdded: number;
-  itemsUpdated: number;
-  itemsDeactivated: number;
-  errors: string[];
-}
-
-export interface POSConnectionStatus {
-  connected: boolean;
-  provider: POSProvider;
-  lastSyncAt?: Date;
-  message?: string;
 }
