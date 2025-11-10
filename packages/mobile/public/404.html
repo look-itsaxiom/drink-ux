@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Drink-UX - Custom Drink Builder</title>
+    <script>
+      // Single Page Application routing workaround for GitHub Pages
+      // This script redirects all 404 pages to index.html with the original path
+      // preserved in the query parameter, allowing the SPA router to handle it.
+      
+      var path = window.location.pathname;
+      var search = window.location.search;
+      
+      // Don't redirect if we're already being redirected (has ?p= param)
+      if (search && search.indexOf('?p=') === 0) {
+        // Already redirected, just go to index.html
+        window.location.replace(window.location.origin + '/drink-ux/');
+      } else {
+        // Detect if we're on GitHub Pages or another host
+        var basePath = '';
+        if (window.location.hostname.includes('github.io')) {
+          basePath = '/drink-ux';
+        }
+        
+        // Remove base path from the pathname if present
+        if (path.startsWith(basePath + '/')) {
+          path = path.slice(basePath.length);
+        }
+        
+        // Redirect to index.html with path in query parameter
+        if (path && path !== '/') {
+          var redirect = window.location.origin + basePath + '/?p=' + 
+                        encodeURIComponent(path) +
+                        (search || '');
+          window.location.replace(redirect);
+        } else {
+          window.location.replace(window.location.origin + basePath + '/');
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <!-- GitHub Pages 404 redirect -->
+  </body>
+</html>
