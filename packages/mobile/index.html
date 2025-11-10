@@ -20,6 +20,27 @@
     <link rel="shortcut icon" type="image/png" href="/favicon.png" />
 
     <meta name="theme-color" content="#6B4226" />
+    
+    <script>
+      // Handle redirect from 404.html for GitHub Pages SPA routing
+      (function() {
+        var redirect = sessionStorage.getItem('redirect');
+        if (redirect) {
+          sessionStorage.removeItem('redirect');
+          history.replaceState(null, null, redirect);
+        } else {
+          // Check if we're coming from the 404 page with path in query param
+          var searchParams = new URLSearchParams(window.location.search);
+          var path = searchParams.get('p');
+          if (path) {
+            // Remove the 'p' parameter and navigate to the actual path
+            // The path already includes leading slash, so we just append it to the base URL
+            var newUrl = window.location.pathname.replace(/\/$/, '') + path;
+            history.replaceState(null, null, newUrl);
+          }
+        }
+      })();
+    </script>
   </head>
 
   <body>
