@@ -7,8 +7,21 @@
 
 .visual-cup {
   width: 100%;
-  max-width: 300px;
+  max-width: 200px;
   height: auto;
+}
+
+/* Responsive sizing for visual cup */
+@media (min-width: 425px) {
+  .visual-cup {
+    max-width: 250px;
+  }
+}
+
+@media (min-width: 768px) {
+  .visual-cup {
+    max-width: 280px;
+  }
 }
 
 .cup-outline {
@@ -79,7 +92,7 @@
 /* Make light-colored top layers visible against light backgrounds */
 .drink-layer.foam-layer,
 .drink-layer.whipped-layer {
-  stroke: rgba(0,0,0,0.08);
+  stroke: rgba(0, 0, 0, 0.08);
   stroke-width: 0.75;
 }
 
@@ -126,7 +139,9 @@
     clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%);
     opacity: 0;
   }
-  20% { opacity: 0.2; }
+  20% {
+    opacity: 0.2;
+  }
   100% {
     clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
     opacity: var(--layer-opacity, 0.3);
@@ -140,7 +155,8 @@
 }
 
 @keyframes bubblePop {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.7;
   }
@@ -175,7 +191,8 @@
 }
 
 @keyframes dustFloat {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0);
     opacity: 0.6;
   }
@@ -230,8 +247,13 @@
 }
 
 @keyframes fadeInOut {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .empty-cup-hint p {
@@ -286,11 +308,11 @@
   .visual-cup {
     max-width: 250px;
   }
-  
+
   .cup-info h3 {
     font-size: 1rem;
   }
-  
+
   .drink-name {
     font-size: 0.8rem;
   }

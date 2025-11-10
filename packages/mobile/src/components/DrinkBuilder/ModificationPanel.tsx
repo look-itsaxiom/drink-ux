@@ -8,13 +8,8 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonCardContent,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonButtons,
-  IonContent,
 } from "@ionic/react";
-import { addCircleOutline, closeCircle, arrowBack } from "ionicons/icons";
+import { addCircleOutline, closeCircle } from "ionicons/icons";
 import { DrinkBuilderState, DrinkType, CupSize } from "@drink-ux/shared";
 import "./ModificationPanel.css";
 
@@ -38,7 +33,6 @@ const ModificationPanel: React.FC<ModificationPanelProps> = ({
   drinkType,
   state,
   onUpdate,
-  onBack,
   onShowMilkSelector,
   onShowSyrupSelector,
   onShowToppingSelector,
@@ -59,18 +53,7 @@ const ModificationPanel: React.FC<ModificationPanelProps> = ({
 
   return (
     <div className="modification-panel">
-      <IonHeader className="mod-header">
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton fill="clear" onClick={onBack}>
-              <IonIcon icon={arrowBack} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Customize your {drinkType.name}</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
-      <IonContent className="modifications-content">
+      <div className="modifications-content">
         {/* Cup Size */}
         <IonCard className="mod-card">
           <IonCardHeader>
@@ -87,7 +70,9 @@ const ModificationPanel: React.FC<ModificationPanelProps> = ({
                   className="size-button"
                 >
                   {size.label}
-                  {size.priceAdd > 0 && <span className="price-add">+${size.priceAdd}</span>}
+                  {size.priceAdd > 0 && (
+                    <span className="price-add">+${size.priceAdd}</span>
+                  )}
                 </IonButton>
               ))}
             </div>
@@ -102,10 +87,20 @@ const ModificationPanel: React.FC<ModificationPanelProps> = ({
             </IonCardHeader>
             <IonCardContent>
               <div className="temp-buttons">
-                <IonButton size="small" fill={state.isHot === true ? "solid" : "outline"} onClick={() => onUpdate({ isHot: true })} className="temp-button">
+                <IonButton
+                  size="small"
+                  fill={state.isHot === true ? "solid" : "outline"}
+                  onClick={() => onUpdate({ isHot: true })}
+                  className="temp-button"
+                >
                   Hot
                 </IonButton>
-                <IonButton size="small" fill={state.isHot === false ? "solid" : "outline"} onClick={() => onUpdate({ isHot: false })} className="temp-button">
+                <IonButton
+                  size="small"
+                  fill={state.isHot === false ? "solid" : "outline"}
+                  onClick={() => onUpdate({ isHot: false })}
+                  className="temp-button"
+                >
                   Iced
                 </IonButton>
               </div>
@@ -126,7 +121,12 @@ const ModificationPanel: React.FC<ModificationPanelProps> = ({
                   <IonIcon icon={closeCircle} onClick={handleRemoveMilk} />
                 </IonChip>
               )}
-              <IonButton size="small" fill="outline" onClick={onShowMilkSelector} className="add-button">
+              <IonButton
+                size="small"
+                fill="outline"
+                onClick={onShowMilkSelector}
+                className="add-button"
+              >
                 <IonIcon slot="start" icon={addCircleOutline} />
                 {state.milk ? "Change" : "Add"} Milk
               </IonButton>
@@ -142,12 +142,24 @@ const ModificationPanel: React.FC<ModificationPanelProps> = ({
           <IonCardContent>
             <div className="mod-chips">
               {state.syrups.map((syrup) => (
-                <IonChip key={syrup.id} color="secondary" className="selected-chip">
+                <IonChip
+                  key={syrup.id}
+                  color="secondary"
+                  className="selected-chip"
+                >
                   <IonLabel>{syrup.name}</IonLabel>
-                  <IonIcon icon={closeCircle} onClick={() => handleRemoveSyrup(syrup.id)} />
+                  <IonIcon
+                    icon={closeCircle}
+                    onClick={() => handleRemoveSyrup(syrup.id)}
+                  />
                 </IonChip>
               ))}
-              <IonButton size="small" fill="outline" onClick={onShowSyrupSelector} className="add-button">
+              <IonButton
+                size="small"
+                fill="outline"
+                onClick={onShowSyrupSelector}
+                className="add-button"
+              >
                 <IonIcon slot="start" icon={addCircleOutline} />
                 Add Syrup
               </IonButton>
@@ -163,19 +175,31 @@ const ModificationPanel: React.FC<ModificationPanelProps> = ({
           <IonCardContent>
             <div className="mod-chips">
               {state.toppings.map((topping) => (
-                <IonChip key={topping.id} color="tertiary" className="selected-chip">
+                <IonChip
+                  key={topping.id}
+                  color="tertiary"
+                  className="selected-chip"
+                >
                   <IonLabel>{topping.name}</IonLabel>
-                  <IonIcon icon={closeCircle} onClick={() => handleRemoveTopping(topping.id)} />
+                  <IonIcon
+                    icon={closeCircle}
+                    onClick={() => handleRemoveTopping(topping.id)}
+                  />
                 </IonChip>
               ))}
-              <IonButton size="small" fill="outline" onClick={onShowToppingSelector} className="add-button">
+              <IonButton
+                size="small"
+                fill="outline"
+                onClick={onShowToppingSelector}
+                className="add-button"
+              >
                 <IonIcon slot="start" icon={addCircleOutline} />
                 Add Topping
               </IonButton>
             </div>
           </IonCardContent>
         </IonCard>
-      </IonContent>
+      </div>
     </div>
   );
 };

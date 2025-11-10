@@ -4,30 +4,39 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-.mod-header {
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.mod-header ion-toolbar {
-  --background: var(--theme-surface);
-  --color: var(--theme-text);
-}
-
-.mod-header ion-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.mod-header ion-button {
-  --color: var(--theme-primary);
+  overflow: hidden;
 }
 
 .modifications-content {
-  --background: var(--theme-background);
+  flex: 1;
   padding: 16px;
+  padding-bottom: 160px; /* Increased space for footer + sheet handle + extra buffer */
+  overflow-y: auto;
+  overflow-x: hidden;
+  --background: transparent;
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--ion-color-medium-tint) transparent;
+}
+
+/* Custom scrollbar for webkit browsers */
+.modifications-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.modifications-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modifications-content::-webkit-scrollbar-thumb {
+  background-color: var(--ion-color-medium-tint);
+  border-radius: 2px;
+}
+
+.modifications-content::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ion-color-medium);
 }
 
 .mod-card {
@@ -174,12 +183,11 @@
 @media (min-width: 768px) {
   .modifications-content {
     padding: 24px;
-    max-width: 600px;
-    margin: 0 auto;
+    padding-bottom: 40px; /* Less padding needed on desktop since footer behavior is different */
   }
 
   .mod-card {
-    margin: 0 0 20px 0;
+    margin: 0 0 24px 0;
   }
 
   .mod-card ion-card-header {
@@ -201,97 +209,5 @@
     --padding-bottom: 12px;
     --padding-start: 20px;
     --padding-end: 20px;
-  }
-}
-
-/* Laptop screens */
-@media (min-width: 1024px) {
-  .modifications-content {
-    padding: 32px;
-    max-width: 700px;
-  }
-
-  .mod-card {
-    margin: 0 0 24px 0;
-  }
-
-  .mod-card ion-card-header {
-    padding: 24px 24px 16px 24px;
-  }
-
-  .mod-card ion-card-title {
-    font-size: 1.3rem;
-  }
-
-  .mod-card ion-card-content {
-    padding: 0 24px 24px 24px;
-  }
-
-  .size-button,
-  .temp-button {
-    min-width: 120px;
-    --padding-top: 14px;
-    --padding-bottom: 14px;
-    --padding-start: 24px;
-    --padding-end: 24px;
-    font-size: 1rem;
-  }
-
-  .add-button {
-    --padding-top: 14px;
-    --padding-bottom: 14px;
-    --padding-start: 20px;
-    --padding-end: 20px;
-    font-size: 1rem;
-  }
-}
-
-/* Large desktop screens */
-@media (min-width: 1440px) {
-  .modifications-content {
-    padding: 40px;
-    max-width: 800px;
-  }
-
-  .mod-card {
-    margin: 0 0 28px 0;
-  }
-
-  .mod-card ion-card-header {
-    padding: 28px 28px 20px 28px;
-  }
-
-  .mod-card ion-card-title {
-    font-size: 1.4rem;
-  }
-
-  .mod-card ion-card-content {
-    padding: 0 28px 28px 28px;
-  }
-
-  .size-button,
-  .temp-button {
-    min-width: 140px;
-    --padding-top: 16px;
-    --padding-bottom: 16px;
-    --padding-start: 28px;
-    --padding-end: 28px;
-    font-size: 1.1rem;
-  }
-
-  .add-button {
-    --padding-top: 16px;
-    --padding-bottom: 16px;
-    --padding-start: 24px;
-    --padding-end: 24px;
-    font-size: 1.1rem;
-  }
-}
-
-/* Ultra-wide screens */
-@media (min-width: 1920px) {
-  .modifications-content {
-    max-width: 900px;
-    padding: 50px;
   }
 }
