@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { POSProvider } from '@drink-ux/shared';
+import { POSProvider } from './types';
 
 const POSIntegration: React.FC = () => {
   const [provider, setProvider] = useState<POSProvider>(POSProvider.SQUARE);

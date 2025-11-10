@@ -28,9 +28,9 @@ This is a monorepo project built with modern web technologies:
 - **`@drink-ux/api`** - TypeScript Express API backend
 
   - RESTful API endpoints
-  - POS integration services
-  - Order management
-  - Business logic
+  - Prisma ORM for database access
+  - Connection to shared types
+  - Basic server setup
 
 - **`@drink-ux/shared`** - Shared TypeScript types and utilities
   - Common type definitions
@@ -40,7 +40,8 @@ This is a monorepo project built with modern web technologies:
 ## Tech Stack
 
 - **Frontend**: React, Ionic, Capacitor
-- **Backend**: Node.js, Express, TypeScript
+- **Backend**: Node.js, Express, TypeScript, Prisma
+- **Database**: SQLite (development), PostgreSQL/MySQL (production)
 - **Build Tools**: Vite, TypeScript
 - **Target Platforms**: Web (PWA), iOS, Android
 
@@ -271,26 +272,17 @@ Test the drink builder directly in your browser - no installation required!
 
 ## API Endpoints
 
-### Drinks
+### Health Check
 
-- `GET /api/drinks` - List all drinks
-- `GET /api/drinks/:id` - Get drink details
+- `GET /health` - API health status
 
-### Orders
+### Example Endpoints
 
-- `GET /api/orders` - List all orders
-- `POST /api/orders` - Create new order
+- `GET /api/example` - Example endpoint
+- `GET /api/example/users` - Get all users
+- `POST /api/example/users` - Create a user
 
-### POS Integration
-
-- `GET /api/pos/integration/:businessId` - Get integration status
-- `POST /api/pos/integration` - Configure integration
-- `POST /api/pos/sync/:businessId` - Sync menu
-
-### Business
-
-- `GET /api/business/:id` - Get business details
-- `PUT /api/business/:id` - Update business settings
+*Note: The API is set up as a generic Express server. Customize routes and models based on your specific needs.*
 
 ## Project Structure
 
@@ -311,9 +303,11 @@ drink-ux/
 │   │   └── vite.config.ts
 │   ├── api/             # Express TypeScript API
 │   │   ├── src/
-│   │   │   ├── routes/
-│   │   │   ├── services/
+│   │   │   ├── routes/  # API route handlers
+│   │   │   ├── database.ts
 │   │   │   └── index.ts
+│   │   ├── prisma/
+│   │   │   └── schema.prisma
 │   │   └── tsconfig.json
 │   └── shared/          # Shared types
 │       ├── src/

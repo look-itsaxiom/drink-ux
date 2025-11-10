@@ -1,14 +1,29 @@
 import React, { useState } from "react";
 import { useHistory } from "react-router";
-import { IonContent, IonPage, IonButton, IonFooter, IonToolbar } from "@ionic/react";
-import { DrinkBuilderState, DrinkCategory, DrinkType, CupSize } from "@drink-ux/shared";
+import {
+  IonContent,
+  IonPage,
+  IonButton,
+  IonFooter,
+  IonToolbar,
+} from "@ionic/react";
+import {
+  DrinkBuilderState,
+  DrinkCategory,
+  DrinkType,
+  CupSize,
+} from "@drink-ux/shared";
 
 import AppHeader from "../components/AppHeader";
 import CategorySelector from "../components/DrinkBuilder/CategorySelector";
 import TypeSelector from "../components/DrinkBuilder/TypeSelector";
 import ModificationPanel from "../components/DrinkBuilder/ModificationPanel";
 import DrinkVisual from "../components/DrinkBuilder/DrinkVisual";
-import ModifierSelector, { milkModifiers, syrupModifiers, toppingModifiers } from "../components/DrinkBuilder/ModifierSelector";
+import ModifierSelector, {
+  milkModifiers,
+  syrupModifiers,
+  toppingModifiers,
+} from "../components/DrinkBuilder/ModifierSelector";
 
 import "./DrinkBuilder.css";
 
@@ -59,7 +74,10 @@ const DrinkBuilder: React.FC = () => {
   };
 
   const handleToppingSelect = (topping: any) => {
-    setDrinkState({ ...drinkState, toppings: [...drinkState.toppings, topping] });
+    setDrinkState({
+      ...drinkState,
+      toppings: [...drinkState.toppings, topping],
+    });
   };
 
   const handleBackFromType = () => {
@@ -68,7 +86,13 @@ const DrinkBuilder: React.FC = () => {
   };
 
   const handleBackFromMods = () => {
-    setDrinkState({ ...drinkState, drinkType: undefined, milk: undefined, syrups: [], toppings: [] });
+    setDrinkState({
+      ...drinkState,
+      drinkType: undefined,
+      milk: undefined,
+      syrups: [],
+      toppings: [],
+    });
     setStep("type");
   };
 
@@ -120,14 +144,14 @@ const DrinkBuilder: React.FC = () => {
       isCompleted: step === "type" || step === "modifications",
     },
     {
-      key: "type", 
+      key: "type",
       label: "Type",
       isActive: step === "type",
       isCompleted: step === "modifications",
     },
     {
       key: "modifications",
-      label: "Customize", 
+      label: "Customize",
       isActive: step === "modifications",
       isCompleted: false,
     },
@@ -135,7 +159,7 @@ const DrinkBuilder: React.FC = () => {
 
   return (
     <IonPage>
-      <AppHeader 
+      <AppHeader
         title="Build Your Drink"
         showBackButton={true}
         backHref="/home"
@@ -144,20 +168,53 @@ const DrinkBuilder: React.FC = () => {
         progressSteps={progressSteps}
       />
 
-      <IonContent fullscreen className="drink-builder">
-        <div className={step === "modifications" ? "builder-container-split" : "container"}>
+      <IonContent
+        fullscreen
+        className={`drink-builder ${
+          step === "modifications" ? "modifications-step" : ""
+        }`}
+        scrollY={step !== "modifications"}
+      >
+        <div
+          className={
+            step === "modifications"
+              ? "builder-container-modifications"
+              : "builder-container-standard"
+          }
+        >
           {/* Visual Section - Only visible on modifications step */}
           {step === "modifications" && (
-            <div className="visual-section section section-compact">
+            <div className="visual-section">
               <DrinkVisual state={drinkState} />
             </div>
           )}
 
           {/* Content Section - Changes based on step */}
-          <div className={step === "modifications" ? "content-section section" : ""}>
-            {step === "category" && <CategorySelector onSelect={handleCategorySelect} />}
+          <div
+            className={
+              step === "modifications"
+                ? "customization-section"
+                : "standard-content"
+            }
+          >
+            {step === "modifications" && (
+              <div className="customization-sheet-handle">
+                <div className="sheet-handle-bar"></div>
+                <div className="sheet-handle-shadow"></div>
+              </div>
+            )}
 
-            {step === "type" && drinkState.category && <TypeSelector category={drinkState.category} onSelect={handleTypeSelect} onBack={handleBackFromType} />}
+            {step === "category" && (
+              <CategorySelector onSelect={handleCategorySelect} />
+            )}
+
+            {step === "type" && drinkState.category && (
+              <TypeSelector
+                category={drinkState.category}
+                onSelect={handleTypeSelect}
+                onBack={handleBackFromType}
+              />
+            )}
 
             {step === "modifications" && drinkState.drinkType && (
               <ModificationPanel
@@ -205,7 +262,11 @@ const DrinkBuilder: React.FC = () => {
       {step === "modifications" && (
         <IonFooter>
           <IonToolbar>
-            <IonButton expand="block" onClick={handleAddToCart} disabled={!drinkState.drinkType}>
+            <IonButton
+              expand="block"
+              onClick={handleAddToCart}
+              disabled={!drinkState.drinkType}
+            >
               Add to Cart - ${calculateTotalPrice()}
             </IonButton>
           </IonToolbar>

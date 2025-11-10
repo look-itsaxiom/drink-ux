@@ -1,48 +1,14 @@
 # Drink-UX API
 
-TypeScript/Express backend API for the Drink-UX platform, providing a unified interface for POS system integration and order management.
+TypeScript/Express backend API for the Drink-UX platform with Prisma ORM for database management.
 
 ## Features
 
-- **POS Abstraction Layer** - Support multiple POS systems (Square, Toast, Clover) through a unified interface
-- **Client Company Management** - Manage coffee shop businesses and their configurations
-- **Order Management** - Handle drink orders with customizations
-- **Type-Safe API** - Full TypeScript support with shared types
-- **Comprehensive Testing** - Unit and integration tests with >85% coverage
-
-## Architecture
-
-The API follows a layered architecture pattern:
-
-```
-Routes → Managers → Services/Repositories → External APIs/Database
-```
-
-- **Routes** - HTTP endpoint handlers (Express routers)
-- **Managers** - Business logic and orchestration
-- **Services** - Specialized functionality (e.g., POS providers)
-- **Repositories** - Data access layer (Prisma ORM)
-
-### POS Abstraction Layer
-
-The POS abstraction layer enables easy integration with multiple point-of-sale systems:
-
-```
-IPOSProvider (Interface)
-    ↓
-BasePOSAdapter (Abstract Class)
-    ↓
-├── SquarePOSProvider
-├── ToastPOSProvider
-└── CloverPOSProvider
-```
-
-**Key Benefits:**
-
-- Unified API for all POS systems
-- Easy to add new providers
-- Provider-agnostic business logic
-- Comprehensive error handling
+- **TypeScript Express Server** - Type-safe REST API
+- **Prisma ORM** - Modern database toolkit with type-safe queries
+- **Shared Types** - Full integration with `@drink-ux/shared` types
+- **CORS Enabled** - Ready for cross-origin requests
+- **Environment Configuration** - Easy setup with `.env` files
 
 ## Quick Start
 
@@ -50,6 +16,35 @@ BasePOSAdapter (Abstract Class)
 
 ```bash
 npm install
+```
+
+### Environment Setup
+
+Create a `.env` file based on `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Default configuration:
+```env
+PORT=3001
+DATABASE_URL="file:./dev.db"
+```
+
+### Database Setup
+
+Initialize the database with Prisma:
+
+```bash
+# Generate Prisma Client
+npx prisma generate
+
+# Create and apply migrations
+npx prisma migrate dev --name init
+
+# Optional: Open Prisma Studio to view data
+npx prisma studio
 ```
 
 ### Development
@@ -61,254 +56,119 @@ npm run dev
 # Build for production
 npm run build
 
+# Run production server
+npm start
+
 # Run tests
 npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Open database REPL for testing queries
-npm run db:repl
 ```
 
-### Database REPL
-
-For quick database testing and exploration, use the interactive REPL:
-
-```bash
-npm run db:repl
-# or
-npm run db:cli
-```
-
-The REPL provides:
-
-- **Full Prisma Client access** - Run any Prisma query
-- **Auto-complete** - Tab completion for queries
-- **Pretty printing** - Colorized, formatted output
-- **Model shortcuts** - Quick access via `models.clientCompany`, etc.
-- **Custom commands** - `.schema`, `.count`, `.help`
-
-**Examples:**
-
-```javascript
-// Find all client companies
-db> await prisma.clientCompany.findMany()
-
-// Create a new company with theme
-db> await models.clientCompany.create({
-  data: {
-    name: "Test Coffee Shop",
-    pointOfContact: "john@example.com",
-    theme: {
-      create: {
-        primaryColor: "#FF6B6B",
-        secondaryColor: "#4ECDC4"
-      }
-    }
-  },
-  include: { theme: true }
-})
-
-// Count records
-db> .count
-
-// Show schema
-db> .schema
-
-// Exit
-db> .exit
-```
-
-### Environment Variables
-
-Create a `.env` file based on `.env.example`:
-
-```env
-PORT=3001
-DATABASE_URL="file:./dev.db"
-
-# POS Provider Credentials (for testing)
-SQUARE_ACCESS_TOKEN=
-TOAST_API_KEY=
-CLOVER_API_KEY=
-```
-
-## API Endpoints
-
-### POS Integration
-
-```
-GET    /api/pos/providers                  - List supported POS providers
-GET    /api/pos/integration/:companyId     - Get POS integration
-POST   /api/pos/test-connection            - Test POS credentials
-POST   /api/pos/integration                - Create/update integration
-POST   /api/pos/sync/:companyId            - Sync menu from POS
-POST   /api/pos/menu                       - Fetch menu items
-POST   /api/pos/order                      - Submit order to POS
-GET    /api/pos/order/:orderId/status      - Get order status
-DELETE /api/pos/integration/:companyId     - Deactivate integration
-```
-
-### Client Companies
-
-```
-GET    /api/clientCompanies                - List all companies
-GET    /api/clientCompanies/stats          - Get statistics
-GET    /api/clientCompanies/:id            - Get company by ID
-POST   /api/clientCompanies                - Create company
-PATCH  /api/clientCompanies/:id            - Update company
-DELETE /api/clientCompanies/:id            - Delete company
-```
-
-### Orders
-
-```
-GET    /api/orders                         - List all orders
-POST   /api/orders                         - Create order
-```
-
-### Drinks
-
-```
-GET    /api/drinks                         - List all drinks
-```
-
-### Health Check
-
-```
-GET    /health                             - API health status
-```
+The API server will be available at `http://localhost:3001`
 
 ## Project Structure
 
 ```
 src/
-├── routes/              # HTTP endpoint handlers
-│   ├── pos.ts          # POS integration endpoints
-│   ├── clientCompany.ts
-│   ├── orders.ts
-│   └── drinks.ts
-├── managers/            # Business logic layer
-│   ├── pos.manager.ts
-│   └── clientCompany.manager.ts
-├── repositories/        # Data access layer
-│   ├── posIntegration.repository.ts
-│   └── clientCompany.repository.ts
-├── services/            # Specialized services
-│   └── pos/            # POS abstraction layer
-│       ├── interfaces/
-│       ├── adapters/
-│       ├── providers/
-│       └── POSProviderFactory.ts
-├── __tests__/          # Test utilities
-├── database.ts         # Prisma client
-└── index.ts           # Express app entry point
+├── routes/          # API route handlers
+│   └── example.ts   # Example routes
+├── database.ts      # Prisma client instance
+└── index.ts         # Express app entry point
 
 prisma/
-├── schema.prisma       # Database schema
-└── migrations/         # Database migrations
-
-generated/
-└── prisma/            # Generated Prisma client
+├── schema.prisma    # Database schema
+└── migrations/      # Database migrations
 ```
 
-## Database
+## API Endpoints
 
-We use Prisma ORM with SQLite for development:
+### Health Check
 
-```bash
-# Generate Prisma client
-npx prisma generate
-
-# Create migration
-npx prisma migrate dev --name migration_name
-
-# Open Prisma Studio
-npx prisma studio
+```
+GET /health - API health status
 ```
 
-### Schema
+### Example Endpoints
+
+```
+GET    /api/example          - Example endpoint
+GET    /api/example/users    - Get all users
+POST   /api/example/users    - Create a user
+```
+
+## Database Schema
+
+The starter schema includes a simple `User` model:
 
 ```prisma
-model ClientCompany {
-  id             String   @id @default(cuid())
-  name           String
-  pointOfContact String
-  theme          ClientTheme?
-  posIntegration POSIntegration?
-}
-
-model POSIntegration {
+model User {
   id        String   @id @default(cuid())
-  provider  String   // POSProvider enum
-  isActive  Boolean  @default(true)
-  company   ClientCompany @relation(...)
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 ```
 
-## Testing
+Customize the schema in `prisma/schema.prisma` based on your needs.
 
-The API has comprehensive test coverage:
+## Adding Features
 
-```bash
-# Run all tests
-npm test
+### Adding a New Route
 
-# Run specific test file
-npm test -- pos.manager.test
+1. Create a new route file in `src/routes/`
+2. Import and use types from `@drink-ux/shared`
+3. Register the route in `src/index.ts`
 
-# Run tests in watch mode
-npm run test:watch
-
-# Generate coverage report
-npm run test:coverage
-```
-
-### Test Structure
-
-```
-src/
-├── managers/__tests__/
-│   ├── pos.manager.test.ts
-│   └── clientCompany.manager.test.ts
-├── repositories/__tests__/
-│   ├── posIntegration.repository.test.ts
-│   └── clientCompany.repository.test.ts
-├── routes/__tests__/
-│   └── clientCompany.routes.test.ts
-└── services/pos/__tests__/
-    ├── POSProviderFactory.test.ts
-    └── SquarePOSProvider.test.ts
-```
-
-## Adding a New POS Provider
-
-1. Add to `POSProvider` enum in `@drink-ux/shared`
-2. Create provider class extending `BasePOSAdapter`
-3. Implement required methods: `testConnection`, `fetchMenu`, `submitOrder`, `syncMenu`, `getOrderStatus`
-4. Register in `POSProviderFactory`
-5. Add tests
-6. Update documentation
-
-See [POS Architecture Documentation](../../docs/api/POS_ARCHITECTURE.md) for details.
-
-## Type Safety
-
-All types are shared across packages via `@drink-ux/shared`:
+Example:
 
 ```typescript
-import {
-  POSProvider,
-  POSCredentials,
-  POSConfig,
-  POSMenuItem,
-  POSOrder,
-  ApiResponse,
-} from "@drink-ux/shared";
+// src/routes/myroute.ts
+import { Router, Request, Response } from "express";
+import { ApiResponse } from "@drink-ux/shared";
+
+const router = Router();
+
+router.get("/", async (req: Request, res: Response) => {
+  const response: ApiResponse<string> = {
+    success: true,
+    data: "Hello World",
+  };
+  res.json(response);
+});
+
+export const myRoutes = router;
 ```
 
-This ensures type consistency between API, mobile app, and admin portal.
+```typescript
+// src/index.ts
+import { myRoutes } from "./routes/myroute";
+// ...
+app.use("/api/myroute", myRoutes);
+```
+
+### Adding Database Models
+
+1. Update `prisma/schema.prisma` with your new model
+2. Create a migration:
+   ```bash
+   npx prisma migrate dev --name add_my_model
+   ```
+3. Use the model in your routes:
+   ```typescript
+   import prisma from "../database";
+   
+   const items = await prisma.myModel.findMany();
+   ```
+
+### Using Shared Types
+
+All types from `@drink-ux/shared` are available for import:
+
+```typescript
+import { ApiResponse, ApiError } from "@drink-ux/shared";
+```
+
+This ensures type consistency across the mobile app, admin portal, and API.
 
 ## Error Handling
 
@@ -320,47 +180,80 @@ All endpoints follow a consistent error response format:
   error: {
     code: "ERROR_CODE",
     message: "Human-readable message",
-    details?: any  // Optional additional information
+    details?: any
   }
 }
 ```
 
 Common error codes:
-
 - `BAD_REQUEST` - Invalid request parameters
 - `NOT_FOUND` - Resource not found
 - `INTERNAL_SERVER_ERROR` - Server error
-- `UNAUTHORIZED` - Authentication required
-- `FORBIDDEN` - Insufficient permissions
 
-## Performance
+## Prisma Commands
 
-- **Singleton Providers** - POS providers are cached for efficiency
-- **Database Connection Pooling** - Prisma connection pooling
-- **Async/Await** - Non-blocking I/O throughout
-- **Type Validation** - Input validation at route level
+```bash
+# Generate Prisma Client after schema changes
+npx prisma generate
 
-## Security
+# Create a new migration
+npx prisma migrate dev --name migration_name
 
-- **Credential Protection** - Never expose POS credentials in responses
-- **Input Validation** - Validate all request parameters
-- **HTTPS Only** - Production uses HTTPS exclusively
-- **Rate Limiting** - (TODO) Implement rate limiting
-- **Authentication** - (TODO) Implement JWT authentication
+# Apply migrations in production
+npx prisma migrate deploy
+
+# Reset database (development only)
+npx prisma migrate reset
+
+# Open Prisma Studio (database GUI)
+npx prisma studio
+
+# Format schema file
+npx prisma format
+```
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+## Production Deployment
+
+1. Build the application:
+   ```bash
+   npm run build
+   ```
+
+2. Set production environment variables
+
+3. Run database migrations:
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+4. Start the server:
+   ```bash
+   npm start
+   ```
+
+## Type Safety
+
+The API is fully typed with TypeScript:
+- Prisma provides type-safe database queries
+- All routes use typed request/response objects
+- Shared types ensure consistency with frontend apps
 
 ## Documentation
 
-- [POS Architecture](../../docs/api/POS_ARCHITECTURE.md) - Detailed architecture documentation
-- [POS Integration Guide](../../docs/api/POS_INTEGRATION.md) - Setup and configuration
-- [Development Guide](../../docs/DEVELOPMENT.md) - General development workflow
-
-## Contributing
-
-1. Follow the existing code structure
-2. Write tests for new features
-3. Update documentation
-4. Follow TypeScript best practices
-5. Use meaningful commit messages
+See the [main project README](../../README.md) for overall project documentation.
 
 ## License
 
