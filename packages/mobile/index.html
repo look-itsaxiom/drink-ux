@@ -24,20 +24,24 @@
     <script>
       // Handle redirect from 404.html for GitHub Pages SPA routing
       (function() {
-        var redirect = sessionStorage.getItem('redirect');
-        if (redirect) {
-          sessionStorage.removeItem('redirect');
-          history.replaceState(null, null, redirect);
-        } else {
-          // Check if we're coming from the 404 page with path in query param
-          var searchParams = new URLSearchParams(window.location.search);
-          var path = searchParams.get('p');
-          if (path) {
-            // Remove the 'p' parameter and navigate to the actual path
-            // The path already includes leading slash, so we just append it to the base URL
-            var newUrl = window.location.pathname.replace(/\/$/, '') + path;
-            history.replaceState(null, null, newUrl);
+        var searchParams = new URLSearchParams(window.location.search);
+        var path = searchParams.get('p');
+        
+        if (path) {
+          // Decode and clean up the path
+          path = decodeURIComponent(path);
+          
+          // Determine base path based on hostname
+          var basePath = '';
+          if (window.location.hostname.includes('github.io')) {
+            basePath = '/drink-ux';
           }
+          
+          // Construct the new URL without the query parameter
+          var newUrl = basePath + path;
+          
+          // Replace the current history entry with the clean URL
+          history.replaceState(null, null, newUrl);
         }
       })();
     </script>
