@@ -62,7 +62,11 @@ router.post("/users", async (req: Request, res: Response) => {
     }
 
     const user = await prisma.user.create({
-      data: { email, name },
+      data: {
+        email,
+        name,
+        passwordHash: "placeholder_hash", // TODO: Real auth will hash passwords properly
+      },
     });
 
     const response: ApiResponse<typeof user> = {

@@ -1,43 +1,135 @@
 /**
- * Drink customization types
+ * Drink-UX Shared Types
+ * Used across mobile, admin, and API packages
  */
-export interface DrinkCustomization {
+
+// =============================================================================
+// BUSINESS & ACCOUNT
+// =============================================================================
+
+export enum AccountState {
+  ONBOARDING = "onboarding",
+  SETUP_COMPLETE = "setup_complete",
+  ACTIVE = "active",
+  PAUSED = "paused",
+  EJECTED = "ejected",
+}
+
+export enum POSProvider {
+  SQUARE = "square",
+  TOAST = "toast",
+  CLOVER = "clover",
+}
+
+export interface BusinessTheme {
+  primaryColor: string;
+  secondaryColor: string;
+  logoUrl?: string;
+}
+
+export interface Business {
   id: string;
   name: string;
-  category: CustomizationCategory;
-  options: CustomizationOption[];
-  required: boolean;
+  slug: string;
+  accountState: AccountState;
+  theme?: BusinessTheme;
+  posProvider?: POSProvider;
 }
 
-export enum CustomizationCategory {
-  SIZE = "size",
-  MILK = "milk",
-  FLAVOR = "flavor",
-  SWEETENER = "sweetener",
-  TOPPING = "topping",
-  TEMPERATURE = "temperature",
+export interface BusinessConfig {
+  business: Business;
+  theme: BusinessTheme;
 }
 
-export interface CustomizationOption {
+// =============================================================================
+// CATALOG - CATEGORIES & BASES
+// =============================================================================
+
+export enum DrinkCategory {
+  COFFEE = "coffee",
+  TEA = "tea",
+  ITALIAN_SODA = "italian_soda",
+  JUICE = "juice",
+  BLENDED = "blended",
+  SPECIALTY = "specialty",
+}
+
+export interface Category {
   id: string;
+  name: string;
+  displayOrder: number;
+  color?: string;
+  icon?: string;
+}
+
+export enum TemperatureConstraint {
+  HOT_ONLY = "hot_only",
+  ICED_ONLY = "iced_only",
+  BOTH = "both",
+}
+
+export interface Base {
+  id: string;
+  categoryId: string;
+  name: string;
+  basePrice: number;
+  temperatureConstraint: TemperatureConstraint;
+  available: boolean;
+  visualColor?: string;
+  visualOpacity?: number;
+}
+
+// =============================================================================
+// CATALOG - MODIFIERS
+// =============================================================================
+
+export enum ModifierType {
+  MILK = "milk",
+  SYRUP = "syrup",
+  TOPPING = "topping",
+}
+
+export interface Modifier {
+  id: string;
+  type: ModifierType;
   name: string;
   price: number;
   available: boolean;
+  visualColor?: string;
+  visualLayerOrder?: number;
+  visualAnimationType?: string;
 }
 
-/**
- * Visual Drink Builder - Component-based model
- */
-export enum ComponentType {
-  CUP = "cup",
-  BASE = "base",
-  MODIFIER = "modifier",
-}
+// =============================================================================
+// CATALOG - PRESETS (Named Drinks)
+// =============================================================================
 
 export enum CupSize {
   SMALL = "small",
   MEDIUM = "medium",
   LARGE = "large",
+}
+
+export interface Preset {
+  id: string;
+  name: string;
+  baseId: string;
+  defaultSize: CupSize;
+  defaultHot: boolean;
+  price: number;
+  available: boolean;
+  imageUrl?: string;
+  modifierIds: string[];
+}
+
+// =============================================================================
+// VISUAL DRINK BUILDER
+// =============================================================================
+
+export enum ComponentType {
+  CUP = "cup",
+  BASE = "base",
+  MODIFIER = "modifier",
 }
 
 export enum CupType {
@@ -56,6 +148,7 @@ export interface VisualProperties {
   color: string;
   opacity?: number;
   layerOrder: number;
+  animationType?: string;
 }
 
 export interface DrinkComponent {
@@ -85,6 +178,120 @@ export interface ModifierComponent extends DrinkComponent {
   canTransformDrink: boolean;
 }
 
+export interface DrinkBuilderState {
+  // Step 1: Category selection
+  category?: DrinkCategory;
+
+  // Step 2: Type selection (base)
+  drinkType?: DrinkType;
+
+  // Step 3: Modifications
+  cupSize?: CupSize;
+  isHot?: boolean;
+  milk?: ModifierComponent;
+  syrups: ModifierComponent[];
+  toppings: ModifierComponent[];
+
+  totalPrice: number;
+}
+
+// Legacy DrinkType interface (used in mobile UI)
+export interface DrinkType {
+  id: string;
+  name: string;
+  category: DrinkCategory;
+  description?: string;
+  basePrice: number;
+  isHot?: boolean; // undefined means both hot/iced available
+  imageUrl?: string;
+}
+
+// =============================================================================
+// ORDERS
+// =============================================================================
+
+export enum OrderStatus {
+  PENDING = "pending",
+  CONFIRMED = "confirmed",
+  PREPARING = "preparing",
+  READY = "ready",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
+  FAILED = "failed",
+}
+
+export interface Order {
+  id: string;
+  businessId: string;
+  posOrderId?: string;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  status: OrderStatus;
+  items: OrderItem[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface OrderItem {
+  id: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+// =============================================================================
+// CUSTOMIZATION (Legacy - used in mobile UI)
+// =============================================================================
+
+export enum CustomizationCategory {
+  SIZE = "size",
+  MILK = "milk",
+  FLAVOR = "flavor",
+  SWEETENER = "sweetener",
+  TOPPING = "topping",
+  TEMPERATURE = "temperature",
+}
+
+export interface DrinkCustomization {
+  id: string;
+  name: string;
+  category: CustomizationCategory;
+  options: CustomizationOption[];
+  required: boolean;
+}
+
+export interface CustomizationOption {
+  id: string;
+  name: string;
+  price: number;
+  available: boolean;
+}
+
+export interface SelectedCustomization {
+  customizationId: string;
+  optionId: string;
+  optionName: string;
+  price: number;
+}
+
+// Legacy Drink interface
+export interface Drink {
+  id: string;
+  name: string;
+  description: string;
+  basePrice: number;
+  category: DrinkCategory;
+  imageUrl?: string;
+  customizations: DrinkCustomization[];
+}
+
+// =============================================================================
+// INTENT CLARIFICATION
+// =============================================================================
+
 export interface IntentClarification {
   componentId: string;
   prompt: string;
@@ -97,95 +304,10 @@ export interface IntentOption {
   resultingComponents: string[];
 }
 
-export interface DrinkBuilderState {
-  // Step 1: Category selection
-  category?: DrinkCategory;
+// =============================================================================
+// API RESPONSE
+// =============================================================================
 
-  // Step 2: Type selection
-  drinkType?: DrinkType;
-
-  // Step 3: Modifications
-  cupSize?: CupSize;
-  isHot?: boolean; // for drinks that support both
-  milk?: ModifierComponent;
-  syrups: ModifierComponent[];
-  toppings: ModifierComponent[];
-
-  totalPrice: number;
-}
-
-/**
- * Drink types
- */
-export interface Drink {
-  id: string;
-  name: string;
-  description: string;
-  basePrice: number;
-  category: DrinkCategory;
-  imageUrl?: string;
-  customizations: DrinkCustomization[];
-}
-
-export enum DrinkCategory {
-  COFFEE = "coffee",
-  TEA = "tea",
-  ITALIAN_SODA = "italian_soda",
-  JUICE = "juice",
-  BLENDED = "blended",
-  SPECIALTY = "specialty",
-}
-
-export interface DrinkType {
-  id: string;
-  name: string;
-  category: DrinkCategory;
-  description?: string;
-  basePrice: number;
-  isHot?: boolean; // undefined means both hot/iced available
-  imageUrl?: string;
-}
-
-/**
- * Order types
- */
-export interface Order {
-  id: string;
-  items: OrderItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  status: OrderStatus;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface OrderItem {
-  drinkId: string;
-  drinkName: string;
-  quantity: number;
-  customizations: SelectedCustomization[];
-  itemTotal: number;
-}
-
-export interface SelectedCustomization {
-  customizationId: string;
-  optionId: string;
-  optionName: string;
-  price: number;
-}
-
-export enum OrderStatus {
-  DRAFT = "draft",
-  PENDING = "pending",
-  PROCESSING = "processing",
-  COMPLETED = "completed",
-  CANCELLED = "cancelled",
-}
-
-/**
- * API Response types
- */
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -195,5 +317,5 @@ export interface ApiResponse<T> {
 export interface ApiError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
 }
