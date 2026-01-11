@@ -22,7 +22,8 @@
       "Bash(set \"PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=yes\")",
       "Bash(dir:*)",
       "Bash(powershell -Command:*)",
-      "Bash(bd close:*)"
+      "Bash(bd close:*)",
+      "Bash(bd sync:*)"
     ]
   }
 }
