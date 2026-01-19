@@ -57,6 +57,13 @@ enum OrderStatus {
   FAILED      // POS rejected or payment failed
 }
 
+enum SyncStatus {
+  IDLE        // No sync in progress
+  SYNCING     // Sync is currently running
+  SUCCESS     // Last sync completed successfully
+  ERROR       // Last sync failed
+}
+
 // =============================================================================
 // USER & BUSINESS
 // =============================================================================
@@ -70,8 +77,28 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Email verification
+  emailVerificationToken    String?   @unique
+  emailVerificationExpires  DateTime?
+
+  // Password reset
+  passwordResetToken        String?   @unique
+  passwordResetExpires      DateTime?
+
   // Relations
   businesses    Business[]
+  sessions      Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Business {
@@ -95,6 +122,11 @@ model Business {
   posLocationId      String?
   posLastSyncAt      DateTime?
 
+  // Catalog Sync Status
+  syncStatus         SyncStatus   @default(IDLE)
+  lastSyncedAt       DateTime?    // Last successful sync timestamp
+  lastSyncError      String?      // Error message from last failed sync
+
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
@@ -105,6 +137,7 @@ model Business {
   modifiers          Modifier[]
   presets            Preset[]
   orders             Order[]
+  syncHistory        SyncHistory[]
 }
 
 // =============================================================================
@@ -259,4 +292,32 @@ model OrderItem {
 
   // Relations
   order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// SYNC HISTORY
+// =============================================================================
+
+model SyncHistory {
+  id                 String      @id @default(cuid())
+  businessId         String
+
+  // Sync details
+  status             SyncStatus
+  startedAt          DateTime    @default(now())
+  completedAt        DateTime?
+
+  // Counts
+  itemsCreated       Int         @default(0)
+  itemsUpdated       Int         @default(0)
+  itemsDeactivated   Int         @default(0)
+  modifiersCreated   Int         @default(0)
+  modifiersUpdated   Int         @default(0)
+
+  // Error info
+  errorMessage       String?
+  errorDetails       Json?       // Detailed error info including failed items
+
+  // Relations
+  business           Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }

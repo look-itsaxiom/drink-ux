@@ -11,12 +11,16 @@ module.exports = {
   coverageReporters: ["text", "lcov", "html"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
-    "^@drink-ux/shared$": "<rootDir>/../shared/src/index.ts",
+    "^@drink-ux/shared/types$": "<rootDir>/../shared/src/types.ts",
+    "^@drink-ux/shared$": "<rootDir>/../shared/src/types.ts",
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
   testTimeout: 10000,
   clearMocks: true,
   restoreMocks: true,
+  // Run tests serially to avoid database isolation issues
+  // Each test file needs exclusive database access
+  maxWorkers: 1,
   globals: {
     "ts-jest": {
       useESM: false,
