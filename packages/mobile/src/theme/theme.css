@@ -2,7 +2,8 @@
 :root {
   /* FALLBACK VALUES - These provide defaults before API theme loads */
   /* When ThemeProvider loads theme from API, these will be overridden */
-  
+
+  /* Core Colors */
   --theme-primary: #667eea;
   --theme-primaryDark: #764ba2;
   --theme-secondary: #6B4226;
@@ -17,12 +18,19 @@
   --theme-warning: #ff9800;
   --theme-error: #f44336;
 
+  /* RGB Values for alpha variations */
+  --theme-primary-rgb: 102, 126, 234;
+  --theme-secondary-rgb: 107, 66, 38;
+
   /* Fallback gradients */
   --theme-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --theme-gradient-secondary: linear-gradient(135deg, #6B4226 0%, #8B5A3C 100%);
-  
+
   /* Derived colors - will be calculated by ThemeProvider from API theme */
   --theme-primary-light: rgba(102, 126, 234, 0.1);
+  --theme-primary-border: rgba(102, 126, 234, 0.3);
+  --theme-primary-shadow: rgba(102, 126, 234, 0.4);
+  --theme-primary-shadow-hover: rgba(102, 126, 234, 0.6);
   --theme-secondary-shadow: rgba(107, 66, 38, 0.3);
   --theme-secondary-shadow-hover: rgba(107, 66, 38, 0.4);
 }
