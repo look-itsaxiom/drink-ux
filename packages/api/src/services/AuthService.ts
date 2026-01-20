@@ -27,6 +27,7 @@ export interface PublicUser {
   email: string;
   name: string | null;
   emailVerified: boolean;
+  businessId: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -184,7 +185,7 @@ export class AuthService {
     });
 
     return {
-      user: this.toPublicUser(result.user),
+      user: this.toPublicUser(result.user, result.business.id),
       business: this.toPublicBusiness(result.business),
       emailVerificationToken,
     };
@@ -208,9 +209,12 @@ export class AuthService {
     // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Find user
+    // Find user with businesses
     const user = await this.prisma.user.findUnique({
       where: { email: normalizedEmail },
+      include: {
+        businesses: true,
+      },
     });
 
     // Don't reveal if email exists
@@ -238,8 +242,11 @@ export class AuthService {
       },
     });
 
+    // Get the first business (users currently have one business)
+    const businessId = user.businesses[0]?.id || '';
+
     return {
-      user: this.toPublicUser(user),
+      user: this.toPublicUser(user, businessId),
       sessionToken,
     };
   }
@@ -254,7 +261,13 @@ export class AuthService {
 
     const session = await this.prisma.session.findUnique({
       where: { token },
-      include: { user: true },
+      include: {
+        user: {
+          include: {
+            businesses: true,
+          },
+        },
+      },
     });
 
     if (!session) {
@@ -270,7 +283,10 @@ export class AuthService {
       return null;
     }
 
-    return this.toPublicUser(session.user);
+    // Get the first business (users currently have one business)
+    const businessId = session.user.businesses[0]?.id || '';
+
+    return this.toPublicUser(session.user, businessId);
   }
 
   /**
@@ -443,12 +459,13 @@ export class AuthService {
   /**
    * Convert user to public user (without sensitive fields)
    */
-  private toPublicUser(user: User): PublicUser {
+  private toPublicUser(user: User, businessId: string = ''): PublicUser {
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       emailVerified: user.emailVerified,
+      businessId,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
