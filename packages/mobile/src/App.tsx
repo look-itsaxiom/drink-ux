@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import DrinkBuilder from './pages/DrinkBuilder';
 import Cart from './pages/Cart';
 import { ThemeProvider } from './theme';
+import { AppProvider } from './context';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -29,18 +30,20 @@ setupIonicReact();
 
 const App: React.FC = () => (
   <ThemeProvider>
-    <IonApp>
-      <IonReactRouter basename={import.meta.env.BASE_URL}>
-        <IonRouterOutlet>
-          <Route path="/home" component={Home} exact />
-          <Route path="/drink/:id" component={DrinkBuilder} exact />
-          <Route path="/cart" component={Cart} exact />
-          <Route path="/" exact>
-            <Redirect to="/home" />
-          </Route>
-        </IonRouterOutlet>
-      </IonReactRouter>
-    </IonApp>
+    <AppProvider>
+      <IonApp>
+        <IonReactRouter basename={import.meta.env.BASE_URL}>
+          <IonRouterOutlet>
+            <Route path="/home" component={Home} exact />
+            <Route path="/drink/:id" component={DrinkBuilder} exact />
+            <Route path="/cart" component={Cart} exact />
+            <Route path="/" exact>
+              <Redirect to="/home" />
+            </Route>
+          </IonRouterOutlet>
+        </IonReactRouter>
+      </IonApp>
+    </AppProvider>
   </ThemeProvider>
 );
 

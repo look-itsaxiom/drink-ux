@@ -24,16 +24,34 @@ import ModifierSelector, {
   syrupModifiers,
   toppingModifiers,
 } from "../components/DrinkBuilder/ModifierSelector";
+import { useCart, CartItem } from "../hooks/useCart";
 
 import "./DrinkBuilder.css";
 
 type BuilderStep = "category" | "type" | "modifications";
 
+// Extended state to track API categoryId
+interface ExtendedDrinkBuilderState extends DrinkBuilderState {
+  categoryId?: string;
+}
+
 const DrinkBuilder: React.FC = () => {
   const history = useHistory();
 
+  // Try to use cart context, handle gracefully if not available
+  let cartAvailable = false;
+  let addToCart: ((item: CartItem) => void) | null = null;
+
+  try {
+    const cart = useCart();
+    addToCart = cart.addItem;
+    cartAvailable = true;
+  } catch {
+    // Cart context not available
+  }
+
   const [step, setStep] = useState<BuilderStep>("category");
-  const [drinkState, setDrinkState] = useState<DrinkBuilderState>({
+  const [drinkState, setDrinkState] = useState<ExtendedDrinkBuilderState>({
     syrups: [],
     toppings: [],
     totalPrice: 0,
@@ -44,8 +62,8 @@ const DrinkBuilder: React.FC = () => {
   const [showSyrupSelector, setShowSyrupSelector] = useState(false);
   const [showToppingSelector, setShowToppingSelector] = useState(false);
 
-  const handleCategorySelect = (category: DrinkCategory) => {
-    setDrinkState({ ...drinkState, category });
+  const handleCategorySelect = (category: DrinkCategory, categoryId: string) => {
+    setDrinkState({ ...drinkState, category, categoryId });
     setStep("type");
   };
 
@@ -81,7 +99,7 @@ const DrinkBuilder: React.FC = () => {
   };
 
   const handleBackFromType = () => {
-    setDrinkState({ ...drinkState, category: undefined });
+    setDrinkState({ ...drinkState, category: undefined, categoryId: undefined });
     setStep("category");
   };
 
@@ -114,7 +132,7 @@ const DrinkBuilder: React.FC = () => {
     drinkState.syrups.forEach((s) => (total += s.price));
     drinkState.toppings.forEach((t) => (total += t.price));
 
-    return total.toFixed(2);
+    return total;
   };
 
   const getProgressValue = () => {
@@ -131,7 +149,45 @@ const DrinkBuilder: React.FC = () => {
   };
 
   const handleAddToCart = () => {
-    console.log("Adding to cart:", drinkState);
+    if (!drinkState.drinkType) return;
+
+    const totalPrice = calculateTotalPrice();
+    const modifierIds: string[] = [];
+    const modifierNames: string[] = [];
+
+    // Collect modifier info
+    if (drinkState.milk) {
+      modifierIds.push(drinkState.milk.id);
+      modifierNames.push(drinkState.milk.name);
+    }
+    drinkState.syrups.forEach((s) => {
+      modifierIds.push(s.id);
+      modifierNames.push(s.name);
+    });
+    drinkState.toppings.forEach((t) => {
+      modifierIds.push(t.id);
+      modifierNames.push(t.name);
+    });
+
+    // Create cart item
+    const cartItem: CartItem = {
+      id: `item-${Date.now()}`,
+      baseId: drinkState.drinkType.id,
+      baseName: drinkState.drinkType.name,
+      size: drinkState.cupSize || CupSize.MEDIUM,
+      isHot: drinkState.isHot ?? true,
+      modifierIds,
+      modifierNames,
+      quantity: 1,
+      unitPrice: totalPrice,
+      totalPrice: totalPrice,
+    };
+
+    if (cartAvailable && addToCart) {
+      addToCart(cartItem);
+    }
+
+    console.log("Adding to cart:", cartItem);
     history.push("/cart");
   };
 
@@ -211,6 +267,7 @@ const DrinkBuilder: React.FC = () => {
             {step === "type" && drinkState.category && (
               <TypeSelector
                 category={drinkState.category}
+                categoryId={drinkState.categoryId}
                 onSelect={handleTypeSelect}
                 onBack={handleBackFromType}
               />
@@ -267,7 +324,7 @@ const DrinkBuilder: React.FC = () => {
               onClick={handleAddToCart}
               disabled={!drinkState.drinkType}
             >
-              Add to Cart - ${calculateTotalPrice()}
+              Add to Cart - ${calculateTotalPrice().toFixed(2)}
             </IonButton>
           </IonToolbar>
         </IonFooter>

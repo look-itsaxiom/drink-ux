@@ -1,17 +1,20 @@
 import React from "react";
-import { IonList, IonItem, IonLabel, IonNote, IonIcon } from "@ionic/react";
-import { arrowBack } from "ionicons/icons";
-import { DrinkCategory, DrinkType } from "@drink-ux/shared";
+import { IonList, IonItem, IonLabel, IonNote, IonIcon, IonSpinner } from "@ionic/react";
+import { arrowBack, alertCircleOutline } from "ionicons/icons";
+import { DrinkCategory, DrinkType, TemperatureConstraint } from "@drink-ux/shared";
+import { useCatalogContext } from "../../context/CatalogContext";
+import { CatalogItem } from "../../services/catalogService";
 import "./TypeSelector.css";
 
 interface TypeSelectorProps {
   category: DrinkCategory;
+  categoryId?: string;
   onSelect: (drinkType: DrinkType) => void;
   onBack: () => void;
 }
 
-// Mock data - in production this would come from an API
-const getDrinkTypes = (category: DrinkCategory): DrinkType[] => {
+// Mock data - fallback when API is not available
+const getFallbackDrinkTypes = (category: DrinkCategory): DrinkType[] => {
   switch (category) {
     case DrinkCategory.COFFEE:
       return [
@@ -42,7 +45,7 @@ const getDrinkTypes = (category: DrinkCategory): DrinkType[] => {
     case DrinkCategory.BLENDED:
       return [
         { id: "smoothie", name: "Smoothie", category, basePrice: 5.5, isHot: false },
-        { id: "frappe", name: "Frappé", category, basePrice: 5.0, isHot: false },
+        { id: "frappe", name: "Frappe", category, basePrice: 5.0, isHot: false },
       ];
     case DrinkCategory.SPECIALTY:
       return [
@@ -54,8 +57,76 @@ const getDrinkTypes = (category: DrinkCategory): DrinkType[] => {
   }
 };
 
-const TypeSelector: React.FC<TypeSelectorProps> = ({ category, onSelect, onBack }) => {
-  const drinkTypes = getDrinkTypes(category);
+/**
+ * Convert temperature constraint to isHot value
+ */
+function getIsHotFromConstraint(constraint: TemperatureConstraint | string): boolean | undefined {
+  switch (constraint) {
+    case TemperatureConstraint.HOT_ONLY:
+    case 'HOT_ONLY':
+      return true;
+    case TemperatureConstraint.ICED_ONLY:
+    case 'ICED_ONLY':
+      return false;
+    case TemperatureConstraint.BOTH:
+    case 'BOTH':
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Transform API catalog item to DrinkType
+ */
+function transformToDrinkType(item: CatalogItem, category: DrinkCategory): DrinkType {
+  return {
+    id: item.id,
+    name: item.name,
+    category,
+    basePrice: item.basePrice,
+    isHot: getIsHotFromConstraint(item.temperatureConstraint),
+  };
+}
+
+const TypeSelector: React.FC<TypeSelectorProps> = ({ category, categoryId, onSelect, onBack }) => {
+  // Try to use catalog context, but handle the case where it's not available
+  let catalogData: { getItemsByCategory: (id: string) => CatalogItem[]; loading: boolean; error: string | null } = {
+    getItemsByCategory: () => [],
+    loading: false,
+    error: null,
+  };
+
+  try {
+    catalogData = useCatalogContext();
+  } catch {
+    // Context not available, use fallback
+  }
+
+  const { getItemsByCategory, loading, error } = catalogData;
+
+  // Get items from API if categoryId is provided
+  const apiItems = categoryId ? getItemsByCategory(categoryId) : [];
+  const drinkTypes = apiItems.length > 0
+    ? apiItems.map(item => transformToDrinkType(item, category))
+    : getFallbackDrinkTypes(category);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="section">
+        <div className="selector-header">
+          <IonIcon icon={arrowBack} className="back-icon" onClick={onBack} />
+          <h2 className="section-title">Loading drinks...</h2>
+        </div>
+        <div className="loading-container">
+          <IonSpinner name="crescent" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state (but still show fallback data)
+  const showError = error && apiItems.length === 0;
 
   return (
     <div className="section">
@@ -64,31 +135,44 @@ const TypeSelector: React.FC<TypeSelectorProps> = ({ category, onSelect, onBack 
         <h2 className="section-title">Choose your {category}</h2>
       </div>
 
-      <IonList className="type-list" lines="none">
-        {drinkTypes.map((drinkType, index) => (
-          <IonItem
-            key={drinkType.id}
-            button
-            onClick={() => onSelect(drinkType)}
-            className="type-item interactive-item interactive-item-large slide-in-up"
-            style={
-              {
-                "--animation-delay": `${index * 0.05}s`,
-              } as React.CSSProperties
-            }
-          >
-            <IonLabel>
-              <h2 className="type-name">{drinkType.name}</h2>
-              <IonNote className="type-price">${drinkType.basePrice.toFixed(2)}</IonNote>
-            </IonLabel>
-            {drinkType.isHot !== undefined && (
-              <IonNote slot="end" className="type-badge" color={drinkType.isHot ? "warning" : "primary"}>
-                {drinkType.isHot ? "Hot only" : "Iced only"}
-              </IonNote>
-            )}
-          </IonItem>
-        ))}
-      </IonList>
+      {showError && (
+        <div className="error-notice">
+          <IonIcon icon={alertCircleOutline} color="warning" />
+          <span>Using sample menu</span>
+        </div>
+      )}
+
+      {drinkTypes.length === 0 ? (
+        <div className="empty-container">
+          <p>No drinks available in this category</p>
+        </div>
+      ) : (
+        <IonList className="type-list" lines="none">
+          {drinkTypes.map((drinkType, index) => (
+            <IonItem
+              key={drinkType.id}
+              button
+              onClick={() => onSelect(drinkType)}
+              className="type-item interactive-item interactive-item-large slide-in-up"
+              style={
+                {
+                  "--animation-delay": `${index * 0.05}s`,
+                } as React.CSSProperties
+              }
+            >
+              <IonLabel>
+                <h2 className="type-name">{drinkType.name}</h2>
+                <IonNote className="type-price">${drinkType.basePrice.toFixed(2)}</IonNote>
+              </IonLabel>
+              {drinkType.isHot !== undefined && (
+                <IonNote slot="end" className="type-badge" color={drinkType.isHot ? "warning" : "primary"}>
+                  {drinkType.isHot ? "Hot only" : "Iced only"}
+                </IonNote>
+              )}
+            </IonItem>
+          ))}
+        </IonList>
+      )}
     </div>
   );
 };
