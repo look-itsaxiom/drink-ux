@@ -1,11 +1,118 @@
-.cart-total {
-  padding: 24px;
-  text-align: right;
-  font-size: 1.5rem;
-  font-weight: bold;
+.cart-page {
+  --background: var(--ion-background-color, #f5f5f5);
 }
 
+/* Empty Cart */
+.empty-cart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  padding: 32px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: var(--ion-color-medium);
+  margin-bottom: 16px;
+}
+
+.empty-cart h2 {
+  margin: 0 0 8px;
+  color: var(--theme-text, var(--ion-text-color));
+}
+
+.empty-cart p {
+  margin: 0 0 24px;
+  color: var(--ion-color-medium);
+}
+
+/* Cart List */
+.cart-list {
+  padding: 8px;
+}
+
+.cart-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+}
+
+.cart-item .item-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cart-item .quantity-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  vertical-align: middle;
+}
+
+.cart-item .item-description {
+  font-size: 0.85rem;
+  color: var(--ion-color-medium);
+  margin: 0;
+}
+
+.item-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quantity-controls .quantity {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.item-price {
+  font-weight: 600;
+  color: var(--theme-secondary, var(--ion-color-primary));
+  min-width: 60px;
+  text-align: right;
+}
+
+/* Cart Summary */
+.cart-summary {
+  padding: 24px 16px;
+  margin-top: 16px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.total-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--theme-secondary, var(--ion-color-primary));
+}
+
+/* Footer */
 ion-footer ion-button {
   margin: 8px;
-  --background: var(--theme-secondary);
+  --background: var(--theme-secondary, var(--ion-color-primary));
+  font-weight: 600;
 }

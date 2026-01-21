@@ -1,4 +1,8 @@
-import { useState } from 'react';
+/**
+ * Cart Page
+ * Displays cart items and allows checkout navigation
+ */
+
 import {
   IonContent,
   IonPage,
@@ -9,25 +13,19 @@ import {
   IonFooter,
   IonToolbar,
   IonIcon,
-  IonSpinner,
-  IonText,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  IonInput,
-  IonAlert,
   IonBadge,
 } from '@ionic/react';
-import { trashOutline, addOutline, removeOutline, checkmarkCircleOutline } from 'ionicons/icons';
+import { trashOutline, addOutline, removeOutline, cartOutline } from 'ionicons/icons';
+import { useHistory } from 'react-router';
 import AppHeader from '../components/AppHeader';
 import { useCart, CartItem } from '../hooks/useCart';
 import './Cart.css';
 
 const Cart: React.FC = () => {
-  const [customerName, setCustomerName] = useState('');
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  const history = useHistory();
 
   // Try to use cart context, handle gracefully if not available
   let cartData: {
@@ -37,9 +35,6 @@ const Cart: React.FC = () => {
     removeItem: (id: string) => void;
     updateQuantity: (id: string, qty: number) => void;
     clearCart: () => void;
-    submitOrder: (info: { customerName: string; customerEmail?: string }) => Promise<{ id: string }>;
-    submitting: boolean;
-    orderError: string | null;
   } = {
     items: [],
     total: 0,
@@ -47,41 +42,29 @@ const Cart: React.FC = () => {
     removeItem: () => {},
     updateQuantity: () => {},
     clearCart: () => {},
-    submitOrder: async () => ({ id: '' }),
-    submitting: false,
-    orderError: null,
   };
 
   let cartAvailable = false;
 
   try {
-    cartData = useCart();
+    const cart = useCart();
+    cartData = {
+      items: cart.items,
+      total: cart.total,
+      itemCount: cart.itemCount,
+      removeItem: cart.removeItem,
+      updateQuantity: cart.updateQuantity,
+      clearCart: cart.clearCart,
+    };
     cartAvailable = true;
   } catch {
     // Cart context not available
   }
 
-  const { items, total, removeItem, updateQuantity, submitOrder, submitting, orderError } = cartData;
+  const { items, total, removeItem, updateQuantity } = cartData;
 
-  const handleSubmitOrder = async () => {
-    if (!customerName.trim()) {
-      return; // Form validation should handle this
-    }
-
-    try {
-      const order = await submitOrder({
-        customerName: customerName.trim(),
-        customerEmail: customerEmail.trim() || undefined,
-      });
-
-      setLastOrderId(order.id);
-      setShowSuccessAlert(true);
-      setCustomerName('');
-      setCustomerEmail('');
-    } catch (err) {
-      // Error is handled by the hook
-      console.error('Order submission failed:', err);
-    }
+  const handleCheckout = () => {
+    history.push('/checkout');
   };
 
   const formatSize = (size: string): string => {
@@ -123,7 +106,7 @@ const Cart: React.FC = () => {
       <IonContent fullscreen className="cart-page">
         {displayItems.length === 0 ? (
           <div className="empty-cart">
-            <IonIcon icon={trashOutline} className="empty-icon" />
+            <IonIcon icon={cartOutline} className="empty-icon" />
             <h2>Your cart is empty</h2>
             <p>Add some drinks to get started!</p>
             <IonButton routerLink="/drink/new" expand="block">
@@ -188,38 +171,6 @@ const Cart: React.FC = () => {
                 <span className="total-amount">${displayTotal.toFixed(2)}</span>
               </div>
             </div>
-
-            {cartAvailable && (
-              <div className="customer-info">
-                <h3>Customer Information</h3>
-                <IonItem>
-                  <IonInput
-                    label="Name"
-                    labelPlacement="floating"
-                    placeholder="Enter your name"
-                    value={customerName}
-                    onIonChange={(e) => setCustomerName(e.detail.value || '')}
-                    required
-                  />
-                </IonItem>
-                <IonItem>
-                  <IonInput
-                    label="Email (optional)"
-                    labelPlacement="floating"
-                    placeholder="Enter your email"
-                    type="email"
-                    value={customerEmail}
-                    onIonChange={(e) => setCustomerEmail(e.detail.value || '')}
-                  />
-                </IonItem>
-              </div>
-            )}
-
-            {orderError && (
-              <div className="error-message">
-                <IonText color="danger">{orderError}</IonText>
-              </div>
-            )}
           </>
         )}
       </IonContent>
@@ -229,37 +180,14 @@ const Cart: React.FC = () => {
           <IonToolbar>
             <IonButton
               expand="block"
-              onClick={handleSubmitOrder}
-              disabled={submitting || !customerName.trim() || !cartAvailable}
+              onClick={handleCheckout}
+              disabled={!cartAvailable}
             >
-              {submitting ? (
-                <>
-                  <IonSpinner name="crescent" />
-                  <span style={{ marginLeft: '8px' }}>Submitting...</span>
-                </>
-              ) : (
-                'Send to POS'
-              )}
+              Proceed to Checkout
             </IonButton>
           </IonToolbar>
         </IonFooter>
       )}
-
-      <IonAlert
-        isOpen={showSuccessAlert}
-        onDidDismiss={() => setShowSuccessAlert(false)}
-        header="Order Submitted!"
-        message={`Your order #${lastOrderId?.slice(-6) || ''} has been sent to the barista.`}
-        buttons={[
-          {
-            text: 'OK',
-            handler: () => {
-              // Could navigate to order status page
-            },
-          },
-        ]}
-        cssClass="success-alert"
-      />
     </IonPage>
   );
 };

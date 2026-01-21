@@ -1,0 +1,308 @@
+.order-confirmation-page {
+  --background: var(--ion-background-color, #f5f5f5);
+}
+
+.confirmation-container {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  color: var(--ion-color-medium);
+}
+
+.loading-container p {
+  margin-top: 16px;
+}
+
+/* Error State */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  text-align: center;
+  padding: 32px;
+}
+
+.error-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.error-container h2 {
+  margin: 0 0 8px;
+  color: var(--ion-color-danger);
+}
+
+.error-container p {
+  color: var(--ion-color-medium);
+  margin-bottom: 24px;
+}
+
+/* Success Banner */
+.success-banner {
+  text-align: center;
+  padding: 24px 16px;
+  background: linear-gradient(135deg, var(--theme-secondary, var(--ion-color-success)) 0%, var(--theme-primary, var(--ion-color-success-shade)) 100%);
+  border-radius: 16px;
+  margin-bottom: 16px;
+  color: white;
+}
+
+.success-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.success-banner h1 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.success-banner p {
+  margin: 0;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+/* Pickup Code Card */
+.pickup-card {
+  text-align: center;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pickup-label {
+  font-size: 0.9rem;
+  color: var(--ion-color-medium);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pickup-code {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--theme-secondary, var(--ion-color-primary));
+  cursor: pointer;
+  user-select: all;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.copy-button {
+  font-size: 0.85rem;
+}
+
+/* Status Card */
+.status-card {
+  margin-bottom: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.status-card ion-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Current Status */
+.current-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: var(--ion-color-light);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.status-icon {
+  font-size: 40px;
+  flex-shrink: 0;
+}
+
+.status-details h3 {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.estimated-time {
+  margin: 0;
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+}
+
+.ready-message {
+  margin: 0;
+  color: var(--ion-color-success);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Progress Steps */
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  padding: 0 8px;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+}
+
+.step-indicator {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ion-color-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.step-indicator ion-icon {
+  font-size: 20px;
+  color: var(--ion-color-medium);
+  transition: color 0.3s ease;
+}
+
+.progress-step.active .step-indicator {
+  background: var(--theme-secondary, var(--ion-color-primary));
+}
+
+.progress-step.active .step-indicator ion-icon {
+  color: white;
+}
+
+.progress-step.current .step-indicator {
+  box-shadow: 0 0 0 4px rgba(var(--ion-color-primary-rgb), 0.3);
+}
+
+.step-label {
+  font-size: 0.75rem;
+  color: var(--ion-color-medium);
+  text-align: center;
+}
+
+.progress-step.active .step-label {
+  color: var(--theme-text, var(--ion-text-color));
+  font-weight: 600;
+}
+
+.step-connector {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--ion-color-light-shade);
+  z-index: 0;
+}
+
+.step-connector.active {
+  background: var(--theme-secondary, var(--ion-color-primary));
+}
+
+/* Error Status */
+.error-status {
+  text-align: center;
+  padding: 16px;
+}
+
+/* Details Card */
+.details-card {
+  margin-bottom: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.details-card ion-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.item-list {
+  padding: 0;
+  margin: 0;
+}
+
+.order-item {
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-end: 0;
+}
+
+.order-item .item-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.order-item .quantity-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+}
+
+.order-item .item-description {
+  font-size: 0.85rem;
+  color: var(--ion-color-medium);
+  margin: 0;
+}
+
+.order-item .item-price {
+  font-weight: 600;
+}
+
+/* Total Section */
+.total-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ion-color-light-shade);
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.total-amount {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--theme-secondary, var(--ion-color-primary));
+}
+
+/* Refresh Section */
+.refresh-section {
+  text-align: center;
+  padding: 16px 0;
+}

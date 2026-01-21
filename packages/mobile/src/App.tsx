@@ -4,6 +4,8 @@ import { IonReactRouter } from '@ionic/react-router';
 import Home from './pages/Home';
 import DrinkBuilder from './pages/DrinkBuilder';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import OrderConfirmation from './pages/OrderConfirmation';
 import { ThemeProvider } from './theme';
 import { AppProvider } from './context';
 
@@ -37,6 +39,8 @@ const App: React.FC = () => (
             <Route path="/home" component={Home} exact />
             <Route path="/drink/:id" component={DrinkBuilder} exact />
             <Route path="/cart" component={Cart} exact />
+            <Route path="/checkout" component={Checkout} exact />
+            <Route path="/order/:orderId" component={OrderConfirmation} exact />
             <Route path="/" exact>
               <Redirect to="/home" />
             </Route>

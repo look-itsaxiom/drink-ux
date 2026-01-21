@@ -64,6 +64,10 @@ export interface OrderItemResponse {
 export interface OrderResponse {
   id: string;
   businessId: string;
+  /** Order number for display (e.g., ORD-001234) */
+  orderNumber?: string;
+  /** Pickup code for customer (e.g., A7X) */
+  pickupCode?: string;
   posOrderId?: string;
   status: OrderStatus;
   customerName: string;
@@ -71,6 +75,8 @@ export interface OrderResponse {
   customerPhone?: string;
   items: OrderItemResponse[];
   totalAmount: number;
+  /** Estimated time when order will be ready */
+  estimatedReadyAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -95,6 +101,24 @@ export async function submitOrder(order: OrderInput): Promise<OrderResponse> {
  */
 export async function getOrder(orderId: string): Promise<OrderResponse> {
   return apiClient.get<OrderResponse>(`/api/orders/${orderId}`);
+}
+
+/**
+ * Get an order by pickup code
+ *
+ * @param businessId - The business ID
+ * @param pickupCode - The pickup code (case-insensitive)
+ * @returns The order response
+ * @throws ApiClientError if order not found
+ */
+export async function getOrderByPickupCode(
+  businessId: string,
+  pickupCode: string
+): Promise<OrderResponse> {
+  const normalizedCode = pickupCode.toUpperCase();
+  return apiClient.get<OrderResponse>(
+    `/api/orders/pickup/${normalizedCode}?businessId=${businessId}`
+  );
 }
 
 /**
@@ -179,10 +203,53 @@ export function formatOrderStatus(status: OrderStatus): string {
   }
 }
 
+/**
+ * Check if an order status is a terminal status (no more updates expected)
+ *
+ * @param status - The order status
+ * @returns True if the status is terminal
+ */
+export function isTerminalStatus(status: OrderStatus): boolean {
+  return [
+    OrderStatus.COMPLETED,
+    OrderStatus.CANCELLED,
+    OrderStatus.FAILED,
+  ].includes(status);
+}
+
+/**
+ * Get the status step number (for progress display)
+ *
+ * @param status - The order status
+ * @returns Step number (0-4)
+ */
+export function getStatusStep(status: OrderStatus): number {
+  switch (status) {
+    case OrderStatus.PENDING:
+      return 0;
+    case OrderStatus.CONFIRMED:
+      return 1;
+    case OrderStatus.PREPARING:
+      return 2;
+    case OrderStatus.READY:
+      return 3;
+    case OrderStatus.COMPLETED:
+      return 4;
+    case OrderStatus.CANCELLED:
+    case OrderStatus.FAILED:
+      return -1;
+    default:
+      return 0;
+  }
+}
+
 export default {
   submitOrder,
   getOrder,
+  getOrderByPickupCode,
   calculateOrderTotal,
   formatOrderItemDescription,
   formatOrderStatus,
+  isTerminalStatus,
+  getStatusStep,
 };
