@@ -1,4 +1,4 @@
-import { OrderStatus } from '@drink-ux/shared';
+import { OrderStatus } from '../../../generated/prisma';
 
 /**
  * Credentials needed to authenticate with a POS system

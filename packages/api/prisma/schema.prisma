@@ -264,8 +264,13 @@ model Order {
   id            String      @id @default(cuid())
   businessId    String
 
+  // Order identifiers
+  orderNumber   String      // Human-readable (e.g., "A42")
+  pickupCode    String      // Short code for pickup (e.g., "7X2K")
+
   // POS reference (set after submission)
   posOrderId    String?
+  posStatus     String?     // Raw status from POS
 
   // Customer info (guest checkout)
   customerName  String
@@ -275,24 +280,55 @@ model Order {
   // Order state
   status        OrderStatus @default(PENDING)
 
+  // Pricing
+  subtotal      Float
+  tax           Float
+  total         Float
+
+  // Notes
+  notes         String?
+
+  // Timestamps
+  estimatedReadyAt DateTime?
+  completedAt      DateTime?
+  cancelledAt      DateTime?
+  cancelReason     String?
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
   // Relations
   business      Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   items         OrderItem[]
+
+  @@index([businessId, status])
+  @@index([businessId, pickupCode])
+  @@unique([businessId, orderNumber])
 }
 
 model OrderItem {
   id          String  @id @default(cuid())
   orderId     String
 
+  // Reference to base item
+  baseId      String
+
   // Snapshot of what was ordered (denormalized for history)
   name        String  // e.g., "Vanilla Oat Latte"
-  description String? // e.g., "Medium, Oat Milk, Vanilla, Iced"
   quantity    Int     @default(1)
+  size        String  // SMALL, MEDIUM, LARGE
+  temperature String  // HOT, ICED
+
+  // Pricing
   unitPrice   Float
   totalPrice  Float
+
+  // Modifiers as JSON array: [{ id, name, price }]
+  modifiers   String  @default("[]")  // JSON stored as string for SQLite compatibility
+
+  notes       String?
+
+  createdAt   DateTime @default(now())
 
   // Relations
   order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)

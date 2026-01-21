@@ -156,18 +156,37 @@ describe('MockPOSAdapter', () => {
     });
   });
 
-  describe('Stubbed methods', () => {
-    it('createOrder throws not implemented', async () => {
-      await expect(adapter.createOrder({
+  describe('Order methods', () => {
+    it('createOrder returns mock POS order ID', async () => {
+      const posOrderId = await adapter.createOrder({
         items: [],
         customerName: 'Test',
-      })).rejects.toThrow('Not yet implemented');
+      });
+      expect(posOrderId).toBe('mock-pos-order-id');
     });
 
-    it('getOrderStatus throws not implemented', async () => {
-      await expect(adapter.getOrderStatus('order-123')).rejects.toThrow('Not yet implemented');
+    it('createOrder can be configured with setCreateOrderResponse', async () => {
+      adapter.setCreateOrderResponse('custom-order-id');
+      const posOrderId = await adapter.createOrder({
+        items: [],
+        customerName: 'Test',
+      });
+      expect(posOrderId).toBe('custom-order-id');
     });
 
+    it('getOrderStatus returns mock status', async () => {
+      const status = await adapter.getOrderStatus('order-123');
+      expect(status).toBe('CONFIRMED');
+    });
+
+    it('getOrderStatus can be configured with setGetOrderStatusResponse', async () => {
+      adapter.setGetOrderStatusResponse('PREPARING');
+      const status = await adapter.getOrderStatus('order-123');
+      expect(status).toBe('PREPARING');
+    });
+  });
+
+  describe('Stubbed methods', () => {
     it('getPaymentLink throws not implemented', async () => {
       await expect(adapter.getPaymentLink('order-123')).rejects.toThrow('Not yet implemented');
     });

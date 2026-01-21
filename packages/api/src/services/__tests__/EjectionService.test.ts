@@ -121,15 +121,24 @@ describe('EjectionService', () => {
     return prisma.order.create({
       data: {
         businessId,
+        orderNumber: `T${Date.now()}`,
+        pickupCode: `${Date.now()}`.slice(-4),
         customerName: 'Test Customer',
         customerEmail: 'customer@test.com',
         status,
+        subtotal: 4.50,
+        tax: 0.37,
+        total: 4.87,
         items: {
           create: {
+            baseId: 'test-base-id',
             name: 'Latte',
             quantity: 1,
+            size: 'MEDIUM',
+            temperature: 'HOT',
             unitPrice: 4.50,
             totalPrice: 4.50,
+            modifiers: '[]',
           },
         },
       },

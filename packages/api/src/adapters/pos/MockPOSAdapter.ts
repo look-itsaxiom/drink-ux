@@ -1,4 +1,4 @@
-import { OrderStatus } from '@drink-ux/shared';
+import { OrderStatus } from '../../../generated/prisma';
 import {
   POSAdapter,
   POSCredentials,
@@ -43,6 +43,8 @@ export class MockPOSAdapter implements POSAdapter {
 
   private pushItemResponse: string = 'mock-pos-item-id';
   private pushModifierResponse: string = 'mock-pos-modifier-id';
+  private createOrderResponse: string = 'mock-pos-order-id';
+  private getOrderStatusResponse: OrderStatus = 'CONFIRMED';
 
   // Configuration methods
   setTokenResponse(tokens: TokenResult): void {
@@ -59,6 +61,14 @@ export class MockPOSAdapter implements POSAdapter {
 
   setPushModifierResponse(posModifierId: string): void {
     this.pushModifierResponse = posModifierId;
+  }
+
+  setCreateOrderResponse(posOrderId: string): void {
+    this.createOrderResponse = posOrderId;
+  }
+
+  setGetOrderStatusResponse(status: OrderStatus): void {
+    this.getOrderStatusResponse = status;
   }
 
   setError(method: MethodName, error: Error): void {
@@ -146,17 +156,17 @@ export class MockPOSAdapter implements POSAdapter {
     this.checkError('updateItem');
   }
 
-  // Stubbed methods - not yet implemented
+  // Order methods
   async createOrder(order: OrderSubmission): Promise<string> {
     this.trackCall('createOrder', [order]);
     this.checkError('createOrder');
-    throw new Error('Not yet implemented - see drink-ux-frd');
+    return this.createOrderResponse;
   }
 
   async getOrderStatus(posOrderId: string): Promise<OrderStatus> {
     this.trackCall('getOrderStatus', [posOrderId]);
     this.checkError('getOrderStatus');
-    throw new Error('Not yet implemented - see drink-ux-frd');
+    return this.getOrderStatusResponse;
   }
 
   async getPaymentLink(orderId: string): Promise<string> {

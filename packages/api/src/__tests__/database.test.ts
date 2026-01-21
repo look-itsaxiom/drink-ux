@@ -389,25 +389,36 @@ describe("Database Schema", () => {
       const order = await prisma.order.create({
         data: {
           businessId,
+          orderNumber: "A1",
+          pickupCode: "TEST",
           customerName: "John Doe",
           customerEmail: "john@example.com",
           customerPhone: "555-1234",
           status: OrderStatus.PENDING,
+          subtotal: 12.50,
+          tax: 1.03,
+          total: 13.53,
           items: {
             create: [
               {
+                baseId: "test-base-id-1",
                 name: "Vanilla Oat Latte",
-                description: "Medium, Oat Milk, Vanilla",
                 quantity: 1,
+                size: "MEDIUM",
+                temperature: "HOT",
                 unitPrice: 5.5,
                 totalPrice: 5.5,
+                modifiers: "[]",
               },
               {
+                baseId: "test-base-id-2",
                 name: "Espresso",
-                description: "Double shot",
                 quantity: 2,
+                size: "SMALL",
+                temperature: "HOT",
                 unitPrice: 3.5,
                 totalPrice: 7.0,
+                modifiers: "[]",
               },
             ],
           },
