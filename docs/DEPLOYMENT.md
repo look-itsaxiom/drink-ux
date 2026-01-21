@@ -5,17 +5,18 @@ This document provides comprehensive deployment instructions for the Drink-UX pl
 ## Table of Contents
 
 1. [Deployment Overview](#deployment-overview)
-2. [Environment Configuration](#environment-configuration)
-3. [Database Setup](#database-setup)
-4. [Mobile PWA Deployment](#mobile-pwa-deployment)
-5. [API Deployment](#api-deployment)
-6. [Admin Portal Deployment](#admin-portal-deployment)
-7. [Multi-Tenant Configuration](#multi-tenant-configuration)
-8. [Square Integration Setup](#square-integration-setup)
-9. [Monitoring and Operations](#monitoring-and-operations)
-10. [CI/CD Pipeline](#cicd-pipeline)
-11. [Security Checklist](#security-checklist)
-12. [Rollback Procedures](#rollback-procedures)
+2. [Docker Deployment](#docker-deployment)
+3. [Environment Configuration](#environment-configuration)
+4. [Database Setup](#database-setup)
+5. [Mobile PWA Deployment](#mobile-pwa-deployment)
+6. [API Deployment](#api-deployment)
+7. [Admin Portal Deployment](#admin-portal-deployment)
+8. [Multi-Tenant Configuration](#multi-tenant-configuration)
+9. [Square Integration Setup](#square-integration-setup)
+10. [Monitoring and Operations](#monitoring-and-operations)
+11. [CI/CD Pipeline](#cicd-pipeline)
+12. [Security Checklist](#security-checklist)
+13. [Rollback Procedures](#rollback-procedures)
 
 ---
 
@@ -64,6 +65,131 @@ This document provides comprehensive deployment instructions for the Drink-UX pl
 | Development | Local development | SQLite | Square Sandbox |
 | Staging | Pre-production testing | PostgreSQL | Square Sandbox |
 | Production | Live system | PostgreSQL | Square Production |
+
+---
+
+## Docker Deployment
+
+The entire Drink-UX ecosystem can be containerized for consistent testing and deployment.
+
+### Quick Start with Docker
+
+```bash
+# Production-like environment
+docker-compose up --build
+
+# Development with hot reload
+docker-compose -f docker-compose.dev.yml up
+
+# Run tests in containers
+docker-compose -f docker-compose.test.yml up --build
+```
+
+### Available Docker Compose Files
+
+| File | Purpose | Use Case |
+|------|---------|----------|
+| `docker-compose.yml` | Production build | Staging, production deployment |
+| `docker-compose.dev.yml` | Development with hot reload | Local development |
+| `docker-compose.test.yml` | Test environment | CI/CD, automated testing |
+
+### Container Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Docker Network                                │
+│                                                                      │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐ │
+│  │   mobile    │  │    api      │  │   admin     │  │     db     │ │
+│  │  (nginx)    │  │  (node.js)  │  │  (nginx)    │  │ (postgres) │ │
+│  │  :3000      │  │  :3001      │  │  :3002      │  │  :5432     │ │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘ │
+│         │                │                │                │        │
+│         └────────────────┴────────────────┴────────────────┘        │
+│                           Internal Network                           │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Service Ports
+
+| Service | Internal Port | External Port | Description |
+|---------|---------------|---------------|-------------|
+| mobile | 3000 | 3000 | Customer-facing PWA |
+| api | 3001 | 3001 | REST API server |
+| admin | 3002 | 3002 | Admin dashboard |
+| db | 5432 | 5432 | PostgreSQL database |
+
+### Environment Variables
+
+Pass Square credentials via environment:
+
+```bash
+# Create .env file at project root
+SQUARE_APPLICATION_ID=your_app_id
+SQUARE_ACCESS_TOKEN=your_access_token
+SQUARE_WEBHOOK_SIGNATURE_KEY=your_webhook_key
+SESSION_SECRET=your-secure-session-secret-min-32-chars
+ENCRYPTION_KEY=your-secure-encryption-key-32chars
+```
+
+Then run:
+```bash
+docker-compose --env-file .env up --build
+```
+
+### Building Individual Images
+
+```bash
+# Build API image
+docker build -f packages/api/Dockerfile -t drink-ux-api .
+
+# Build Mobile image
+docker build -f packages/mobile/Dockerfile -t drink-ux-mobile .
+
+# Build Admin image
+docker build -f packages/admin/Dockerfile -t drink-ux-admin .
+```
+
+### Running Database Migrations in Docker
+
+```bash
+# Run migrations on the API container
+docker-compose exec api npx prisma migrate deploy
+
+# Open Prisma Studio (for debugging)
+docker-compose exec api npx prisma studio
+```
+
+### Health Checks
+
+All containers include health checks:
+
+```bash
+# Check container health
+docker-compose ps
+
+# View health check logs
+docker inspect --format='{{json .State.Health}}' drink-ux-api
+```
+
+### Volumes
+
+| Volume | Purpose |
+|--------|---------|
+| `postgres_data` | Persistent database storage |
+
+### Cleaning Up
+
+```bash
+# Stop and remove containers
+docker-compose down
+
+# Remove containers and volumes (WARNING: deletes database)
+docker-compose down -v
+
+# Remove all images
+docker-compose down --rmi all
+```
 
 ---
 

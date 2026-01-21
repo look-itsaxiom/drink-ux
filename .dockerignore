@@ -1,0 +1,52 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs (will be created in container)
+**/dist
+**/build
+
+# Development files
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Documentation (not needed in container)
+docs
+*.md
+!README.md
+
+# Test files (not needed in production)
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+coverage
+.nyc_output
+
+# Environment files (use docker-compose env instead)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+*.swp
+*.swo
+
+# Prisma
+packages/api/prisma/*.db
+packages/api/prisma/*.db-journal
+
+# Misc
+.beads
+*.tgz
