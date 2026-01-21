@@ -57,6 +57,14 @@ enum OrderStatus {
   FAILED      // POS rejected or payment failed
 }
 
+enum PaymentStatus {
+  PENDING     // Payment not yet processed
+  PROCESSING  // Payment being processed
+  COMPLETED   // Payment successful
+  FAILED      // Payment failed
+  REFUNDED    // Payment refunded
+}
+
 enum SyncStatus {
   IDLE        // No sync in progress
   SYNCING     // Sync is currently running
@@ -284,6 +292,13 @@ model Order {
   subtotal      Float
   tax           Float
   total         Float
+
+  // Payment info
+  paymentId       String?         // Square payment ID
+  paymentStatus   PaymentStatus   @default(PENDING)
+  paymentAmount   Float?          // Amount charged (may differ from total in future)
+  paymentMethod   String?         // "card", "cash", etc.
+  paidAt          DateTime?       // When payment was completed
 
   // Notes
   notes         String?

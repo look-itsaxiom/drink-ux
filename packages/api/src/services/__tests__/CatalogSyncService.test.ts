@@ -33,10 +33,17 @@ describe('CatalogSyncService', () => {
   let mockAdapter: MockPOSAdapter;
   const businessId = 'test-business-123';
 
+  // Short delays for testing
+  const testRetryConfig = {
+    maxRetries: 3,
+    baseDelay: 10,
+    maxDelay: 50,
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockAdapter = new MockPOSAdapter();
-    service = new CatalogSyncService(mockPrisma, mockAdapter);
+    service = new CatalogSyncService(mockPrisma, mockAdapter, testRetryConfig);
 
     // Default mock responses
     mockPrisma.business.findUnique = jest.fn().mockResolvedValue({
@@ -523,6 +530,187 @@ describe('CatalogSyncService', () => {
       const status = await service.getSyncStatus(businessId);
 
       expect(status).toBeNull();
+    });
+  });
+
+  // Retry logic
+  describe('retry logic', () => {
+    it('retries on transient POS errors', async () => {
+      mockPrisma.base.findMany = jest.fn().mockResolvedValue([
+        { id: 'base-1', name: 'Item', basePrice: 3.0, posItemId: null, available: true, updatedAt: new Date() },
+      ]);
+      mockPrisma.base.update = jest.fn().mockResolvedValue({});
+
+      // First call fails, second succeeds
+      let callCount = 0;
+      jest.spyOn(mockAdapter, 'pushItem').mockImplementation(async () => {
+        callCount++;
+        if (callCount === 1) {
+          const error = new Error('POS temporarily unavailable');
+          (error as any).retryable = true;
+          throw error;
+        }
+        return 'pos-item-123';
+      });
+
+      const result = await service.sync(businessId);
+
+      expect(result.success).toBe(true);
+      expect(callCount).toBe(2);
+    });
+
+    it('respects maxRetries limit', async () => {
+      mockPrisma.base.findMany = jest.fn().mockResolvedValue([
+        { id: 'base-1', name: 'Item', basePrice: 3.0, posItemId: null, available: true, updatedAt: new Date() },
+      ]);
+
+      let callCount = 0;
+      jest.spyOn(mockAdapter, 'pushItem').mockImplementation(async () => {
+        callCount++;
+        const error = new Error('POS always failing');
+        (error as any).retryable = true;
+        throw error;
+      });
+
+      const result = await service.sync(businessId);
+
+      expect(result.success).toBe(false);
+      // Default maxRetries is 3, plus initial attempt = 4 total calls
+      expect(callCount).toBe(4);
+    });
+
+    it('does not retry on non-retryable errors', async () => {
+      mockPrisma.base.findMany = jest.fn().mockResolvedValue([
+        { id: 'base-1', name: 'Item', basePrice: 3.0, posItemId: null, available: true, updatedAt: new Date() },
+      ]);
+
+      let callCount = 0;
+      jest.spyOn(mockAdapter, 'pushItem').mockImplementation(async () => {
+        callCount++;
+        throw new Error('Invalid item data'); // Non-retryable
+      });
+
+      const result = await service.sync(businessId);
+
+      expect(result.success).toBe(false);
+      expect(callCount).toBe(1); // No retries
+    });
+
+    it('retries on rate limit errors', async () => {
+      mockPrisma.base.findMany = jest.fn().mockResolvedValue([
+        { id: 'base-1', name: 'Item', basePrice: 3.0, posItemId: null, available: true, updatedAt: new Date() },
+      ]);
+      mockPrisma.base.update = jest.fn().mockResolvedValue({});
+
+      let callCount = 0;
+      jest.spyOn(mockAdapter, 'pushItem').mockImplementation(async () => {
+        callCount++;
+        if (callCount === 1) {
+          const error = new Error('Rate limit exceeded');
+          (error as any).code = 'RATE_LIMIT_EXCEEDED';
+          (error as any).retryable = true;
+          throw error;
+        }
+        return 'pos-item-123';
+      });
+
+      const result = await service.sync(businessId);
+
+      expect(result.success).toBe(true);
+      expect(callCount).toBe(2);
+    });
+
+    it('retries on network timeout', async () => {
+      mockPrisma.base.findMany = jest.fn().mockResolvedValue([
+        { id: 'base-1', name: 'Item', basePrice: 3.0, posItemId: null, available: true, updatedAt: new Date() },
+      ]);
+      mockPrisma.base.update = jest.fn().mockResolvedValue({});
+
+      let callCount = 0;
+      jest.spyOn(mockAdapter, 'pushItem').mockImplementation(async () => {
+        callCount++;
+        if (callCount === 1) {
+          const error = new Error('Network timeout');
+          (error as any).code = 'TIMEOUT';
+          (error as any).retryable = true;
+          throw error;
+        }
+        return 'pos-item-123';
+      });
+
+      const result = await service.sync(businessId);
+
+      expect(result.success).toBe(true);
+      expect(callCount).toBe(2);
+    });
+
+    it('logs retry attempts', async () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      mockPrisma.base.findMany = jest.fn().mockResolvedValue([
+        { id: 'base-1', name: 'Item', basePrice: 3.0, posItemId: null, available: true, updatedAt: new Date() },
+      ]);
+      mockPrisma.base.update = jest.fn().mockResolvedValue({});
+
+      let callCount = 0;
+      jest.spyOn(mockAdapter, 'pushItem').mockImplementation(async () => {
+        callCount++;
+        if (callCount === 1) {
+          const error = new Error('Temporary failure');
+          (error as any).retryable = true;
+          throw error;
+        }
+        return 'pos-item-123';
+      });
+
+      await service.sync(businessId);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Retry attempt'),
+        expect.anything()
+      );
+      consoleSpy.mockRestore();
+    });
+  });
+
+  // Auth expiry handling
+  describe('auth expiry handling', () => {
+    it('detects expired POS auth and returns specific error', async () => {
+      mockPrisma.base.findMany = jest.fn().mockResolvedValue([
+        { id: 'base-1', name: 'Item', basePrice: 3.0, posItemId: null, available: true, updatedAt: new Date() },
+      ]);
+
+      jest.spyOn(mockAdapter, 'pushItem').mockImplementation(async () => {
+        const error = new Error('Access token expired');
+        (error as any).code = 'AUTH_EXPIRED';
+        throw error;
+      });
+
+      const result = await service.sync(businessId);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('expired');
+    });
+
+    it('records auth expiry error for admin notification', async () => {
+      mockPrisma.base.findMany = jest.fn().mockResolvedValue([
+        { id: 'base-1', name: 'Item', basePrice: 3.0, posItemId: null, available: true, updatedAt: new Date() },
+      ]);
+
+      jest.spyOn(mockAdapter, 'pushItem').mockImplementation(async () => {
+        const error = new Error('OAuth token expired');
+        (error as any).code = 'AUTH_EXPIRED';
+        throw error;
+      });
+
+      await service.sync(businessId);
+
+      expect(mockPrisma.business.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            lastSyncError: expect.stringContaining('expired'),
+          }),
+        })
+      );
     });
   });
 

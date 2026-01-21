@@ -1,0 +1,133 @@
+/**
+ * OfflineIndicator Component Styles
+ */
+
+.offline-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--ion-color-warning);
+  color: var(--ion-color-warning-contrast);
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.offline-indicator-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.offline-indicator-icon {
+  font-size: 1.25rem;
+}
+
+.offline-indicator-message {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.offline-indicator-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 16px;
+}
+
+.offline-indicator-retry {
+  --color: var(--ion-color-warning-contrast);
+  --padding-start: 8px;
+  --padding-end: 8px;
+}
+
+.offline-indicator-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: inherit;
+  padding: 4px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.offline-indicator-dismiss:hover {
+  opacity: 1;
+}
+
+.offline-indicator-dismiss ion-icon {
+  font-size: 1.25rem;
+}
+
+/* Banner variant (default) - top of screen */
+.offline-indicator-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Toast variant - floating at bottom */
+.offline-indicator-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  min-width: 280px;
+  max-width: 90%;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 12px 16px;
+}
+
+/* Badge variant - small compact indicator */
+.offline-indicator-badge {
+  display: inline-flex;
+  position: relative;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+}
+
+.offline-indicator-badge .offline-indicator-icon {
+  font-size: 1rem;
+}
+
+.offline-indicator-badge .offline-indicator-actions {
+  margin-left: 8px;
+}
+
+.offline-indicator-badge .offline-indicator-retry {
+  --padding-start: 4px;
+  --padding-end: 4px;
+  font-size: 0.75rem;
+}
+
+.offline-indicator-badge .offline-indicator-dismiss {
+  padding: 2px;
+}
+
+.offline-indicator-badge .offline-indicator-dismiss ion-icon {
+  font-size: 1rem;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .offline-indicator {
+    background: var(--ion-color-warning-shade);
+  }
+}
+
+/* Safe area support for notched devices */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .offline-indicator-banner {
+    padding-top: calc(8px + env(safe-area-inset-top));
+  }
+}

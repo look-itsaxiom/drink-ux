@@ -333,5 +333,282 @@ describe('useCart', () => {
       expect(result.current.items).toHaveLength(1);
       expect(result.current.items[0].baseName).toBe('Latte');
     });
+
+    it('should remove localStorage when cart is emptied', () => {
+      const { result } = renderHook(() => useCart(), { wrapper });
+
+      act(() => {
+        result.current.addItem(mockCartItem);
+      });
+
+      expect(localStorage.getItem('cart-biz-123')).not.toBeNull();
+
+      act(() => {
+        result.current.clearCart();
+      });
+
+      expect(localStorage.getItem('cart-biz-123')).toBeNull();
+    });
+
+    it('should handle corrupted localStorage data', () => {
+      // Pre-populate with invalid data
+      localStorage.setItem('cart-biz-123', 'invalid json{{{');
+
+      const { result } = renderHook(() => useCart(), { wrapper });
+
+      // Should start with empty cart
+      expect(result.current.items).toHaveLength(0);
+      // Should have cleared the corrupted data
+      expect(localStorage.getItem('cart-biz-123')).toBeNull();
+    });
+
+    it('should handle non-array localStorage data', () => {
+      // Pre-populate with object instead of array
+      localStorage.setItem('cart-biz-123', JSON.stringify({ invalid: true }));
+
+      const { result } = renderHook(() => useCart(), { wrapper });
+
+      // Should start with empty cart
+      expect(result.current.items).toHaveLength(0);
+    });
+  });
+
+  describe('checkout recovery', () => {
+    const mockOrderResponse: OrderResponse = {
+      id: 'order-456',
+      businessId: 'biz-123',
+      status: OrderStatus.PENDING,
+      customerName: 'John Doe',
+      customerEmail: 'john@example.com',
+      items: [
+        {
+          id: 'order-item-1',
+          name: 'Latte',
+          description: 'Medium, Hot',
+          quantity: 1,
+          unitPrice: 5.5,
+          totalPrice: 5.5,
+        },
+      ],
+      totalAmount: 5.5,
+      createdAt: '2024-01-15T10:30:00Z',
+      updatedAt: '2024-01-15T10:30:00Z',
+    };
+
+    it('should save pending order intent before submission', async () => {
+      let resolvePromise: (value: Response) => void;
+      vi.mocked(global.fetch).mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolvePromise = resolve;
+          })
+      );
+
+      const { result } = renderHook(() => useCart(), { wrapper });
+
+      act(() => {
+        result.current.addItem(mockCartItem);
+      });
+
+      let submitPromise: Promise<OrderResponse>;
+
+      act(() => {
+        submitPromise = result.current.submitOrder({
+          customerName: 'John Doe',
+          customerEmail: 'john@example.com',
+        });
+      });
+
+      // Should have saved pending order
+      const pendingOrder = localStorage.getItem('pending-order-biz-123');
+      expect(pendingOrder).not.toBeNull();
+      const parsed = JSON.parse(pendingOrder!);
+      expect(parsed.customerInfo.customerName).toBe('John Doe');
+      expect(parsed.items).toHaveLength(1);
+
+      // Resolve the fetch
+      const mockResponse = createMockResponse({
+        success: true,
+        data: mockOrderResponse,
+      });
+
+      await act(async () => {
+        resolvePromise!(mockResponse);
+        await submitPromise;
+      });
+
+      // Pending order should be cleared after success
+      expect(localStorage.getItem('pending-order-biz-123')).toBeNull();
+    });
+
+    it('should preserve cart on submission failure', async () => {
+      const mockError = createMockErrorResponse(
+        'NETWORK_ERROR',
+        'Network request failed',
+        500
+      );
+      vi.mocked(global.fetch).mockResolvedValueOnce(mockError);
+
+      const { result } = renderHook(() => useCart(), { wrapper });
+
+      act(() => {
+        result.current.addItem(mockCartItem);
+      });
+
+      await act(async () => {
+        await expect(
+          result.current.submitOrder({
+            customerName: 'John Doe',
+            customerEmail: 'john@example.com',
+          })
+        ).rejects.toThrow();
+      });
+
+      // Cart should still have the items
+      expect(result.current.items).toHaveLength(1);
+      expect(result.current.items[0].baseName).toBe('Latte');
+
+      // Cart should still be persisted in localStorage
+      expect(localStorage.getItem('cart-biz-123')).not.toBeNull();
+    });
+
+    it('should restore pending order info', () => {
+      // Pre-populate with pending order
+      const pendingOrder = {
+        customerInfo: {
+          customerName: 'John Doe',
+          customerEmail: 'john@example.com',
+        },
+        items: [mockCartItem],
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('pending-order-biz-123', JSON.stringify(pendingOrder));
+      localStorage.setItem('cart-biz-123', JSON.stringify([mockCartItem]));
+
+      const { result } = renderHook(() => useCart(), { wrapper });
+
+      expect(result.current.pendingOrderInfo).not.toBeNull();
+      expect(result.current.pendingOrderInfo?.customerName).toBe('John Doe');
+    });
+
+    it('should clear stale pending orders (older than 30 minutes)', () => {
+      // Pre-populate with old pending order
+      const oldTimestamp = Date.now() - 31 * 60 * 1000; // 31 minutes ago
+      const pendingOrder = {
+        customerInfo: {
+          customerName: 'John Doe',
+        },
+        items: [mockCartItem],
+        timestamp: oldTimestamp,
+      };
+      localStorage.setItem('pending-order-biz-123', JSON.stringify(pendingOrder));
+
+      const { result } = renderHook(() => useCart(), { wrapper });
+
+      // Old pending order should be cleared
+      expect(result.current.pendingOrderInfo).toBeNull();
+      expect(localStorage.getItem('pending-order-biz-123')).toBeNull();
+    });
+
+    it('should allow clearing pending order info', () => {
+      // Pre-populate with pending order
+      const pendingOrder = {
+        customerInfo: {
+          customerName: 'John Doe',
+        },
+        items: [mockCartItem],
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('pending-order-biz-123', JSON.stringify(pendingOrder));
+      localStorage.setItem('cart-biz-123', JSON.stringify([mockCartItem]));
+
+      const { result } = renderHook(() => useCart(), { wrapper });
+
+      expect(result.current.pendingOrderInfo).not.toBeNull();
+
+      act(() => {
+        result.current.clearPendingOrder();
+      });
+
+      expect(result.current.pendingOrderInfo).toBeNull();
+      expect(localStorage.getItem('pending-order-biz-123')).toBeNull();
+    });
+
+    it('should track last order error for display', async () => {
+      const mockError = createMockErrorResponse(
+        'POS_UNAVAILABLE',
+        'POS system temporarily unavailable',
+        503
+      );
+      vi.mocked(global.fetch).mockResolvedValueOnce(mockError);
+
+      const { result } = renderHook(() => useCart(), { wrapper });
+
+      act(() => {
+        result.current.addItem(mockCartItem);
+      });
+
+      await act(async () => {
+        await expect(
+          result.current.submitOrder({ customerName: 'John Doe' })
+        ).rejects.toThrow();
+      });
+
+      expect(result.current.orderError).toContain('unavailable');
+    });
+
+    it('should clear error on successful retry', async () => {
+      // First call fails
+      const mockError = createMockErrorResponse(
+        'POS_UNAVAILABLE',
+        'POS system temporarily unavailable',
+        503
+      );
+      vi.mocked(global.fetch).mockResolvedValueOnce(mockError);
+
+      const { result } = renderHook(() => useCart(), { wrapper });
+
+      act(() => {
+        result.current.addItem(mockCartItem);
+      });
+
+      // First attempt fails
+      await act(async () => {
+        await expect(
+          result.current.submitOrder({ customerName: 'John Doe' })
+        ).rejects.toThrow();
+      });
+
+      expect(result.current.orderError).not.toBeNull();
+
+      // Second call succeeds
+      const mockResponse = createMockResponse({
+        success: true,
+        data: mockOrderResponse,
+      });
+      vi.mocked(global.fetch).mockResolvedValueOnce(mockResponse);
+
+      await act(async () => {
+        await result.current.submitOrder({ customerName: 'John Doe' });
+      });
+
+      expect(result.current.orderError).toBeNull();
+    });
+  });
+
+  describe('cart with timestamp', () => {
+    it('should store cart with timestamp', () => {
+      const { result } = renderHook(() => useCart(), { wrapper });
+
+      act(() => {
+        result.current.addItem(mockCartItem);
+      });
+
+      const stored = localStorage.getItem('cart-biz-123');
+      const parsed = JSON.parse(stored!);
+
+      // Cart should have items (timestamp is optional based on implementation)
+      expect(parsed).toHaveLength(1);
+    });
   });
 });

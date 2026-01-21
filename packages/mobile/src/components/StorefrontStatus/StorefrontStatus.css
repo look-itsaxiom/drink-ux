@@ -1,0 +1,189 @@
+/**
+ * StorefrontStatus Component Styles
+ */
+
+.storefront-status {
+  font-family: var(--ion-font-family);
+}
+
+/* Status indicator colors */
+.storefront-status-indicator-loading {
+  --status-color: var(--ion-color-medium);
+}
+
+.storefront-status-indicator-healthy {
+  --status-color: var(--ion-color-success);
+}
+
+.storefront-status-indicator-degraded {
+  --status-color: var(--ion-color-warning);
+}
+
+.storefront-status-indicator-unhealthy {
+  --status-color: var(--ion-color-danger);
+}
+
+/* Badge variant */
+.storefront-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: var(--status-color);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.storefront-status-badge ion-icon {
+  font-size: 1rem;
+}
+
+.storefront-status-badge ion-spinner {
+  width: 14px;
+  height: 14px;
+  --color: white;
+}
+
+.storefront-status-badge .storefront-status-name {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.storefront-status-badge .storefront-status-name::after {
+  content: ':';
+}
+
+/* Card variant */
+.storefront-status-card {
+  margin: 8px;
+}
+
+.storefront-status-card ion-card-content {
+  padding: 16px;
+}
+
+.storefront-status-card-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.storefront-status-card-content ion-icon {
+  font-size: 2rem;
+  color: var(--status-color);
+}
+
+.storefront-status-card-content ion-spinner {
+  width: 32px;
+  height: 32px;
+  --color: var(--status-color);
+}
+
+.storefront-status-card .storefront-status-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.storefront-status-card .storefront-status-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--ion-text-color);
+}
+
+.storefront-status-card .storefront-status-label {
+  color: var(--status-color);
+  font-weight: 500;
+}
+
+/* Detailed variant */
+.storefront-status-detailed {
+  padding: 16px;
+  background: var(--ion-card-background);
+  border-radius: 8px;
+  border-left: 4px solid var(--status-color);
+}
+
+.storefront-status-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.storefront-status-header ion-icon {
+  font-size: 2rem;
+  color: var(--status-color);
+}
+
+.storefront-status-header ion-spinner {
+  width: 32px;
+  height: 32px;
+  --color: var(--status-color);
+}
+
+.storefront-status-detailed .storefront-status-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.storefront-status-detailed .storefront-status-name {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ion-text-color);
+}
+
+.storefront-status-detailed .storefront-status-label {
+  color: var(--status-color);
+  font-weight: 500;
+}
+
+/* Service status items */
+.storefront-status-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ion-border-color);
+}
+
+.storefront-status-service {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--ion-color-light);
+  font-size: 0.875rem;
+}
+
+.storefront-status-service.healthy {
+  color: var(--ion-color-success);
+}
+
+.storefront-status-service.unhealthy {
+  color: var(--ion-color-danger);
+}
+
+.storefront-status-service ion-icon {
+  font-size: 1rem;
+}
+
+/* Error display */
+.storefront-status-error {
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--ion-color-danger-tint);
+  border-radius: 4px;
+  color: var(--ion-color-danger-shade);
+  font-size: 0.75rem;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .storefront-status-service {
+    background: var(--ion-color-dark);
+  }
+}

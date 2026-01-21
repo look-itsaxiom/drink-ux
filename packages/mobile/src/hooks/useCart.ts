@@ -46,6 +46,15 @@ export interface CustomerInfo {
 }
 
 /**
+ * Pending order information for checkout recovery
+ */
+export interface PendingOrderInfo {
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+}
+
+/**
  * Cart context value
  */
 export interface CartContextValue {
@@ -69,17 +78,33 @@ export interface CartContextValue {
   submitting: boolean;
   /** Last order error */
   orderError: string | null;
+  /** Pending order info from interrupted checkout */
+  pendingOrderInfo: PendingOrderInfo | null;
+  /** Clear pending order info */
+  clearPendingOrder: () => void;
 }
 
 // Create context
 const CartContext = createContext<CartContextValue | null>(null);
 
 /**
- * Get the localStorage key for a business
+ * Get the localStorage key for a business cart
  */
 function getStorageKey(businessId: string): string {
   return `cart-${businessId}`;
 }
+
+/**
+ * Get the localStorage key for pending order
+ */
+function getPendingOrderKey(businessId: string): string {
+  return `pending-order-${businessId}`;
+}
+
+/**
+ * Pending order expiry time (30 minutes)
+ */
+const PENDING_ORDER_EXPIRY_MS = 30 * 60 * 1000;
 
 /**
  * Generate a unique ID for cart items
@@ -99,12 +124,22 @@ export interface CartProviderProps {
 }
 
 /**
+ * Stored pending order structure
+ */
+interface StoredPendingOrder {
+  customerInfo: CustomerInfo;
+  items: CartItem[];
+  timestamp: number;
+}
+
+/**
  * Cart Provider component
  */
 export function CartProvider({ businessId, children }: CartProviderProps): JSX.Element {
   const [items, setItems] = useState<CartItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
+  const [pendingOrderInfo, setPendingOrderInfo] = useState<PendingOrderInfo | null>(null);
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -118,8 +153,38 @@ export function CartProvider({ businessId, children }: CartProviderProps): JSX.E
           setItems(parsed);
         }
       } catch {
-        // Invalid stored data, ignore
+        // Invalid stored data, clear it
         localStorage.removeItem(storageKey);
+      }
+    }
+  }, [businessId]);
+
+  // Load pending order info on mount
+  useEffect(() => {
+    const pendingKey = getPendingOrderKey(businessId);
+    const stored = localStorage.getItem(pendingKey);
+
+    if (stored) {
+      try {
+        const parsed: StoredPendingOrder = JSON.parse(stored);
+        const now = Date.now();
+
+        // Check if pending order has expired
+        if (now - parsed.timestamp > PENDING_ORDER_EXPIRY_MS) {
+          // Clear expired pending order
+          localStorage.removeItem(pendingKey);
+          setPendingOrderInfo(null);
+        } else {
+          // Restore pending order info
+          setPendingOrderInfo({
+            customerName: parsed.customerInfo.customerName,
+            customerEmail: parsed.customerInfo.customerEmail,
+            customerPhone: parsed.customerInfo.customerPhone,
+          });
+        }
+      } catch {
+        // Invalid stored data, clear it
+        localStorage.removeItem(pendingKey);
       }
     }
   }, [businessId]);
@@ -186,6 +251,29 @@ export function CartProvider({ businessId, children }: CartProviderProps): JSX.E
     setItems([]);
   }, []);
 
+  // Clear pending order info
+  const clearPendingOrder = useCallback(() => {
+    const pendingKey = getPendingOrderKey(businessId);
+    localStorage.removeItem(pendingKey);
+    setPendingOrderInfo(null);
+  }, [businessId]);
+
+  // Save pending order before submission
+  const savePendingOrder = useCallback((customerInfo: CustomerInfo) => {
+    const pendingKey = getPendingOrderKey(businessId);
+    const pendingOrder: StoredPendingOrder = {
+      customerInfo,
+      items,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(pendingKey, JSON.stringify(pendingOrder));
+    setPendingOrderInfo({
+      customerName: customerInfo.customerName,
+      customerEmail: customerInfo.customerEmail,
+      customerPhone: customerInfo.customerPhone,
+    });
+  }, [businessId, items]);
+
   // Submit order
   const handleSubmitOrder = useCallback(
     async (customerInfo: CustomerInfo): Promise<OrderResponse> => {
@@ -195,6 +283,9 @@ export function CartProvider({ businessId, children }: CartProviderProps): JSX.E
 
       setSubmitting(true);
       setOrderError(null);
+
+      // Save pending order for recovery
+      savePendingOrder(customerInfo);
 
       try {
         const orderInput: OrderInput = {
@@ -217,11 +308,13 @@ export function CartProvider({ businessId, children }: CartProviderProps): JSX.E
 
         const response = await submitOrder(orderInput);
 
-        // Clear cart on successful order
+        // Clear cart and pending order on successful order
         clearCart();
+        clearPendingOrder();
 
         return response;
       } catch (err) {
+        // Preserve cart on failure - don't clear items
         if (err instanceof ApiClientError) {
           setOrderError(err.message);
         } else if (err instanceof Error) {
@@ -234,7 +327,7 @@ export function CartProvider({ businessId, children }: CartProviderProps): JSX.E
         setSubmitting(false);
       }
     },
-    [businessId, items, clearCart]
+    [businessId, items, clearCart, clearPendingOrder, savePendingOrder]
   );
 
   const value: CartContextValue = {
@@ -248,6 +341,8 @@ export function CartProvider({ businessId, children }: CartProviderProps): JSX.E
     submitOrder: handleSubmitOrder,
     submitting,
     orderError,
+    pendingOrderInfo,
+    clearPendingOrder,
   };
 
   return React.createElement(CartContext.Provider, { value }, children);

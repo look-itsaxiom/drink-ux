@@ -19,6 +19,80 @@ import {
 } from '../utils/catalogDiff';
 
 /**
+ * Retry configuration for sync operations
+ */
+interface RetryConfig {
+  maxRetries: number;
+  baseDelay: number;
+  maxDelay: number;
+}
+
+/**
+ * Default retry configuration
+ */
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  baseDelay: 1000,
+  maxDelay: 10000,
+};
+
+/**
+ * Error codes that should trigger a retry
+ */
+const RETRYABLE_ERROR_CODES = [
+  'RATE_LIMIT_EXCEEDED',
+  'TIMEOUT',
+  'NETWORK_ERROR',
+  'POS_UNAVAILABLE',
+  'ECONNRESET',
+  'ETIMEDOUT',
+];
+
+/**
+ * Check if an error is retryable
+ */
+function isRetryableError(error: unknown): boolean {
+  if (error instanceof Error) {
+    // Check for explicit retryable flag
+    if ((error as any).retryable === true) {
+      return true;
+    }
+    // Check for retryable error codes
+    const code = (error as any).code;
+    if (code && RETRYABLE_ERROR_CODES.includes(code)) {
+      return true;
+    }
+    // Check message patterns for transient errors
+    const message = error.message.toLowerCase();
+    if (
+      message.includes('timeout') ||
+      message.includes('temporarily') ||
+      message.includes('rate limit') ||
+      message.includes('connection') ||
+      message.includes('unavailable')
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Calculate exponential backoff delay
+ */
+function calculateBackoffDelay(attempt: number, config: RetryConfig): number {
+  const delay = config.baseDelay * Math.pow(2, attempt - 1);
+  return Math.min(delay, config.maxDelay);
+}
+
+/**
+ * Sleep for a given number of milliseconds
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * Result of a sync operation
  */
 export interface SyncResult {
@@ -43,10 +117,49 @@ export interface SyncStatusResponse {
 }
 
 export class CatalogSyncService {
+  private retryConfig: RetryConfig;
+
   constructor(
     private prisma: PrismaClient,
-    private adapter: POSAdapter
-  ) {}
+    private adapter: POSAdapter,
+    retryConfig?: Partial<RetryConfig>
+  ) {
+    this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...retryConfig };
+  }
+
+  /**
+   * Execute an operation with retry logic
+   */
+  private async withRetry<T>(
+    operation: () => Promise<T>,
+    operationName: string
+  ): Promise<T> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= this.retryConfig.maxRetries + 1; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+
+        // Check if we should retry
+        if (attempt <= this.retryConfig.maxRetries && isRetryableError(error)) {
+          const delay = calculateBackoffDelay(attempt, this.retryConfig);
+          console.warn(`Retry attempt ${attempt} for ${operationName} after ${delay}ms`, {
+            error: lastError.message,
+            code: (error as any).code,
+          });
+          await sleep(delay);
+        } else {
+          // Non-retryable error or max retries reached
+          throw lastError;
+        }
+      }
+    }
+
+    // Should not reach here, but TypeScript needs this
+    throw lastError;
+  }
 
   /**
    * Sync catalog changes to POS
@@ -237,30 +350,42 @@ export class CatalogSyncService {
     let modifiersCreated = 0;
     let modifiersUpdated = 0;
 
-    // Create new items
+    // Create new items with retry
     for (const item of diff.items.created) {
-      const posItemId = await this.adapter.pushItem(this.toCatalogItem(item));
+      const posItemId = await this.withRetry(
+        () => this.adapter.pushItem(this.toCatalogItem(item)),
+        `pushItem:${item.name}`
+      );
       await this.updateItemPosId(item, posItemId);
       itemsCreated++;
     }
 
-    // Update existing items
+    // Update existing items with retry
     for (const item of diff.items.updated) {
-      await this.adapter.updateItem(item.posItemId!, this.toCatalogItem(item));
+      await this.withRetry(
+        () => this.adapter.updateItem(item.posItemId!, this.toCatalogItem(item)),
+        `updateItem:${item.name}`
+      );
       itemsUpdated++;
     }
 
-    // Deactivate items (mark inactive in POS, don't delete)
+    // Deactivate items (mark inactive in POS, don't delete) with retry
     for (const item of diff.items.deactivated) {
       const deactivatedItem = this.toCatalogItem(item);
       // Mark as inactive/unavailable in POS
-      await this.adapter.updateItem(item.posItemId!, deactivatedItem);
+      await this.withRetry(
+        () => this.adapter.updateItem(item.posItemId!, deactivatedItem),
+        `deactivateItem:${item.name}`
+      );
       itemsDeactivated++;
     }
 
-    // Create new modifiers
+    // Create new modifiers with retry
     for (const modifier of diff.modifiers.created) {
-      const posModifierId = await this.adapter.pushModifier(this.toCatalogModifier(modifier));
+      const posModifierId = await this.withRetry(
+        () => this.adapter.pushModifier(this.toCatalogModifier(modifier)),
+        `pushModifier:${modifier.name}`
+      );
       await this.updateModifierPosId(modifier, posModifierId);
       modifiersCreated++;
     }
