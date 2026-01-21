@@ -547,6 +547,8 @@ describe('POST /api/orders', () => {
 
 ## End-to-End Testing Scenarios
 
+> **For detailed E2E testing with curl commands, automated scripts, and step-by-step guides, see [E2E_TESTING_GUIDE.md](./E2E_TESTING_GUIDE.md)**
+
 These scenarios should be manually verified before major releases. They cover complete user flows across the system.
 
 ### a. New Business Onboarding Flow
