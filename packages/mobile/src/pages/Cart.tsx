@@ -95,7 +95,7 @@ const Cart: React.FC = () => {
 
   // If cart context is not available, show demo items
   const displayItems = cartAvailable ? items : [
-    { id: '1', baseName: 'Classic Latte', size: 'MEDIUM', isHot: true, modifierNames: [], quantity: 1, totalPrice: 5.0 } as CartItem,
+    { id: '1', baseId: 'demo-base', baseName: 'Classic Latte', size: 'MEDIUM', isHot: true, modifierIds: [], modifierNames: [], quantity: 1, unitPrice: 5.0, totalPrice: 5.0 } as CartItem,
   ];
 
   const displayTotal = cartAvailable ? total : 5.0;

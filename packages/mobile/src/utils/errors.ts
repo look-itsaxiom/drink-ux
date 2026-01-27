@@ -108,7 +108,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
 /**
  * Error codes that can be retried
  */
-const RETRYABLE_ERRORS = new Set([
+const RETRYABLE_ERRORS = new Set<string>([
   ERROR_CODES.NETWORK_ERROR,
   ERROR_CODES.TIMEOUT,
   ERROR_CODES.POS_UNAVAILABLE,

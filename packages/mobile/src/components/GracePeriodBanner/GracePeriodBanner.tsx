@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { IonIcon, IonButton } from '@ionic/react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router';
 import { alertCircle, close } from 'ionicons/icons';
 import './GracePeriodBanner.css';
 
@@ -77,7 +77,7 @@ export function GracePeriodBanner({
   paymentUpdateUrl = '/admin/billing',
   onDismiss,
 }: GracePeriodBannerProps): React.ReactElement | null {
-  const navigate = useNavigate();
+  const history = useHistory();
   const [isDismissed, setIsDismissed] = useState(wasDismissedToday);
 
   // Check dismissal on mount
@@ -94,7 +94,7 @@ export function GracePeriodBanner({
 
   // Handle payment update click
   const handleUpdatePayment = () => {
-    navigate(paymentUpdateUrl);
+    history.push(paymentUpdateUrl);
   };
 
   // Don't render if dismissed today

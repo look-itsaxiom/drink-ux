@@ -3,25 +3,12 @@ import {
   fetchBusinessTheme,
   BusinessTheme,
   ThemeServiceError,
-  getApiBaseUrl,
 } from './themeService';
 import { createMockResponse, createMockErrorResponse } from '../test/setup';
 
 describe('themeService', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-  });
-
-  describe('getApiBaseUrl', () => {
-    it('returns configured base URL when provided', () => {
-      const url = getApiBaseUrl('https://api.example.com');
-      expect(url).toBe('https://api.example.com');
-    });
-
-    it('returns default localhost URL when not configured', () => {
-      const url = getApiBaseUrl();
-      expect(url).toBe('http://localhost:3001');
-    });
   });
 
   describe('fetchBusinessTheme', () => {

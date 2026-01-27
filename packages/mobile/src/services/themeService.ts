@@ -45,11 +45,11 @@ const DEFAULT_API_BASE_URL = 'http://localhost:3001';
 const DEFAULT_TIMEOUT = 10000;
 
 /**
- * Get the API base URL
+ * Get the API base URL for theme service
  * @param configuredUrl - Optional configured URL
  * @returns The API base URL to use
  */
-export function getApiBaseUrl(configuredUrl?: string): string {
+function getThemeApiBaseUrl(configuredUrl?: string): string {
   return configuredUrl || DEFAULT_API_BASE_URL;
 }
 
@@ -74,7 +74,7 @@ export async function fetchBusinessTheme(
   }
 
   const { apiBaseUrl, timeout = DEFAULT_TIMEOUT } = options;
-  const baseUrl = getApiBaseUrl(apiBaseUrl);
+  const baseUrl = getThemeApiBaseUrl(apiBaseUrl);
   const url = `${baseUrl}/api/business/${encodeURIComponent(businessSlug.trim())}`;
 
   // Create abort controller for timeout
