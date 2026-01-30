@@ -140,11 +140,10 @@ export class SquareAdapter implements POSAdapter {
       'ORDERS_READ',
       'ORDERS_WRITE',
       'PAYMENTS_READ',
-    ].join('+');
+    ];
 
     const params = new URLSearchParams({
       client_id: this.appId,
-      scope: scopes,
       session: 'false',
       state: state,
     });
@@ -154,7 +153,10 @@ export class SquareAdapter implements POSAdapter {
       params.append('redirect_uri', this.callbackUrl);
     }
 
-    return `${this.getBaseUrl()}/oauth2/authorize?${params.toString()}`;
+    // Build scope manually - Square expects space-separated scopes, not URL-encoded plus signs
+    const scopeParam = scopes.join(' ');
+
+    return `${this.getBaseUrl()}/oauth2/authorize?${params.toString()}&scope=${encodeURIComponent(scopeParam)}`;
   }
 
   /**
