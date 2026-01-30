@@ -1,8 +1,10 @@
 # Drink-UX Implementation Roadmap
 
+> **DEPRECATED (2026-01-29):** This roadmap is outdated. The dogfood milestone implementation (Jan 29) completed most of Phase 3-5 work. See [2026-01-29-milestone-definitions.md](../plans/2026-01-29-milestone-definitions.md) for current milestones and `bd list` for active issues.
+
 **Epic:** drink-ux-418 - POS Integration & Source of Truth
 **Planning Doc:** [2026-01-10-pos-integration-design.md](../plans/2026-01-10-pos-integration-design.md)
-**Status:** In Progress (5 of 16 tasks complete)
+**Status:** SUPERSEDED - Most tasks complete, see milestone definitions
 
 ---
 

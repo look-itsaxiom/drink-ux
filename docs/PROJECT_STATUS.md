@@ -1,12 +1,22 @@
 # Drink-UX Project Status
 
+> **OUTDATED (2026-01-29):** This status doc was written before the dogfood milestone implementation. The current state is significantly more complete. See [2026-01-29-milestone-definitions.md](./plans/2026-01-29-milestone-definitions.md) for current milestones and `bd list` for active issues.
+
 **Date:** 2026-01-26
 **Branch:** `c-integration`
-**Status:** Runnable baseline established
+**Status:** ~~Runnable baseline established~~ **Dogfood milestone code complete (2026-01-29)**
 
 ## Current State
 
-All packages now build successfully. The API routes are wired up and the server starts. The project is at a runnable baseline but not yet functional end-to-end.
+~~All packages now build successfully. The API routes are wired up and the server starts. The project is at a runnable baseline but not yet functional end-to-end.~~
+
+**Updated 2026-01-29:** Core features are implemented:
+- Onboarding wizard with real Square OAuth and AI catalog transformation
+- Mobile ordering with real API integration
+- Admin catalog CRUD with database persistence
+- Payment/subscription services (partial - some integration work remains)
+
+**Next:** E2E testing against Square sandbox, then business-ready work.
 
 ---
 
