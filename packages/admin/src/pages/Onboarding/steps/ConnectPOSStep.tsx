@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { OnboardingData } from '../Onboarding';
+import { useBusiness } from '../../../contexts/BusinessContext';
 
 interface Props {
   data: OnboardingData;
@@ -12,6 +13,7 @@ interface Props {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3005';
 
 const ConnectPOSStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => {
+  const { businessId } = useBusiness();
   const [searchParams, setSearchParams] = useSearchParams();
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +43,9 @@ const ConnectPOSStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => 
     setError(null);
 
     try {
-      // For the OAuth flow, we need a businessId. In a real scenario,
-      // this would come from the authenticated user's business.
-      // For now, we'll use a placeholder that gets set during signup.
-      const businessId = 'temp-business-id'; // TODO: Get from auth context
+      if (!businessId) {
+        throw new Error('No business ID configured. Please set up your business first.');
+      }
 
       // Get OAuth URL from API (GET request with businessId)
       const response = await fetch(

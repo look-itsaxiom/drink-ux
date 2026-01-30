@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useBusiness } from '../contexts/BusinessContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3005';
-
-// TODO: Get from auth context
-const TEMP_BUSINESS_ID = 'temp-business-id';
 
 interface BusinessInfo {
   id: string;
@@ -27,6 +25,7 @@ interface POSStatus {
 }
 
 const Dashboard: React.FC = () => {
+  const { businessId } = useBusiness();
   const [loading, setLoading] = useState(true);
   const [business, setBusiness] = useState<BusinessInfo | null>(null);
   const [catalogSummary, setCatalogSummary] = useState<CatalogSummary>({ categories: 0, bases: 0, modifiers: 0 });
@@ -34,8 +33,10 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (businessId) {
+      fetchDashboardData();
+    }
+  }, [businessId]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -44,16 +45,16 @@ const Dashboard: React.FC = () => {
     try {
       // Fetch all data in parallel
       const [businessRes, categoriesRes, basesRes, modifiersRes, posStatusRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/businesses/${TEMP_BUSINESS_ID}`, {
+        fetch(`${API_BASE_URL}/api/businesses/${businessId}`, {
           credentials: 'include',
         }).catch(() => null),
-        fetch(`${API_BASE_URL}/api/catalog/categories?businessId=${TEMP_BUSINESS_ID}`, {
+        fetch(`${API_BASE_URL}/api/catalog/categories?businessId=${businessId}`, {
           credentials: 'include',
         }).catch(() => null),
-        fetch(`${API_BASE_URL}/api/catalog/bases?businessId=${TEMP_BUSINESS_ID}`, {
+        fetch(`${API_BASE_URL}/api/catalog/bases?businessId=${businessId}`, {
           credentials: 'include',
         }).catch(() => null),
-        fetch(`${API_BASE_URL}/api/catalog/modifiers?businessId=${TEMP_BUSINESS_ID}`, {
+        fetch(`${API_BASE_URL}/api/catalog/modifiers?businessId=${businessId}`, {
           credentials: 'include',
         }).catch(() => null),
         fetch(`${API_BASE_URL}/api/pos/oauth/status`, {

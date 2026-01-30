@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
+import { useBusiness } from '../contexts/BusinessContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3005';
-
-// TODO: Get from auth context
-const TEMP_BUSINESS_ID = 'temp-business-id';
 
 interface Category {
   id: string;
@@ -35,6 +33,7 @@ type TabType = 'categories' | 'bases' | 'modifiers';
 type ModalType = 'category' | 'base' | 'modifier' | null;
 
 const MenuManagement: React.FC = () => {
+  const { businessId } = useBusiness();
   const [activeTab, setActiveTab] = useState<TabType>('categories');
   const [categories, setCategories] = useState<Category[]>([]);
   const [bases, setBases] = useState<Base[]>([]);
@@ -52,8 +51,10 @@ const MenuManagement: React.FC = () => {
   const [formData, setFormData] = useState<Record<string, string | number | boolean>>({});
 
   useEffect(() => {
-    fetchCatalogData();
-  }, []);
+    if (businessId) {
+      fetchCatalogData();
+    }
+  }, [businessId]);
 
   const fetchCatalogData = async () => {
     setLoading(true);
@@ -61,13 +62,13 @@ const MenuManagement: React.FC = () => {
 
     try {
       const [categoriesRes, basesRes, modifiersRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/catalog/categories?businessId=${TEMP_BUSINESS_ID}`, {
+        fetch(`${API_BASE_URL}/api/catalog/categories?businessId=${businessId}`, {
           credentials: 'include',
         }),
-        fetch(`${API_BASE_URL}/api/catalog/bases?businessId=${TEMP_BUSINESS_ID}`, {
+        fetch(`${API_BASE_URL}/api/catalog/bases?businessId=${businessId}`, {
           credentials: 'include',
         }),
-        fetch(`${API_BASE_URL}/api/catalog/modifiers?businessId=${TEMP_BUSINESS_ID}`, {
+        fetch(`${API_BASE_URL}/api/catalog/modifiers?businessId=${businessId}`, {
           credentials: 'include',
         }),
       ]);
@@ -173,7 +174,7 @@ const MenuManagement: React.FC = () => {
 
       const body = {
         ...formData,
-        businessId: TEMP_BUSINESS_ID,
+        businessId: businessId,
       };
 
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {

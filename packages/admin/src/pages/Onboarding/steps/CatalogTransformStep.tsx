@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { OnboardingData } from '../Onboarding';
+import { useBusiness } from '../../../contexts/BusinessContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3005';
 
@@ -17,6 +18,7 @@ interface CatalogSuggestion {
 }
 
 const CatalogTransformStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => {
+  const { businessId } = useBusiness();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<CatalogSuggestion | null>(null);
@@ -33,8 +35,11 @@ const CatalogTransformStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack 
     setError(null);
 
     try {
+      if (!businessId) {
+        throw new Error('No business ID configured');
+      }
+
       // 1. Fetch raw catalog from Square via API
-      const businessId = 'temp-business-id'; // TODO: Get from auth context
       const importResponse = await fetch(`${API_BASE_URL}/api/pos/import-catalog`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

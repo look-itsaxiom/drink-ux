@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BusinessProvider } from './contexts/BusinessContext';
 import Dashboard from './pages/Dashboard';
 import MenuManagement from './pages/MenuManagement';
 import POSIntegration from './pages/POSIntegration';
@@ -45,12 +46,14 @@ function AppLayout() {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/*" element={<AppLayout />} />
-      </Routes>
-    </Router>
+    <BusinessProvider>
+      <Router>
+        <Routes>
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/*" element={<AppLayout />} />
+        </Routes>
+      </Router>
+    </BusinessProvider>
   );
 }
 
