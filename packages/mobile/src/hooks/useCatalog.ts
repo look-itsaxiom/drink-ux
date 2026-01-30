@@ -6,10 +6,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   getCatalog,
+  getModifiers,
   CatalogData,
   CategoryWithItems,
   CatalogItem,
+  ModifierData,
   getItemsByCategory as getItemsByCategoryUtil,
+  groupModifiersByType,
 } from '../services/catalogService';
 import { ApiClientError } from '../services/api';
 
@@ -31,6 +34,10 @@ export interface UseCatalogResult {
   catalog: CatalogData | null;
   /** Categories array for easy access */
   categories: CategoryWithItems[];
+  /** All modifiers */
+  modifiers: ModifierData[];
+  /** Modifiers grouped by type (MILK, SYRUP, TOPPING) */
+  modifiersByType: Record<string, ModifierData[]>;
   /** Loading state */
   loading: boolean;
   /** Error message if fetch failed */
@@ -69,6 +76,7 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
   const { businessSlug, skip = false } = options;
 
   const [catalog, setCatalog] = useState<CatalogData | null>(null);
+  const [modifiers, setModifiers] = useState<ModifierData[]>([]);
   const [loading, setLoading] = useState<boolean>(!!businessSlug && !skip);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,11 +90,18 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
     setError(null);
 
     try {
-      const data = await getCatalog(businessSlug);
-      setCatalog(data);
+      // Fetch catalog and modifiers in parallel
+      const [catalogData, modifiersData] = await Promise.all([
+        getCatalog(businessSlug),
+        getModifiers(businessSlug).catch(() => [] as ModifierData[]),
+      ]);
+
+      setCatalog(catalogData);
+      setModifiers(modifiersData);
       setError(null);
     } catch (err) {
       setCatalog(null);
+      setModifiers([]);
 
       if (err instanceof ApiClientError) {
         setError(err.message);
@@ -110,6 +125,11 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
     return catalog?.categories || [];
   }, [catalog]);
 
+  // Memoize modifiers grouped by type
+  const modifiersByType = useMemo(() => {
+    return groupModifiersByType(modifiers);
+  }, [modifiers]);
+
   // Helper function to get items by category
   const getItemsByCategory = useCallback(
     (categoryId: string): CatalogItem[] => {
@@ -122,6 +142,8 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
   return {
     catalog,
     categories,
+    modifiers,
+    modifiersByType,
     loading,
     error,
     getItemsByCategory,

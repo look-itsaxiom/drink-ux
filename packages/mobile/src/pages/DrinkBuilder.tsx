@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useHistory } from "react-router";
 import {
   IonContent,
@@ -12,6 +12,8 @@ import {
   DrinkCategory,
   DrinkType,
   CupSize,
+  ComponentType,
+  ModifierComponent,
 } from "@drink-ux/shared";
 
 import AppHeader from "../components/AppHeader";
@@ -20,13 +22,35 @@ import TypeSelector from "../components/DrinkBuilder/TypeSelector";
 import ModificationPanel from "../components/DrinkBuilder/ModificationPanel";
 import DrinkVisual from "../components/DrinkBuilder/DrinkVisual";
 import ModifierSelector, {
-  milkModifiers,
-  syrupModifiers,
-  toppingModifiers,
+  milkModifiers as fallbackMilkModifiers,
+  syrupModifiers as fallbackSyrupModifiers,
+  toppingModifiers as fallbackToppingModifiers,
 } from "../components/DrinkBuilder/ModifierSelector";
 import { useCart, CartItem } from "../hooks/useCart";
+import { useCatalogContext } from "../context/CatalogContext";
+import { ModifierData } from "../services/catalogService";
 
 import "./DrinkBuilder.css";
+
+/**
+ * Transform API modifier to ModifierComponent for UI
+ */
+function transformModifier(mod: ModifierData): ModifierComponent {
+  return {
+    id: mod.id,
+    name: mod.name,
+    type: ComponentType.MODIFIER,
+    category: mod.type.toLowerCase(),
+    price: mod.price,
+    canTransformDrink: false,
+    visual: {
+      color: mod.visualColor || '#f0f0f0',
+      opacity: 0.6,
+      layerOrder: mod.visualLayerOrder || 2,
+    },
+    available: mod.available,
+  };
+}
 
 type BuilderStep = "category" | "type" | "modifications";
 
@@ -49,6 +73,32 @@ const DrinkBuilder: React.FC = () => {
   } catch {
     // Cart context not available
   }
+
+  // Try to use catalog context for modifiers, handle gracefully if not available
+  let catalogModifiersByType: Record<string, ModifierData[]> = {};
+
+  try {
+    const catalog = useCatalogContext();
+    catalogModifiersByType = catalog.modifiersByType || {};
+  } catch {
+    // Catalog context not available
+  }
+
+  // Transform API modifiers to ModifierComponent format, or use fallbacks
+  const milkModifiers = useMemo(() => {
+    const apiMilks = catalogModifiersByType['MILK'] || catalogModifiersByType['milk'] || [];
+    return apiMilks.length > 0 ? apiMilks.map(transformModifier) : fallbackMilkModifiers;
+  }, [catalogModifiersByType]);
+
+  const syrupModifiers = useMemo(() => {
+    const apiSyrups = catalogModifiersByType['SYRUP'] || catalogModifiersByType['syrup'] || [];
+    return apiSyrups.length > 0 ? apiSyrups.map(transformModifier) : fallbackSyrupModifiers;
+  }, [catalogModifiersByType]);
+
+  const toppingModifiers = useMemo(() => {
+    const apiToppings = catalogModifiersByType['TOPPING'] || catalogModifiersByType['topping'] || [];
+    return apiToppings.length > 0 ? apiToppings.map(transformModifier) : fallbackToppingModifiers;
+  }, [catalogModifiersByType]);
 
   const [step, setStep] = useState<BuilderStep>("category");
   const [drinkState, setDrinkState] = useState<ExtendedDrinkBuilderState>({

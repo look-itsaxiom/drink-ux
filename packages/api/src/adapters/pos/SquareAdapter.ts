@@ -115,10 +115,11 @@ export class SquareAdapter implements POSAdapter {
   private callbackUrl: string;
 
   constructor() {
-    this.appId = process.env.SQUARE_APP_ID || '';
-    this.appSecret = process.env.SQUARE_APP_SECRET || '';
+    // Support both naming conventions for backwards compatibility
+    this.appId = process.env.SQUARE_APPLICATION_ID || process.env.SQUARE_APP_ID || '';
+    this.appSecret = process.env.SQUARE_APPLICATION_SECRET || process.env.SQUARE_APP_SECRET || '';
     this.environment = (process.env.SQUARE_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox';
-    this.callbackUrl = process.env.POS_OAUTH_CALLBACK_URL || '';
+    this.callbackUrl = process.env.SQUARE_OAUTH_CALLBACK_URL || process.env.POS_OAUTH_CALLBACK_URL || 'http://localhost:3005/api/pos/oauth/callback';
   }
 
   private getBaseUrl(): string {
@@ -148,7 +149,19 @@ export class SquareAdapter implements POSAdapter {
       state: state,
     });
 
+    // Add redirect_uri if configured
+    if (this.callbackUrl) {
+      params.append('redirect_uri', this.callbackUrl);
+    }
+
     return `${this.getBaseUrl()}/oauth2/authorize?${params.toString()}`;
+  }
+
+  /**
+   * Check if the adapter is properly configured for OAuth
+   */
+  isOAuthConfigured(): boolean {
+    return !!(this.appId && this.appSecret);
   }
 
   async exchangeCodeForTokens(code: string): Promise<TokenResult> {
@@ -513,13 +526,180 @@ export class SquareAdapter implements POSAdapter {
   }
 
   async createOrder(order: OrderSubmission): Promise<string> {
-    // Stubbed - will be implemented in drink-ux-frd (Order Submission Flow)
-    throw new Error('Not yet implemented - see drink-ux-frd');
+    if (!this.credentials) {
+      throw new Error('Square credentials not set');
+    }
+
+    // Get location ID from credentials or fetch first available location
+    let locationId = this.credentials.locationId;
+    if (!locationId) {
+      // Fetch first location if not set
+      const locationsResponse = await fetch(`${this.getBaseUrl()}/v2/locations`, {
+        headers: {
+          'Authorization': `Bearer ${this.credentials.accessToken}`,
+          'Square-Version': SQUARE_API_VERSION,
+        },
+      });
+
+      const locationsData = await locationsResponse.json() as { locations?: Array<{ id: string }> };
+      if (!locationsResponse.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+
+      locationId = locationsData.locations?.[0]?.id;
+      if (!locationId) {
+        throw new Error('No locations found for this merchant');
+      }
+    }
+
+    // Build line items for Square order
+    const lineItems = order.items.map((item) => {
+      const lineItem: Record<string, unknown> = {
+        quantity: item.quantity.toString(),
+      };
+
+      // If we have a catalog item ID, use it
+      if (item.posItemId) {
+        lineItem.catalog_object_id = item.posItemId;
+
+        // Add variation ID if available
+        if (item.variationId) {
+          lineItem.catalog_object_id = item.variationId;
+        }
+
+        // Add modifiers if available
+        if (item.modifierIds && item.modifierIds.length > 0) {
+          lineItem.modifiers = item.modifierIds.map((modId) => ({
+            catalog_object_id: modId,
+          }));
+        }
+      } else {
+        // Create ad-hoc line item if no catalog ID
+        lineItem.name = 'Custom Drink';
+        lineItem.base_price_money = {
+          amount: 0,
+          currency: 'USD',
+        };
+      }
+
+      return lineItem;
+    });
+
+    // Build the order request
+    const orderRequest: Record<string, unknown> = {
+      order: {
+        location_id: locationId,
+        line_items: lineItems,
+        fulfillments: [
+          {
+            type: 'PICKUP',
+            state: 'PROPOSED',
+            pickup_details: {
+              recipient: {
+                display_name: order.customerName,
+                email_address: order.customerEmail,
+                phone_number: order.customerPhone,
+              },
+              schedule_type: 'ASAP',
+              note: 'Mobile order',
+            },
+          },
+        ],
+      },
+      idempotency_key: `order-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+    };
+
+    // Submit order to Square
+    const response = await fetch(`${this.getBaseUrl()}/v2/orders`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.credentials.accessToken}`,
+        'Content-Type': 'application/json',
+        'Square-Version': SQUARE_API_VERSION,
+      },
+      body: JSON.stringify(orderRequest),
+    });
+
+    interface SquareOrderResponse {
+      order?: {
+        id?: string;
+        state?: string;
+        fulfillments?: Array<{ state?: string }>;
+      };
+    }
+
+    const data = await response.json() as SquareOrderResponse | SquareApiErrorResponse;
+
+    if (!response.ok) {
+      const errorData = data as SquareApiErrorResponse;
+      const errorMessage = errorData.errors?.[0]?.detail || 'Failed to create order in Square';
+      console.error('Square order creation failed:', errorData);
+      throw new Error(errorMessage);
+    }
+
+    const orderData = data as SquareOrderResponse;
+
+    // Return the Square order ID
+    const orderId = orderData.order?.id;
+    if (!orderId) {
+      throw new Error('No order ID returned from Square');
+    }
+
+    return orderId;
   }
 
   async getOrderStatus(posOrderId: string): Promise<OrderStatus> {
-    // Stubbed - will be implemented in drink-ux-frd (Order Submission Flow)
-    throw new Error('Not yet implemented - see drink-ux-frd');
+    if (!this.credentials) {
+      throw new Error('Square credentials not set');
+    }
+
+    interface SquareOrderResponse {
+      order?: {
+        state?: string;
+        fulfillments?: Array<{ state?: string }>;
+      };
+    }
+
+    const response = await fetch(`${this.getBaseUrl()}/v2/orders/${posOrderId}`, {
+      headers: {
+        'Authorization': `Bearer ${this.credentials.accessToken}`,
+        'Square-Version': SQUARE_API_VERSION,
+      },
+    });
+
+    const data = await response.json() as SquareOrderResponse | SquareApiErrorResponse;
+
+    if (!response.ok) {
+      const errorData = data as SquareApiErrorResponse;
+      throw new Error(errorData.errors?.[0]?.detail || 'Failed to get order status');
+    }
+
+    const orderData = data as SquareOrderResponse;
+
+    // Map Square order state to our OrderStatus
+    const squareState = orderData.order?.state;
+    const fulfillmentState = orderData.order?.fulfillments?.[0]?.state;
+
+    switch (squareState) {
+      case 'OPEN':
+        switch (fulfillmentState) {
+          case 'PROPOSED':
+            return 'PENDING';
+          case 'RESERVED':
+          case 'PREPARED':
+            return 'PREPARING';
+          case 'COMPLETED':
+            return 'READY';
+          default:
+            return 'CONFIRMED';
+        }
+      case 'COMPLETED':
+        return 'COMPLETED';
+      case 'CANCELED':
+        return 'CANCELLED';
+      default:
+        return 'PENDING';
+    }
   }
 
   async getPaymentLink(orderId: string): Promise<string> {

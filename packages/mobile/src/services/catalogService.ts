@@ -87,6 +87,30 @@ export async function getCatalog(businessSlug: string): Promise<CatalogData> {
 }
 
 /**
+ * Fetch modifiers for a business
+ * Uses the public endpoint GET /api/business/:slug/catalog/modifiers
+ *
+ * @param businessSlug - The business slug (subdomain)
+ * @returns Array of modifiers
+ * @throws ApiClientError if business not found or other errors
+ */
+export async function getModifiers(businessSlug: string): Promise<ModifierData[]> {
+  return apiClient.get<ModifierData[]>(`/api/business/${businessSlug}/catalog/modifiers`);
+}
+
+/**
+ * Fetch presets for a business
+ * Uses the public endpoint GET /api/business/:slug/catalog/presets
+ *
+ * @param businessSlug - The business slug (subdomain)
+ * @returns Array of presets
+ * @throws ApiClientError if business not found or other errors
+ */
+export async function getPresets(businessSlug: string): Promise<PresetData[]> {
+  return apiClient.get<PresetData[]>(`/api/business/${businessSlug}/catalog/presets`);
+}
+
+/**
  * Fetch full catalog including modifiers and presets
  * This requires multiple API calls and authentication for some endpoints
  *

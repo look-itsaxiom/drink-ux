@@ -273,5 +273,177 @@ export function createBusinessRouter(
     }
   });
 
+  /**
+   * GET /api/business/:slug/catalog/modifiers
+   * Get available modifiers for a business
+   */
+  router.get('/:slug/catalog/modifiers', async (req: Request, res: Response) => {
+    const { slug } = req.params;
+
+    try {
+      // Find business by slug
+      const business = await prisma.business.findUnique({
+        where: { slug },
+      });
+
+      // Business not found
+      if (!business) {
+        const response: ApiResponse<never> = {
+          success: false,
+          error: {
+            code: 'BUSINESS_NOT_FOUND',
+            message: `Business '${slug}' not found`,
+          },
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      // Check if business is accessible
+      if (!ACCESSIBLE_STATES.includes(business.accountState)) {
+        const response: ApiResponse<never> = {
+          success: false,
+          error: {
+            code: 'BUSINESS_NOT_FOUND',
+            message: `Business '${slug}' is not currently accessible`,
+          },
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      // Get available modifiers
+      const modifiers = await prisma.modifier.findMany({
+        where: {
+          businessId: business.id,
+          available: true,
+        },
+        orderBy: [{ type: 'asc' }, { name: 'asc' }],
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          price: true,
+          available: true,
+          visualColor: true,
+          visualLayerOrder: true,
+          visualAnimationType: true,
+        },
+      });
+
+      const response: ApiResponse<typeof modifiers> = {
+        success: true,
+        data: modifiers,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      console.error('Get business modifiers error:', error);
+      const response: ApiResponse<never> = {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to retrieve modifiers',
+        },
+      };
+      res.status(500).json(response);
+    }
+  });
+
+  /**
+   * GET /api/business/:slug/catalog/presets
+   * Get available presets (featured drinks) for a business
+   */
+  router.get('/:slug/catalog/presets', async (req: Request, res: Response) => {
+    const { slug } = req.params;
+
+    try {
+      // Find business by slug
+      const business = await prisma.business.findUnique({
+        where: { slug },
+      });
+
+      // Business not found
+      if (!business) {
+        const response: ApiResponse<never> = {
+          success: false,
+          error: {
+            code: 'BUSINESS_NOT_FOUND',
+            message: `Business '${slug}' not found`,
+          },
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      // Check if business is accessible
+      if (!ACCESSIBLE_STATES.includes(business.accountState)) {
+        const response: ApiResponse<never> = {
+          success: false,
+          error: {
+            code: 'BUSINESS_NOT_FOUND',
+            message: `Business '${slug}' is not currently accessible`,
+          },
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      // Get available presets with their modifiers
+      const presets = await prisma.preset.findMany({
+        where: {
+          businessId: business.id,
+          available: true,
+        },
+        orderBy: { name: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          baseId: true,
+          defaultSize: true,
+          defaultHot: true,
+          price: true,
+          available: true,
+          imageUrl: true,
+          modifiers: {
+            select: {
+              modifierId: true,
+            },
+          },
+        },
+      });
+
+      // Transform to include modifierIds array
+      const presetsWithModifierIds = presets.map(preset => ({
+        id: preset.id,
+        name: preset.name,
+        baseId: preset.baseId,
+        defaultSize: preset.defaultSize,
+        defaultHot: preset.defaultHot,
+        price: preset.price,
+        available: preset.available,
+        imageUrl: preset.imageUrl,
+        modifierIds: preset.modifiers.map(m => m.modifierId),
+      }));
+
+      const response: ApiResponse<typeof presetsWithModifierIds> = {
+        success: true,
+        data: presetsWithModifierIds,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      console.error('Get business presets error:', error);
+      const response: ApiResponse<never> = {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to retrieve presets',
+        },
+      };
+      res.status(500).json(response);
+    }
+  });
+
   return router;
 }
