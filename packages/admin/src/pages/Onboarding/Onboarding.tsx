@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BusinessProfileStep from './steps/BusinessProfileStep';
+import { useAuth } from '../../contexts/AuthContext';
 import ConnectPOSStep from './steps/ConnectPOSStep';
+import BusinessProfileStep from './steps/BusinessProfileStep';
 import CatalogTransformStep from './steps/CatalogTransformStep';
 import ConfirmationStep from './steps/ConfirmationStep';
 import './Onboarding.css';
@@ -20,20 +21,24 @@ export interface OnboardingData {
   };
 }
 
+// Reordered: Connect POS first, then profile (pre-filled), then catalog
 const STEPS = [
-  { id: 'profile', label: 'Business Profile' },
   { id: 'pos', label: 'Connect POS' },
+  { id: 'profile', label: 'Business Profile' },
   { id: 'catalog', label: 'Import Catalog' },
   { id: 'confirm', label: 'Confirmation' },
 ];
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate();
+  const { user, business } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
+
+  // Pre-populate with data from signup
   const [data, setData] = useState<OnboardingData>({
-    businessName: '',
-    slug: '',
-    contactEmail: '',
+    businessName: business?.name || '',
+    slug: business?.slug || '',
+    contactEmail: user?.email || '',
     posConnected: false,
     catalogTransformed: false,
   });
@@ -62,16 +67,18 @@ const Onboarding: React.FC = () => {
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
+        // Connect POS first - no back button on first step
         return (
-          <BusinessProfileStep
+          <ConnectPOSStep
             data={data}
             onUpdate={updateData}
             onNext={nextStep}
           />
         );
       case 1:
+        // Business profile - pre-filled from signup, can edit if needed
         return (
-          <ConnectPOSStep
+          <BusinessProfileStep
             data={data}
             onUpdate={updateData}
             onNext={nextStep}

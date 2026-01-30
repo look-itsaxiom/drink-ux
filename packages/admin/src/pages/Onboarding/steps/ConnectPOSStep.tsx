@@ -7,7 +7,7 @@ interface Props {
   data: OnboardingData;
   onUpdate: (updates: Partial<OnboardingData>) => void;
   onNext: () => void;
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -124,11 +124,13 @@ const ConnectPOSStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => 
 
           {error && <div className="error-message">{error}</div>}
 
-          <div className="step-actions">
-            <button type="button" className="btn btn-secondary" onClick={onBack}>
-              Back
-            </button>
-          </div>
+          {onBack && (
+            <div className="step-actions">
+              <button type="button" className="btn btn-secondary" onClick={onBack}>
+                Back
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

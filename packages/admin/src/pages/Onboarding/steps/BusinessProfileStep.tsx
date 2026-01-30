@@ -5,9 +5,10 @@ interface Props {
   data: OnboardingData;
   onUpdate: (updates: Partial<OnboardingData>) => void;
   onNext: () => void;
+  onBack?: () => void;
 }
 
-const BusinessProfileStep: React.FC<Props> = ({ data, onUpdate, onNext }) => {
+const BusinessProfileStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const generateSlug = (name: string): string => {
@@ -104,6 +105,11 @@ const BusinessProfileStep: React.FC<Props> = ({ data, onUpdate, onNext }) => {
         </div>
 
         <div className="step-actions">
+          {onBack && (
+            <button type="button" className="btn btn-secondary" onClick={onBack}>
+              Back
+            </button>
+          )}
           <button type="submit" className="btn btn-primary">
             Continue
           </button>
