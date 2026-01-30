@@ -167,23 +167,31 @@ export class SquareAdapter implements POSAdapter {
   }
 
   async exchangeCodeForTokens(code: string): Promise<TokenResult> {
+    const requestBody: Record<string, string> = {
+      client_id: this.appId,
+      client_secret: this.appSecret,
+      code: code,
+      grant_type: 'authorization_code',
+    };
+
+    // Include redirect_uri if configured (Square may require it)
+    if (this.callbackUrl) {
+      requestBody.redirect_uri = this.callbackUrl;
+    }
+
     const response = await fetch(`${this.getBaseUrl()}/oauth2/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        client_id: this.appId,
-        client_secret: this.appSecret,
-        code: code,
-        grant_type: 'authorization_code',
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
       const errorData = data as SquareErrorResponse;
+      console.error('Square token exchange error:', JSON.stringify(data, null, 2));
       throw new Error(errorData.error_description || errorData.error || 'OAuth token exchange failed');
     }
 
