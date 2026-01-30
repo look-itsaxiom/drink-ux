@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { ApiResponse } from '@drink-ux/shared';
+import { PrismaClient } from '../../generated/prisma';
 import { AuthService, AuthError, PublicUser, PublicBusiness } from '../services/AuthService';
 import {
   sessionMiddleware,
@@ -32,6 +33,12 @@ interface LoginResponseData {
  */
 interface MeResponseData {
   user: PublicUser;
+  business?: {
+    id: string;
+    name: string;
+    slug: string;
+    accountState: string;
+  };
 }
 
 /**
@@ -47,6 +54,8 @@ interface ForgotPasswordResponseData {
 export interface AuthRouterOptions {
   /** Disable rate limiting (for tests) */
   disableRateLimit?: boolean;
+  /** Prisma client for business queries */
+  prisma?: PrismaClient;
 }
 
 /**
@@ -56,7 +65,7 @@ export interface AuthRouterOptions {
  */
 export function createAuthRouter(authService: AuthService, options: AuthRouterOptions = {}): Router {
   const router = Router();
-  const { disableRateLimit = false } = options;
+  const { disableRateLimit = false, prisma } = options;
 
   // Apply session middleware to all routes
   router.use(sessionMiddleware(authService));
@@ -157,14 +166,36 @@ export function createAuthRouter(authService: AuthService, options: AuthRouterOp
 
   /**
    * GET /api/auth/me
-   * Get current authenticated user
+   * Get current authenticated user and business
    */
-  router.get('/me', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+  router.get('/me', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    const responseData: MeResponseData = {
+      user: req.user!,
+    };
+
+    // Fetch business data if prisma is available and user has businessId
+    if (prisma && req.user?.businessId) {
+      try {
+        const business = await prisma.business.findUnique({
+          where: { id: req.user.businessId },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            accountState: true,
+          },
+        });
+        if (business) {
+          responseData.business = business;
+        }
+      } catch {
+        // Silently continue without business data
+      }
+    }
+
     const response: ApiResponse<MeResponseData> = {
       success: true,
-      data: {
-        user: req.user!,
-      },
+      data: responseData,
     };
 
     res.status(200).json(response);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { OnboardingData } from '../Onboarding';
-import { useBusiness } from '../../../contexts/BusinessContext';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface Props {
   data: OnboardingData;
@@ -13,7 +13,8 @@ interface Props {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const ConnectPOSStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => {
-  const { businessId } = useBusiness();
+  const { user } = useAuth();
+  const businessId = user?.businessId;
   const [searchParams, setSearchParams] = useSearchParams();
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);

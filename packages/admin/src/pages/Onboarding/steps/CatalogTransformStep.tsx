@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { OnboardingData } from '../Onboarding';
-import { useBusiness } from '../../../contexts/BusinessContext';
+import { useAuth } from '../../../contexts/AuthContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3005';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface Props {
   data: OnboardingData;
@@ -18,7 +18,8 @@ interface CatalogSuggestion {
 }
 
 const CatalogTransformStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => {
-  const { businessId } = useBusiness();
+  const { user } = useAuth();
+  const businessId = user?.businessId;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<CatalogSuggestion | null>(null);

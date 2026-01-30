@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
-import { useBusiness } from '../contexts/BusinessContext';
+import { useAuth } from '../contexts/AuthContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3005';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface Category {
   id: string;
@@ -33,7 +33,8 @@ type TabType = 'categories' | 'bases' | 'modifiers';
 type ModalType = 'category' | 'base' | 'modifier' | null;
 
 const MenuManagement: React.FC = () => {
-  const { businessId } = useBusiness();
+  const { user } = useAuth();
+  const businessId = user?.businessId;
   const [activeTab, setActiveTab] = useState<TabType>('categories');
   const [categories, setCategories] = useState<Category[]>([]);
   const [bases, setBases] = useState<Base[]>([]);

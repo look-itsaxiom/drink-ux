@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useBusiness } from '../contexts/BusinessContext';
+import { useAuth } from '../contexts/AuthContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3005';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface BusinessInfo {
   id: string;
@@ -25,7 +25,8 @@ interface POSStatus {
 }
 
 const Dashboard: React.FC = () => {
-  const { businessId } = useBusiness();
+  const { user } = useAuth();
+  const businessId = user?.businessId;
   const [loading, setLoading] = useState(true);
   const [business, setBusiness] = useState<BusinessInfo | null>(null);
   const [catalogSummary, setCatalogSummary] = useState<CatalogSummary>({ categories: 0, bases: 0, modifiers: 0 });

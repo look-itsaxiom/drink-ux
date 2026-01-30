@@ -1,5 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { BusinessProvider } from './contexts/BusinessContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import MenuManagement from './pages/MenuManagement';
 import POSIntegration from './pages/POSIntegration';
@@ -8,7 +11,8 @@ import './App.css';
 
 function AppLayout() {
   const location = useLocation();
-  const isOnboarding = location.pathname === '/onboarding';
+  const { logout, user } = useAuth();
+  const isOnboarding = location.pathname.startsWith('/onboarding');
 
   // Onboarding has its own layout
   if (isOnboarding) {
@@ -32,6 +36,16 @@ function AppLayout() {
             <Link to="/pos">POS Integration</Link>
           </li>
         </ul>
+        <div className="sidebar-footer">
+          {user && (
+            <div className="user-info">
+              <span className="user-email">{user.email}</span>
+              <button onClick={logout} className="logout-btn">
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
       </nav>
       <main className="main-content">
         <Routes>
@@ -44,16 +58,41 @@ function AppLayout() {
   );
 }
 
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+
+      {/* Protected routes */}
+      <Route
+        path="/onboarding/*"
+        element={
+          <ProtectedRoute requireOnboardingComplete={false}>
+            <Onboarding />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  );
+}
+
 function App() {
   return (
-    <BusinessProvider>
-      <Router>
-        <Routes>
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/*" element={<AppLayout />} />
-        </Routes>
-      </Router>
-    </BusinessProvider>
+    <Router>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </Router>
   );
 }
 

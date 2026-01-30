@@ -105,7 +105,7 @@ const webhookService = new WebhookService(prisma, {
 app.use("/health", createHealthRoutes(healthCheckService));
 
 // Auth routes
-app.use("/api/auth", createAuthRouter(authService));
+app.use("/api/auth", createAuthRouter(authService, { prisma }));
 
 // Business routes (public business info)
 app.use("/api/business", createBusinessRouter(prisma));
