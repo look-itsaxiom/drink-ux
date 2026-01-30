@@ -9,8 +9,9 @@ dotenv.config();
 // Database
 import prisma from "./database";
 
-// POS Adapter (use mock for now - replace with SquareAdapter in production)
+// POS Adapters
 import { MockPOSAdapter } from "./adapters/pos/MockPOSAdapter";
+import { SquareAdapter } from "./adapters/pos/SquareAdapter";
 
 // Services
 import { AuthService } from "./services/AuthService";
@@ -67,9 +68,11 @@ app.use(cookieParser());
 // CREATE SERVICES
 // =============================================================================
 
-// Create mock POS adapter for development
-// TODO: Replace with SquareAdapter when Square credentials are configured
-const posAdapter = new MockPOSAdapter();
+// Create POS adapter based on environment configuration
+const squareAppId = process.env.SQUARE_APPLICATION_ID || process.env.SQUARE_APP_ID;
+const squareAppSecret = process.env.SQUARE_APPLICATION_SECRET || process.env.SQUARE_APP_SECRET;
+const useSquare = squareAppId && squareAppSecret;
+const posAdapter = useSquare ? new SquareAdapter() : new MockPOSAdapter();
 
 // Services that just need prisma
 const authService = new AuthService(prisma);
@@ -163,7 +166,7 @@ if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
     console.log(`API server running on port ${PORT}`);
     console.log(`CORS origins: ${corsOrigins.join(", ")}`);
-    console.log(`Using mock POS adapter for development`);
+    console.log(`POS adapter: ${useSquare ? "Square" : "Mock (set SQUARE_APPLICATION_ID and SQUARE_APPLICATION_SECRET for Square)"}`);
   });
 }
 

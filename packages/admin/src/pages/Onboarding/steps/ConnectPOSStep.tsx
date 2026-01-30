@@ -10,7 +10,7 @@ interface Props {
   onBack: () => void;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3005';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const ConnectPOSStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => {
   const { businessId } = useBusiness();
@@ -74,12 +74,6 @@ const ConnectPOSStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => 
     }
   };
 
-  const handleSkip = () => {
-    // Allow skipping POS connection - they can import manually or use template
-    onUpdate({ posConnected: false });
-    onNext();
-  };
-
   return (
     <div className="step-content">
       <h2>Connect Your POS</h2>
@@ -128,13 +122,6 @@ const ConnectPOSStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => 
           </div>
 
           {error && <div className="error-message">{error}</div>}
-
-          <div className="skip-option">
-            <p>Don't have a Square account or want to set up manually?</p>
-            <button type="button" className="btn btn-link" onClick={handleSkip}>
-              Skip for now
-            </button>
-          </div>
 
           <div className="step-actions">
             <button type="button" className="btn btn-secondary" onClick={onBack}>
