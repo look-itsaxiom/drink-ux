@@ -30,15 +30,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Smart routing based on onboarding state
   const isOnboarding = location.pathname.startsWith('/onboarding');
-  const needsOnboarding = business?.accountState === 'ONBOARDING';
+  // If business is null/undefined, assume onboarding needed (safe default)
+  const needsOnboarding = !business || business.accountState === 'ONBOARDING';
 
   if (requireOnboardingComplete && needsOnboarding && !isOnboarding) {
     // User needs to complete onboarding, redirect there
     return <Navigate to="/onboarding" replace />;
   }
 
-  if (!needsOnboarding && isOnboarding) {
-    // Onboarding complete but user is on onboarding page, go to dashboard
+  // Only redirect away from onboarding if we KNOW business is complete
+  if (business && business.accountState !== 'ONBOARDING' && isOnboarding) {
+    // Onboarding complete, redirect to dashboard
     return <Navigate to="/" replace />;
   }
 
