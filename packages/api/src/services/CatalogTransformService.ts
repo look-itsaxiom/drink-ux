@@ -12,7 +12,7 @@ import { RawCatalogData, RawPOSItem, RawPOSModifier, RawPOSCategory } from '../a
 /**
  * Supported AI providers
  */
-export type AIProvider = 'anthropic' | 'openai' | 'ollama' | 'none';
+export type AIProvider = 'anthropic' | 'openai' | 'ollama' | 'custom' | 'none';
 
 /**
  * Transformed catalog suggestion from AI
@@ -46,8 +46,11 @@ export interface CatalogTransformResult {
 export class CatalogTransformService {
   private anthropicClient: Anthropic | null = null;
   private openaiClient: OpenAI | null = null;
+  private customClient: OpenAI | null = null;
   private ollamaBaseUrl: string | null = null;
   private ollamaModel: string = 'llama3.2';
+  private ollamaApiKey: string | null = null;
+  private customModel: string = 'default';
   private preferredProvider: AIProvider;
 
   constructor() {
@@ -63,11 +66,25 @@ export class CatalogTransformService {
       this.openaiClient = new OpenAI({ apiKey: openaiKey });
     }
 
+    // Initialize custom AI client (OpenAI-compatible endpoint)
+    const customBaseUrl = process.env.CUSTOM_AI_BASE_URL;
+    const customApiKey = process.env.CUSTOM_AI_API_KEY;
+    if (customBaseUrl && customApiKey) {
+      this.customClient = new OpenAI({
+        baseURL: customBaseUrl,
+        apiKey: customApiKey,
+      });
+      this.customModel = process.env.CUSTOM_AI_MODEL || 'default';
+      console.log(`Custom AI configured: ${customBaseUrl}`);
+    }
+
     // Initialize Ollama config
     const ollamaUrl = process.env.OLLAMA_BASE_URL;
     if (ollamaUrl) {
       this.ollamaBaseUrl = ollamaUrl;
       this.ollamaModel = process.env.OLLAMA_MODEL || 'llama3.2';
+      this.ollamaApiKey = process.env.OLLAMA_API_KEY || null;
+      console.log(`Ollama configured: ${ollamaUrl}`);
     }
 
     // Determine preferred provider from env or auto-detect
@@ -75,7 +92,7 @@ export class CatalogTransformService {
     if (configuredProvider && this.isProviderAvailable(configuredProvider)) {
       this.preferredProvider = configuredProvider;
     } else {
-      // Auto-detect in priority order: Anthropic > OpenAI > Ollama
+      // Auto-detect in priority order: Custom > Anthropic > OpenAI > Ollama
       this.preferredProvider = this.detectAvailableProvider();
     }
   }
@@ -89,6 +106,8 @@ export class CatalogTransformService {
         return this.anthropicClient !== null;
       case 'openai':
         return this.openaiClient !== null;
+      case 'custom':
+        return this.customClient !== null;
       case 'ollama':
         return this.ollamaBaseUrl !== null;
       default:
@@ -100,6 +119,7 @@ export class CatalogTransformService {
    * Auto-detect available provider
    */
   private detectAvailableProvider(): AIProvider {
+    if (this.customClient) return 'custom';
     if (this.anthropicClient) return 'anthropic';
     if (this.openaiClient) return 'openai';
     if (this.ollamaBaseUrl) return 'ollama';
@@ -128,6 +148,7 @@ export class CatalogTransformService {
 
     // Try preferred provider first, then fallback chain
     const providers: AIProvider[] = [this.preferredProvider];
+    if (this.preferredProvider !== 'custom' && this.customClient) providers.push('custom');
     if (this.preferredProvider !== 'anthropic' && this.anthropicClient) providers.push('anthropic');
     if (this.preferredProvider !== 'openai' && this.openaiClient) providers.push('openai');
     if (this.preferredProvider !== 'ollama' && this.ollamaBaseUrl) providers.push('ollama');
@@ -163,6 +184,8 @@ export class CatalogTransformService {
         return this.transformWithAnthropic(prompt, rawCatalog);
       case 'openai':
         return this.transformWithOpenAI(prompt, rawCatalog);
+      case 'custom':
+        return this.transformWithCustom(prompt, rawCatalog);
       case 'ollama':
         return this.transformWithOllama(prompt, rawCatalog);
       default:
@@ -221,6 +244,32 @@ export class CatalogTransformService {
   }
 
   /**
+   * Transform using custom OpenAI-compatible endpoint (e.g., local LLM server)
+   */
+  private async transformWithCustom(prompt: string, rawCatalog: RawCatalogData): Promise<CatalogTransformResult> {
+    if (!this.customClient) {
+      throw new Error('Custom AI client not initialized');
+    }
+
+    console.log('Using custom AI endpoint for catalog transformation...');
+
+    const completion = await this.customClient.chat.completions.create({
+      model: this.customModel,
+      max_tokens: 4096,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
+
+    const responseText = completion.choices[0]?.message?.content || '';
+
+    return this.parseAIResponse(responseText, rawCatalog);
+  }
+
+  /**
    * Transform using Ollama (local)
    */
   private async transformWithOllama(prompt: string, rawCatalog: RawCatalogData): Promise<CatalogTransformResult> {
@@ -228,11 +277,20 @@ export class CatalogTransformService {
       throw new Error('Ollama not configured');
     }
 
+    console.log('Using Ollama for catalog transformation...');
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add auth header if API key is configured
+    if (this.ollamaApiKey) {
+      headers['Authorization'] = `Bearer ${this.ollamaApiKey}`;
+    }
+
     const response = await fetch(`${this.ollamaBaseUrl}/api/generate`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         model: this.ollamaModel,
         prompt: prompt,
@@ -244,7 +302,8 @@ export class CatalogTransformService {
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama request failed: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Ollama request failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json() as { response?: string };

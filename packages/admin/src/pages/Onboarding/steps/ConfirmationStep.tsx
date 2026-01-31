@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { OnboardingData } from '../Onboarding';
+import { useAuth } from '../../../contexts/AuthContext';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface Props {
   data: OnboardingData;
@@ -8,6 +11,8 @@ interface Props {
 }
 
 const ConfirmationStep: React.FC<Props> = ({ data, onBack, onComplete }) => {
+  const { user, refreshUser } = useAuth();
+  const businessId = user?.businessId;
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,9 +21,29 @@ const ConfirmationStep: React.FC<Props> = ({ data, onBack, onComplete }) => {
     setError(null);
 
     try {
-      // TODO: Call API to finalize onboarding
-      // POST /api/onboarding/complete
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!businessId) {
+        throw new Error('No business ID found');
+      }
+
+      // Call API to finalize onboarding and update accountState to ACTIVE
+      const response = await fetch(`${API_BASE_URL}/api/business/${businessId}/complete-onboarding`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          businessName: data.businessName,
+          slug: data.slug,
+          contactEmail: data.contactEmail,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to complete onboarding');
+      }
+
+      // Refresh user data to get updated business state
+      await refreshUser();
 
       onComplete();
     } catch (err) {

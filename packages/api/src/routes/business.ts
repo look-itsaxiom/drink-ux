@@ -445,5 +445,100 @@ export function createBusinessRouter(
     }
   });
 
+  /**
+   * POST /api/business/:id/complete-onboarding
+   * Complete onboarding and transition business to ACTIVE state
+   */
+  router.post('/:id/complete-onboarding', async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { businessName, slug, contactEmail } = req.body;
+
+    try {
+      // Find business by ID
+      const business = await prisma.business.findUnique({
+        where: { id },
+      });
+
+      if (!business) {
+        const response: ApiResponse<never> = {
+          success: false,
+          error: {
+            code: 'BUSINESS_NOT_FOUND',
+            message: `Business '${id}' not found`,
+          },
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      // Check if business is in onboarding state
+      if (business.accountState !== 'ONBOARDING') {
+        const response: ApiResponse<never> = {
+          success: false,
+          error: {
+            code: 'INVALID_STATE',
+            message: 'Business is not in onboarding state',
+          },
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      // Check if slug is taken by another business (if changing)
+      if (slug && slug !== business.slug) {
+        const existingBusiness = await prisma.business.findUnique({
+          where: { slug },
+        });
+        if (existingBusiness) {
+          const response: ApiResponse<never> = {
+            success: false,
+            error: {
+              code: 'SLUG_TAKEN',
+              message: `The URL slug '${slug}' is already taken`,
+            },
+          };
+          res.status(400).json(response);
+          return;
+        }
+      }
+
+      // Update business with new values and set accountState to ACTIVE
+      const updatedBusiness = await prisma.business.update({
+        where: { id },
+        data: {
+          name: businessName || business.name,
+          slug: slug || business.slug,
+          contactEmail: contactEmail || business.contactEmail,
+          accountState: 'ACTIVE',
+        },
+      });
+
+      const response: ApiResponse<{ message: string; business: { id: string; name: string; slug: string; accountState: AccountState } }> = {
+        success: true,
+        data: {
+          message: 'Onboarding complete! Your business is now active.',
+          business: {
+            id: updatedBusiness.id,
+            name: updatedBusiness.name,
+            slug: updatedBusiness.slug,
+            accountState: updatedBusiness.accountState,
+          },
+        },
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      console.error('Complete onboarding error:', error);
+      const response: ApiResponse<never> = {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to complete onboarding',
+        },
+      };
+      res.status(500).json(response);
+    }
+  });
+
   return router;
 }

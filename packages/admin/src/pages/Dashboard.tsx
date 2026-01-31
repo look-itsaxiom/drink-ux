@@ -4,15 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-interface BusinessInfo {
-  id: string;
-  name: string;
-  posProvider: string | null;
-  posMerchantId: string | null;
-  subscriptionStatus: string;
-  createdAt: string;
-}
-
 interface CatalogSummary {
   categories: number;
   bases: number;
@@ -25,10 +16,9 @@ interface POSStatus {
 }
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, business } = useAuth();
   const businessId = user?.businessId;
   const [loading, setLoading] = useState(true);
-  const [business, setBusiness] = useState<BusinessInfo | null>(null);
   const [catalogSummary, setCatalogSummary] = useState<CatalogSummary>({ categories: 0, bases: 0, modifiers: 0 });
   const [posStatus, setPosStatus] = useState<POSStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +26,8 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (businessId) {
       fetchDashboardData();
+    } else {
+      setLoading(false);
     }
   }, [businessId]);
 
@@ -44,11 +36,8 @@ const Dashboard: React.FC = () => {
     setError(null);
 
     try {
-      // Fetch all data in parallel
-      const [businessRes, categoriesRes, basesRes, modifiersRes, posStatusRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/businesses/${businessId}`, {
-          credentials: 'include',
-        }).catch(() => null),
+      // Fetch catalog and POS status data (business info comes from AuthContext)
+      const [categoriesRes, basesRes, modifiersRes, posStatusRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/catalog/categories?businessId=${businessId}`, {
           credentials: 'include',
         }).catch(() => null),
@@ -62,14 +51,6 @@ const Dashboard: React.FC = () => {
           credentials: 'include',
         }).catch(() => null),
       ]);
-
-      // Parse business info
-      if (businessRes?.ok) {
-        const businessData = await businessRes.json();
-        if (businessData.success) {
-          setBusiness(businessData.data);
-        }
-      }
 
       // Parse catalog counts
       const summary: CatalogSummary = { categories: 0, bases: 0, modifiers: 0 };

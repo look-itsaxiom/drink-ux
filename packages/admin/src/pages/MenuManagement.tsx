@@ -29,7 +29,20 @@ interface Modifier {
   available: boolean;
 }
 
-type TabType = 'categories' | 'bases' | 'modifiers';
+interface SquareItem {
+  id: string;
+  name: string;
+  description?: string;
+  variations?: Array<{ name: string; price: number }>;
+}
+
+interface SquareCatalog {
+  categories: Array<{ id: string; name: string }>;
+  items: SquareItem[];
+  modifiers: Array<{ id: string; name: string; price?: number }>;
+}
+
+type TabType = 'categories' | 'bases' | 'modifiers' | 'square';
 type ModalType = 'category' | 'base' | 'modifier' | null;
 
 const MenuManagement: React.FC = () => {
@@ -42,6 +55,10 @@ const MenuManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Square catalog state
+  const [squareCatalog, setSquareCatalog] = useState<SquareCatalog | null>(null);
+  const [squareLoading, setSquareLoading] = useState(false);
 
   // Modal state
   const [modalType, setModalType] = useState<ModalType>(null);
@@ -93,6 +110,44 @@ const MenuManagement: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const fetchSquareCatalog = async () => {
+    if (!businessId || squareLoading) return;
+
+    setSquareLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/pos/import-catalog`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ businessId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to fetch Square catalog');
+      }
+
+      const result = await response.json();
+      if (result.data?.rawCatalog) {
+        setSquareCatalog(result.data.rawCatalog);
+      } else {
+        setSquareCatalog({ categories: [], items: [], modifiers: [] });
+      }
+    } catch (err) {
+      console.error('Failed to fetch Square catalog:', err);
+      setSquareCatalog({ categories: [], items: [], modifiers: [] });
+    } finally {
+      setSquareLoading(false);
+    }
+  };
+
+  // Fetch Square catalog when tab is selected
+  useEffect(() => {
+    if (activeTab === 'square' && !squareCatalog && !squareLoading) {
+      fetchSquareCatalog();
+    }
+  }, [activeTab]);
 
   const getCategoryName = (categoryId: string): string => {
     const category = categories.find(c => c.id === categoryId);
@@ -253,6 +308,13 @@ const MenuManagement: React.FC = () => {
         onClick={() => setActiveTab('modifiers')}
       >
         Modifiers ({modifiers.length})
+      </button>
+      <button
+        className={`btn ${activeTab === 'square' ? 'btn-primary' : 'btn-secondary'}`}
+        onClick={() => setActiveTab('square')}
+        style={{ marginLeft: 'auto' }}
+      >
+        View Square Items
       </button>
     </div>
   );
@@ -476,6 +538,171 @@ const MenuManagement: React.FC = () => {
     );
   };
 
+  const renderSquareItems = () => {
+    if (squareLoading) {
+      return (
+        <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #3498db',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          <p>Loading Square catalog...</p>
+        </div>
+      );
+    }
+
+    const hasData = squareCatalog && (
+      squareCatalog.categories.length > 0 ||
+      squareCatalog.items.length > 0 ||
+      squareCatalog.modifiers.length > 0
+    );
+
+    if (!hasData) {
+      return (
+        <div className="card">
+          <div style={{
+            backgroundColor: '#fff3e0',
+            padding: '20px',
+            borderRadius: '8px',
+            textAlign: 'center'
+          }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#ef6c00' }}>No Square Catalog Items</h3>
+            <p style={{ margin: 0, color: '#666' }}>
+              Your Square catalog appears to be empty. Add items in your Square Dashboard,
+              then refresh this page to see them here.
+            </p>
+          </div>
+          <div style={{ marginTop: '20px', textAlign: 'center' }}>
+            <button className="btn btn-secondary" onClick={fetchSquareCatalog}>
+              Refresh Square Data
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <h3 style={{ margin: 0 }}>Your Square Catalog</h3>
+            <p style={{ margin: '5px 0 0 0', color: '#7f8c8d', fontSize: '14px' }}>
+              Reference these items when building your drink-ux menu
+            </p>
+          </div>
+          <button className="btn btn-secondary" onClick={fetchSquareCatalog}>
+            Refresh
+          </button>
+        </div>
+
+        {/* Square Categories */}
+        {squareCatalog!.categories.length > 0 && (
+          <div style={{ marginBottom: '30px' }}>
+            <h4 style={{ marginBottom: '10px', color: '#2c3e50' }}>
+              Categories ({squareCatalog!.categories.length})
+            </h4>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+              {squareCatalog!.categories.map(cat => (
+                <span key={cat.id} style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#e8f5e9',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  color: '#2e7d32'
+                }}>
+                  {cat.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Square Items */}
+        {squareCatalog!.items.length > 0 && (
+          <div style={{ marginBottom: '30px' }}>
+            <h4 style={{ marginBottom: '10px', color: '#2c3e50' }}>
+              Items ({squareCatalog!.items.length})
+            </h4>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #ecf0f1' }}>
+                  <th style={{ padding: '10px', textAlign: 'left' }}>Name</th>
+                  <th style={{ padding: '10px', textAlign: 'left' }}>Description</th>
+                  <th style={{ padding: '10px', textAlign: 'left' }}>Variations</th>
+                </tr>
+              </thead>
+              <tbody>
+                {squareCatalog!.items.map(item => (
+                  <tr key={item.id} style={{ borderBottom: '1px solid #ecf0f1' }}>
+                    <td style={{ padding: '10px', fontWeight: 500 }}>{item.name}</td>
+                    <td style={{ padding: '10px', color: '#7f8c8d' }}>
+                      {item.description || '-'}
+                    </td>
+                    <td style={{ padding: '10px' }}>
+                      {item.variations && item.variations.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {item.variations.map((v, idx) => (
+                            <span key={idx} style={{ fontSize: '13px' }}>
+                              {v.name}: {formatPrice(v.price / 100)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Square Modifiers */}
+        {squareCatalog!.modifiers.length > 0 && (
+          <div>
+            <h4 style={{ marginBottom: '10px', color: '#2c3e50' }}>
+              Modifiers ({squareCatalog!.modifiers.length})
+            </h4>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #ecf0f1' }}>
+                  <th style={{ padding: '10px', textAlign: 'left' }}>Name</th>
+                  <th style={{ padding: '10px', textAlign: 'left' }}>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {squareCatalog!.modifiers.map(mod => (
+                  <tr key={mod.id} style={{ borderBottom: '1px solid #ecf0f1' }}>
+                    <td style={{ padding: '10px', fontWeight: 500 }}>{mod.name}</td>
+                    <td style={{ padding: '10px' }}>
+                      {mod.price && mod.price > 0 ? `+${formatPrice(mod.price / 100)}` : 'Included'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div style={{
+          marginTop: '30px',
+          padding: '15px',
+          backgroundColor: '#e3f2fd',
+          borderRadius: '8px'
+        }}>
+          <p style={{ margin: 0, fontSize: '14px', color: '#1565c0' }}>
+            <strong>Tip:</strong> Use the Categories, Drink Bases, and Modifiers tabs to create
+            your drink-ux menu. You can reference these Square items for names and prices.
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   const renderCategoryForm = () => (
     <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
       <div style={{ marginBottom: '15px' }}>
@@ -685,6 +912,7 @@ const MenuManagement: React.FC = () => {
       {activeTab === 'categories' && renderCategories()}
       {activeTab === 'bases' && renderBases()}
       {activeTab === 'modifiers' && renderModifiers()}
+      {activeTab === 'square' && renderSquareItems()}
 
       {/* Add/Edit Category Modal */}
       <Modal

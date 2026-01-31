@@ -11,10 +11,10 @@ interface Props {
   onBack: () => void;
 }
 
-interface CatalogSuggestion {
-  categories: Array<{ name: string; icon?: string }>;
-  bases: Array<{ name: string; category: string; basePrice: number }>;
-  modifiers: Array<{ name: string; type: 'MILK' | 'SYRUP' | 'TOPPING'; price: number }>;
+interface SquareImportSummary {
+  categories: number;
+  items: number;
+  modifiers: number;
 }
 
 const CatalogTransformStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => {
@@ -22,16 +22,15 @@ const CatalogTransformStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack 
   const businessId = user?.businessId;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<CatalogSuggestion | null>(null);
-  const [editedSuggestions, setEditedSuggestions] = useState<CatalogSuggestion | null>(null);
+  const [importSummary, setImportSummary] = useState<SquareImportSummary | null>(null);
 
   useEffect(() => {
-    if (data.posConnected && !suggestions) {
-      fetchAndTransformCatalog();
+    if (data.posConnected && !importSummary) {
+      fetchSquareSummary();
     }
   }, [data.posConnected]);
 
-  const fetchAndTransformCatalog = async () => {
+  const fetchSquareSummary = async () => {
     setLoading(true);
     setError(null);
 
@@ -40,96 +39,34 @@ const CatalogTransformStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack 
         throw new Error('No business ID configured');
       }
 
-      // 1. Fetch raw catalog from Square via API
-      const importResponse = await fetch(`${API_BASE_URL}/api/pos/import-catalog`, {
+      // Fetch raw catalog summary from Square
+      const response = await fetch(`${API_BASE_URL}/api/pos/import-catalog`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ businessId }),
       });
 
-      if (!importResponse.ok) {
-        const errorData = await importResponse.json();
-        throw new Error(errorData.error?.message || 'Failed to import catalog');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to fetch Square catalog');
       }
 
-      const importResult = await importResponse.json();
-      const rawCatalog = importResult.data.rawCatalog;
-
-      // 2. Send raw catalog to AI for transformation
-      const transformResponse = await fetch(`${API_BASE_URL}/api/pos/transform-catalog`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ rawCatalog }),
-      });
-
-      if (!transformResponse.ok) {
-        const errorData = await transformResponse.json();
-        throw new Error(errorData.error?.message || 'Failed to transform catalog');
-      }
-
-      const transformResult = await transformResponse.json();
-      const aiSuggestions = transformResult.data.suggestions;
-      const aiPowered = transformResult.data.aiPowered;
-
-      // 3. Convert AI suggestions to our UI format
-      const transformedSuggestions: CatalogSuggestion = {
-        categories: aiSuggestions.categories.map((cat: { name: string; icon: string }) => ({
-          name: cat.name,
-          icon: cat.icon,
-        })),
-        bases: aiSuggestions.bases.map((base: { name: string; categoryName: string; basePrice: number }) => ({
-          name: base.name,
-          category: base.categoryName,
-          basePrice: base.basePrice,
-        })),
-        modifiers: aiSuggestions.modifiers.map((mod: { name: string; type: string; price: number }) => ({
-          name: mod.name,
-          type: mod.type as 'MILK' | 'SYRUP' | 'TOPPING',
-          price: mod.price,
-        })),
-      };
-
-      // Show whether AI was used
-      if (aiPowered && aiSuggestions.reasoning) {
-        console.log('AI transformation reasoning:', aiSuggestions.reasoning);
-      }
-
-      setSuggestions(transformedSuggestions);
-      setEditedSuggestions(transformedSuggestions);
+      const result = await response.json();
+      setImportSummary(result.data.summary);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to transform catalog');
+      // Don't show error for empty catalog - that's expected for new sandbox
+      const message = err instanceof Error ? err.message : 'Failed to fetch catalog';
+      if (!message.includes('No catalog')) {
+        setError(message);
+      }
+      setImportSummary({ categories: 0, items: 0, modifiers: 0 });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUseTemplate = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Use predefined template catalog
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      onUpdate({
-        catalogTransformed: true,
-        catalogSummary: {
-          categories: 3,
-          bases: 8,
-          modifiers: 12,
-        },
-      });
-      onNext();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to apply template');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStartFresh = () => {
+  const handleContinue = () => {
     onUpdate({
       catalogTransformed: true,
       catalogSummary: {
@@ -141,73 +78,33 @@ const CatalogTransformStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack 
     onNext();
   };
 
-  const handleApplySuggestions = async () => {
-    if (!editedSuggestions) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // TODO: Save the transformed catalog to the API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      onUpdate({
-        catalogTransformed: true,
-        catalogSummary: {
-          categories: editedSuggestions.categories.length,
-          bases: editedSuggestions.bases.length,
-          modifiers: editedSuggestions.modifiers.length,
-        },
-      });
-      onNext();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save catalog');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // If no POS connected, show alternate options
   if (!data.posConnected) {
     return (
       <div className="step-content">
         <h2>Set Up Your Menu</h2>
         <p className="step-description">
-          Choose how you'd like to set up your drink menu.
+          You can set up your drink menu after completing onboarding.
         </p>
 
-        <div className="catalog-options">
-          <div className="catalog-option">
-            <h3>Start with a Template</h3>
-            <p>Get started quickly with a pre-built coffee shop menu that you can customize.</p>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handleUseTemplate}
-              disabled={loading}
-            >
-              {loading ? 'Setting up...' : 'Use Template'}
-            </button>
-          </div>
-
-          <div className="catalog-option">
-            <h3>Start Fresh</h3>
-            <p>Build your menu from scratch in the admin dashboard.</p>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleStartFresh}
-            >
-              Start Fresh
-            </button>
-          </div>
+        <div className="catalog-info" style={{
+          backgroundColor: '#f8f9fa',
+          padding: '20px',
+          borderRadius: '8px',
+          marginBottom: '20px'
+        }}>
+          <p style={{ margin: 0 }}>
+            After onboarding, you'll be able to create categories, drink bases, and modifiers
+            in the Menu Management section.
+          </p>
         </div>
-
-        {error && <div className="error-message">{error}</div>}
 
         <div className="step-actions">
           <button type="button" className="btn btn-secondary" onClick={onBack}>
             Back
+          </button>
+          <button type="button" className="btn btn-primary" onClick={handleContinue}>
+            Continue
           </button>
         </div>
       </div>
@@ -215,83 +112,111 @@ const CatalogTransformStep: React.FC<Props> = ({ data, onUpdate, onNext, onBack 
   }
 
   // Loading state
-  if (loading && !suggestions) {
+  if (loading) {
     return (
       <div className="step-content">
-        <h2>Analyzing Your Menu</h2>
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Our AI is analyzing your Square catalog and transforming it into the drink-ux format...</p>
+        <h2>Checking Your Square Catalog</h2>
+        <div className="loading-state" style={{ textAlign: 'center', padding: '40px' }}>
+          <div className="spinner" style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #3498db',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          <p>Fetching your Square catalog...</p>
         </div>
       </div>
     );
   }
 
-  // Show AI suggestions for review
+  const hasSquareData = importSummary && (importSummary.categories > 0 || importSummary.items > 0 || importSummary.modifiers > 0);
+
   return (
     <div className="step-content">
-      <h2>Review Catalog Suggestions</h2>
+      <h2>Set Up Your Menu</h2>
       <p className="step-description">
-        We've analyzed your menu and created suggestions for your drink-ux catalog.
-        Review and edit as needed before applying.
+        Your Square account is connected. Now let's set up your drink-ux menu.
       </p>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && <div className="error-message" style={{ marginBottom: '20px' }}>{error}</div>}
 
-      {editedSuggestions && (
-        <div className="suggestions-review">
-          <div className="suggestion-section">
-            <h3>Categories ({editedSuggestions.categories.length})</h3>
-            <div className="items-list">
-              {editedSuggestions.categories.map((cat, i) => (
-                <div key={i} className="item-card">
-                  <span className="item-name">{cat.name}</span>
-                </div>
-              ))}
+      {hasSquareData ? (
+        <div className="square-summary" style={{
+          backgroundColor: '#e8f5e9',
+          padding: '20px',
+          borderRadius: '8px',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ margin: '0 0 15px 0', color: '#2e7d32' }}>
+            Found in Your Square Catalog
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2e7d32' }}>
+                {importSummary?.categories || 0}
+              </div>
+              <div style={{ fontSize: '14px', color: '#666' }}>Categories</div>
             </div>
-          </div>
-
-          <div className="suggestion-section">
-            <h3>Drink Bases ({editedSuggestions.bases.length})</h3>
-            <div className="items-list">
-              {editedSuggestions.bases.map((base, i) => (
-                <div key={i} className="item-card">
-                  <span className="item-name">{base.name}</span>
-                  <span className="item-detail">{base.category}</span>
-                  <span className="item-price">${base.basePrice.toFixed(2)}</span>
-                </div>
-              ))}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2e7d32' }}>
+                {importSummary?.items || 0}
+              </div>
+              <div style={{ fontSize: '14px', color: '#666' }}>Items</div>
             </div>
-          </div>
-
-          <div className="suggestion-section">
-            <h3>Modifiers ({editedSuggestions.modifiers.length})</h3>
-            <div className="items-list">
-              {editedSuggestions.modifiers.map((mod, i) => (
-                <div key={i} className="item-card">
-                  <span className="item-name">{mod.name}</span>
-                  <span className="item-detail">{mod.type}</span>
-                  <span className="item-price">
-                    {mod.price > 0 ? `+$${mod.price.toFixed(2)}` : 'Included'}
-                  </span>
-                </div>
-              ))}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2e7d32' }}>
+                {importSummary?.modifiers || 0}
+              </div>
+              <div style={{ fontSize: '14px', color: '#666' }}>Modifiers</div>
             </div>
           </div>
         </div>
+      ) : (
+        <div className="square-summary" style={{
+          backgroundColor: '#fff3e0',
+          padding: '20px',
+          borderRadius: '8px',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#ef6c00' }}>
+            No Items in Square Catalog
+          </h3>
+          <p style={{ margin: 0, color: '#666' }}>
+            Your Square catalog appears to be empty. No worries - you can create your
+            drink menu from scratch in the Menu Management section.
+          </p>
+        </div>
       )}
+
+      <div className="next-steps" style={{
+        backgroundColor: '#f8f9fa',
+        padding: '20px',
+        borderRadius: '8px',
+        marginBottom: '20px'
+      }}>
+        <h3 style={{ margin: '0 0 15px 0' }}>What's Next?</h3>
+        <p style={{ margin: '0 0 10px 0' }}>
+          After completing onboarding, go to <strong>Menu Management</strong> to:
+        </p>
+        <ul style={{ margin: 0, paddingLeft: '20px' }}>
+          <li>Create drink categories (Coffee, Tea, Specialty, etc.)</li>
+          <li>Add drink bases (Latte, Cappuccino, Cold Brew, etc.)</li>
+          <li>Set up modifiers (milks, syrups, toppings)</li>
+          {hasSquareData && (
+            <li>Reference your Square items while building your menu</li>
+          )}
+        </ul>
+      </div>
 
       <div className="step-actions">
         <button type="button" className="btn btn-secondary" onClick={onBack}>
           Back
         </button>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={handleApplySuggestions}
-          disabled={loading}
-        >
-          {loading ? 'Applying...' : 'Apply Suggestions'}
+        <button type="button" className="btn btn-primary" onClick={handleContinue}>
+          Continue to Confirmation
         </button>
       </div>
     </div>

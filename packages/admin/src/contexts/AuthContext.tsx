@@ -15,6 +15,11 @@ interface Business {
   name: string;
   slug: string;
   accountState: string;
+  posProvider: string | null;
+  posMerchantId: string | null;
+  contactEmail: string | null;
+  subscriptionStatus: string;
+  createdAt: string;
 }
 
 interface AuthContextType {

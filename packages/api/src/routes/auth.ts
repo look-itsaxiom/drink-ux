@@ -38,6 +38,11 @@ interface MeResponseData {
     name: string;
     slug: string;
     accountState: string;
+    posProvider: string | null;
+    posMerchantId: string | null;
+    contactEmail: string | null;
+    subscriptionStatus: string | null;
+    createdAt: Date;
   };
 }
 
@@ -183,6 +188,11 @@ export function createAuthRouter(authService: AuthService, options: AuthRouterOp
             name: true,
             slug: true,
             accountState: true,
+            posProvider: true,
+            posMerchantId: true,
+            contactEmail: true,
+            subscriptionStatus: true,
+            createdAt: true,
           },
         });
         if (business) {
