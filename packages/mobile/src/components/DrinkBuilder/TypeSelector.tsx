@@ -1,9 +1,9 @@
 import React from "react";
 import { IonList, IonItem, IonLabel, IonNote, IonIcon, IonSpinner } from "@ionic/react";
 import { arrowBack, alertCircleOutline } from "ionicons/icons";
-import { DrinkCategory, DrinkType, TemperatureConstraint } from "@drink-ux/shared";
+import { DrinkCategory, DrinkType } from "@drink-ux/shared";
 import { useCatalogContext } from "../../context/CatalogContext";
-import { CatalogItem } from "../../services/catalogService";
+import { MappedBase, getDefaultIsHot } from "../../services/catalogService";
 import "./TypeSelector.css";
 
 interface TypeSelectorProps {
@@ -58,40 +58,23 @@ const getFallbackDrinkTypes = (category: DrinkCategory): DrinkType[] => {
 };
 
 /**
- * Convert temperature constraint to isHot value
+ * Transform mapped base to DrinkType
+ * Note: DrinkType.id now stores the squareItemId for order submission
  */
-function getIsHotFromConstraint(constraint: TemperatureConstraint | string): boolean | undefined {
-  switch (constraint) {
-    case TemperatureConstraint.HOT_ONLY:
-    case 'HOT_ONLY':
-      return true;
-    case TemperatureConstraint.ICED_ONLY:
-    case 'ICED_ONLY':
-      return false;
-    case TemperatureConstraint.BOTH:
-    case 'BOTH':
-    default:
-      return undefined;
-  }
-}
-
-/**
- * Transform API catalog item to DrinkType
- */
-function transformToDrinkType(item: CatalogItem, category: DrinkCategory): DrinkType {
+function transformToDrinkType(base: MappedBase, category: DrinkCategory): DrinkType {
   return {
-    id: item.id,
-    name: item.name,
+    id: base.squareItemId, // Use Square ID directly
+    name: base.name,
     category,
-    basePrice: item.basePrice,
-    isHot: getIsHotFromConstraint(item.temperatureConstraint),
+    basePrice: base.price,
+    isHot: getDefaultIsHot(base.temperatures),
   };
 }
 
 const TypeSelector: React.FC<TypeSelectorProps> = ({ category, categoryId, onSelect, onBack }) => {
   // Try to use catalog context, but handle the case where it's not available
-  let catalogData: { getItemsByCategory: (id: string) => CatalogItem[]; loading: boolean; error: string | null } = {
-    getItemsByCategory: () => [],
+  let catalogData: { getBasesByCategory: (id: string) => MappedBase[]; loading: boolean; error: string | null } = {
+    getBasesByCategory: () => [],
     loading: false,
     error: null,
   };
@@ -102,12 +85,12 @@ const TypeSelector: React.FC<TypeSelectorProps> = ({ category, categoryId, onSel
     // Context not available, use fallback
   }
 
-  const { getItemsByCategory, loading, error } = catalogData;
+  const { getBasesByCategory, loading, error } = catalogData;
 
-  // Get items from API if categoryId is provided
-  const apiItems = categoryId ? getItemsByCategory(categoryId) : [];
-  const drinkTypes = apiItems.length > 0
-    ? apiItems.map(item => transformToDrinkType(item, category))
+  // Get bases from API if categoryId is provided
+  const apiBases = categoryId ? getBasesByCategory(categoryId) : [];
+  const drinkTypes = apiBases.length > 0
+    ? apiBases.map(base => transformToDrinkType(base, category))
     : getFallbackDrinkTypes(category);
 
   // Show loading state
@@ -126,7 +109,7 @@ const TypeSelector: React.FC<TypeSelectorProps> = ({ category, categoryId, onSel
   }
 
   // Show error state (but still show fallback data)
-  const showError = error && apiItems.length === 0;
+  const showError = error && apiBases.length === 0;
 
   return (
     <div className="section">

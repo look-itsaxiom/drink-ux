@@ -1,307 +1,151 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
-import { TemperatureConstraint } from '@drink-ux/shared';
+/**
+ * useCatalog Hook Tests
+ * Tests for the mapped catalog hook
+ */
+
+import { renderHook, waitFor } from '@testing-library/react';
 import { useCatalog } from '../useCatalog';
-import { CatalogData, CategoryWithItems } from '../../services/catalogService';
-import { createMockResponse, createMockErrorResponse } from '../../test/setup';
+import { getMappedCatalog, MappedCatalog } from '../../services/catalogService';
+
+// Mock the catalog service
+jest.mock('../../services/catalogService', () => ({
+  getMappedCatalog: jest.fn(),
+  groupBasesByCategory: jest.fn((bases) => {
+    const categoryMap = new Map<string, any[]>();
+    for (const base of bases) {
+      const category = base.category || 'Other';
+      if (!categoryMap.has(category)) {
+        categoryMap.set(category, []);
+      }
+      categoryMap.get(category)!.push(base);
+    }
+    return Array.from(categoryMap.entries()).map(([name, items]) => ({
+      id: name.toLowerCase().replace(/\s+/g, '_'),
+      name,
+      items,
+    }));
+  }),
+}));
+
+const mockGetMappedCatalog = getMappedCatalog as jest.MockedFunction<typeof getMappedCatalog>;
+
+// Sample mapped catalog data
+const mockMappedCatalog: MappedCatalog = {
+  bases: [
+    {
+      squareItemId: 'item-1',
+      name: 'Latte',
+      price: 4.50,
+      category: 'Coffee',
+      sizes: ['small', 'medium', 'large'],
+      temperatures: ['hot', 'iced'],
+    },
+    {
+      squareItemId: 'item-2',
+      name: 'Green Tea',
+      price: 3.00,
+      category: 'Tea',
+      sizes: ['medium', 'large'],
+      temperatures: ['hot', 'iced'],
+    },
+  ],
+  modifiers: {
+    milks: [
+      { squareModifierId: 'mod-1', name: 'Oat Milk', price: 0.75 },
+    ],
+    syrups: [
+      { squareModifierId: 'mod-2', name: 'Vanilla', price: 0.50 },
+    ],
+    toppings: [],
+  },
+};
 
 describe('useCatalog', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
+    mockGetMappedCatalog.mockResolvedValue(mockMappedCatalog);
   });
 
-  afterEach(() => {
-    Object.assign(window.location, {
-      hostname: 'localhost',
-      search: '',
-    });
+  it('should initialize with loading state when businessId is provided', () => {
+    const { result } = renderHook(() =>
+      useCatalog({ businessId: 'test-business-id' })
+    );
+
+    expect(result.current.loading).toBe(true);
+    expect(result.current.catalog).toBeNull();
+    expect(result.current.categories).toEqual([]);
   });
 
-  const mockCategory: CategoryWithItems = {
-    id: 'cat-1',
-    name: 'Coffee',
-    displayOrder: 1,
-    color: '#8B4513',
-    icon: 'cafe',
-    items: [
-      {
-        id: 'base-1',
-        name: 'Latte',
-        basePrice: 4.5,
-        temperatureConstraint: TemperatureConstraint.BOTH,
-        visualColor: '#C4A484',
-      },
-      {
-        id: 'base-2',
-        name: 'Americano',
-        basePrice: 3.5,
-        temperatureConstraint: TemperatureConstraint.BOTH,
-        visualColor: '#3C2A21',
-      },
-    ],
-  };
+  it('should fetch catalog on mount', async () => {
+    const { result } = renderHook(() =>
+      useCatalog({ businessId: 'test-business-id' })
+    );
 
-  const mockCatalogData: CatalogData = {
-    businessId: 'biz-123',
-    categories: [
-      mockCategory,
-      {
-        id: 'cat-2',
-        name: 'Tea',
-        displayOrder: 2,
-        color: '#2E7D32',
-        icon: 'leaf',
-        items: [
-          {
-            id: 'base-3',
-            name: 'Green Tea',
-            basePrice: 3.0,
-            temperatureConstraint: TemperatureConstraint.BOTH,
-            visualColor: '#90EE90',
-          },
-        ],
-      },
-    ],
-  };
-
-  describe('initial state', () => {
-    it('should start with loading true when business slug is provided', () => {
-      vi.mocked(global.fetch).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
-      );
-
-      const { result } = renderHook(() =>
-        useCatalog({ businessSlug: 'test-coffee-shop' })
-      );
-
-      expect(result.current.loading).toBe(true);
-      expect(result.current.catalog).toBeNull();
-      expect(result.current.error).toBeNull();
-    });
-
-    it('should not fetch when no business slug is provided', () => {
-      const { result } = renderHook(() => useCatalog({}));
-
+    await waitFor(() => {
       expect(result.current.loading).toBe(false);
-      expect(result.current.catalog).toBeNull();
-      // No error since it's just waiting for a slug
     });
+
+    expect(mockGetMappedCatalog).toHaveBeenCalledWith('test-business-id');
+    expect(result.current.catalog).toEqual(mockMappedCatalog);
+    expect(result.current.bases).toHaveLength(2);
   });
 
-  describe('successful fetch', () => {
-    it('should fetch and return catalog data', async () => {
-      const mockResponse = createMockResponse({
-        success: true,
-        data: mockCatalogData,
-      });
-      vi.mocked(global.fetch).mockResolvedValueOnce(mockResponse);
+  it('should derive categories from bases', async () => {
+    const { result } = renderHook(() =>
+      useCatalog({ businessId: 'test-business-id' })
+    );
 
-      const { result } = renderHook(() =>
-        useCatalog({ businessSlug: 'test-coffee-shop' })
-      );
-
-      expect(result.current.loading).toBe(true);
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.catalog).toEqual(mockCatalogData);
-      expect(result.current.error).toBeNull();
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
-    it('should provide categories array', async () => {
-      const mockResponse = createMockResponse({
-        success: true,
-        data: mockCatalogData,
-      });
-      vi.mocked(global.fetch).mockResolvedValueOnce(mockResponse);
-
-      const { result } = renderHook(() =>
-        useCatalog({ businessSlug: 'test-coffee-shop' })
-      );
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.categories).toHaveLength(2);
-      expect(result.current.categories[0].name).toBe('Coffee');
-      expect(result.current.categories[1].name).toBe('Tea');
-    });
+    expect(result.current.categories).toHaveLength(2);
+    expect(result.current.categories.map(c => c.name)).toContain('Coffee');
+    expect(result.current.categories.map(c => c.name)).toContain('Tea');
   });
 
-  describe('error handling', () => {
-    it('should handle business not found error', async () => {
-      const mockError = createMockErrorResponse(
-        'BUSINESS_NOT_FOUND',
-        "Business 'invalid-slug' not found",
-        404
-      );
-      vi.mocked(global.fetch).mockResolvedValueOnce(mockError);
+  it('should provide modifiers grouped by type', async () => {
+    const { result } = renderHook(() =>
+      useCatalog({ businessId: 'test-business-id' })
+    );
 
-      const { result } = renderHook(() =>
-        useCatalog({ businessSlug: 'invalid-slug' })
-      );
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.catalog).toBeNull();
-      expect(result.current.error).toBe("Business 'invalid-slug' not found");
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
-    it('should handle network error', async () => {
-      vi.mocked(global.fetch).mockRejectedValueOnce(
-        new TypeError('Failed to fetch')
-      );
-
-      const { result } = renderHook(() =>
-        useCatalog({ businessSlug: 'test-coffee-shop' })
-      );
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.catalog).toBeNull();
-      expect(result.current.error).toBe('Unable to connect to server');
-    });
+    expect(result.current.modifiers.milks).toHaveLength(1);
+    expect(result.current.modifiers.syrups).toHaveLength(1);
+    expect(result.current.modifiers.toppings).toHaveLength(0);
   });
 
-  describe('getItemsByCategory', () => {
-    it('should return items for a specific category', async () => {
-      const mockResponse = createMockResponse({
-        success: true,
-        data: mockCatalogData,
-      });
-      vi.mocked(global.fetch).mockResolvedValueOnce(mockResponse);
+  it('should skip fetch when skip option is true', () => {
+    renderHook(() =>
+      useCatalog({ businessId: 'test-business-id', skip: true })
+    );
 
-      const { result } = renderHook(() =>
-        useCatalog({ businessSlug: 'test-coffee-shop' })
-      );
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      const coffeeItems = result.current.getItemsByCategory('cat-1');
-      expect(coffeeItems).toHaveLength(2);
-      expect(coffeeItems[0].name).toBe('Latte');
-
-      const teaItems = result.current.getItemsByCategory('cat-2');
-      expect(teaItems).toHaveLength(1);
-      expect(teaItems[0].name).toBe('Green Tea');
-    });
-
-    it('should return empty array for unknown category', async () => {
-      const mockResponse = createMockResponse({
-        success: true,
-        data: mockCatalogData,
-      });
-      vi.mocked(global.fetch).mockResolvedValueOnce(mockResponse);
-
-      const { result } = renderHook(() =>
-        useCatalog({ businessSlug: 'test-coffee-shop' })
-      );
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      const items = result.current.getItemsByCategory('unknown');
-      expect(items).toEqual([]);
-    });
+    expect(mockGetMappedCatalog).not.toHaveBeenCalled();
   });
 
-  describe('refetch', () => {
-    it('should allow manual refetch', async () => {
-      // First call fails
-      vi.mocked(global.fetch).mockRejectedValueOnce(
-        new TypeError('Failed to fetch')
-      );
+  it('should not fetch when businessId is null', () => {
+    const { result } = renderHook(() =>
+      useCatalog({ businessId: null })
+    );
 
-      const { result } = renderHook(() =>
-        useCatalog({ businessSlug: 'test-coffee-shop' })
-      );
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.error).toBe('Unable to connect to server');
-
-      // Second call succeeds
-      const mockResponse = createMockResponse({
-        success: true,
-        data: mockCatalogData,
-      });
-      vi.mocked(global.fetch).mockResolvedValueOnce(mockResponse);
-
-      act(() => {
-        result.current.refetch();
-      });
-
-      await waitFor(() => {
-        expect(result.current.catalog).toEqual(mockCatalogData);
-      });
-
-      expect(result.current.error).toBeNull();
-    });
+    expect(mockGetMappedCatalog).not.toHaveBeenCalled();
+    expect(result.current.loading).toBe(false);
   });
 
-  describe('caching', () => {
-    it('should not refetch when businessSlug does not change', async () => {
-      const mockResponse = createMockResponse({
-        success: true,
-        data: mockCatalogData,
-      });
-      vi.mocked(global.fetch).mockResolvedValue(mockResponse);
+  it('should handle getBasesByCategory', async () => {
+    const { result } = renderHook(() =>
+      useCatalog({ businessId: 'test-business-id' })
+    );
 
-      const { result, rerender } = renderHook(
-        ({ businessSlug }) => useCatalog({ businessSlug }),
-        { initialProps: { businessSlug: 'test-coffee-shop' } }
-      );
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      // First fetch
-      expect(global.fetch).toHaveBeenCalledTimes(1);
-
-      // Rerender with same slug
-      rerender({ businessSlug: 'test-coffee-shop' });
-
-      // Should not trigger another fetch
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
-    it('should refetch when businessSlug changes', async () => {
-      const mockResponse = createMockResponse({
-        success: true,
-        data: mockCatalogData,
-      });
-      vi.mocked(global.fetch).mockResolvedValue(mockResponse);
-
-      const { result, rerender } = renderHook(
-        ({ businessSlug }) => useCatalog({ businessSlug }),
-        { initialProps: { businessSlug: 'test-coffee-shop' } }
-      );
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(global.fetch).toHaveBeenCalledTimes(1);
-
-      // Rerender with different slug
-      rerender({ businessSlug: 'another-shop' });
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(2);
-      });
-    });
+    const coffeeBases = result.current.getBasesByCategory('coffee');
+    expect(coffeeBases).toHaveLength(1);
+    expect(coffeeBases[0].name).toBe('Latte');
   });
 });

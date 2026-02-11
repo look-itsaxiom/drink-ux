@@ -8,7 +8,6 @@ import {
   IonToolbar,
 } from "@ionic/react";
 import {
-  DrinkBuilderState,
   DrinkCategory,
   DrinkType,
   CupSize,
@@ -28,35 +27,43 @@ import ModifierSelector, {
 } from "../components/DrinkBuilder/ModifierSelector";
 import { useCart, CartItem } from "../hooks/useCart";
 import { useCatalogContext } from "../context/CatalogContext";
-import { ModifierData } from "../services/catalogService";
+import { MappedModifier } from "../services/catalogService";
 
 import "./DrinkBuilder.css";
 
 /**
- * Transform API modifier to ModifierComponent for UI
+ * Transform mapped modifier to ModifierComponent for UI
  */
-function transformModifier(mod: ModifierData): ModifierComponent {
+function transformModifier(mod: MappedModifier, type: string): ModifierComponent {
   return {
-    id: mod.id,
+    id: mod.squareModifierId, // Use Square modifier ID directly
     name: mod.name,
     type: ComponentType.MODIFIER,
-    category: mod.type.toLowerCase(),
+    category: type.toLowerCase(),
     price: mod.price,
     canTransformDrink: false,
     visual: {
-      color: mod.visualColor || '#f0f0f0',
+      color: '#f0f0f0',
       opacity: 0.6,
-      layerOrder: mod.visualLayerOrder || 2,
+      layerOrder: 2,
     },
-    available: mod.available,
+    available: true,
   };
 }
 
 type BuilderStep = "category" | "type" | "modifications";
 
-// Extended state to track API categoryId
-interface ExtendedDrinkBuilderState extends DrinkBuilderState {
+// Local state interface (not extending shared DrinkBuilderState to avoid import issues)
+interface DrinkBuilderLocalState {
+  category?: DrinkCategory;
   categoryId?: string;
+  drinkType?: DrinkType;
+  cupSize?: CupSize;
+  isHot?: boolean;
+  milk?: ModifierComponent;
+  syrups: ModifierComponent[];
+  toppings: ModifierComponent[];
+  totalPrice: number;
 }
 
 const DrinkBuilder: React.FC = () => {
@@ -75,33 +82,33 @@ const DrinkBuilder: React.FC = () => {
   }
 
   // Try to use catalog context for modifiers, handle gracefully if not available
-  let catalogModifiersByType: Record<string, ModifierData[]> = {};
+  let catalogModifiers = { milks: [] as MappedModifier[], syrups: [] as MappedModifier[], toppings: [] as MappedModifier[] };
 
   try {
     const catalog = useCatalogContext();
-    catalogModifiersByType = catalog.modifiersByType || {};
+    catalogModifiers = catalog.modifiers || { milks: [], syrups: [], toppings: [] };
   } catch {
     // Catalog context not available
   }
 
   // Transform API modifiers to ModifierComponent format, or use fallbacks
   const milkModifiers = useMemo(() => {
-    const apiMilks = catalogModifiersByType['MILK'] || catalogModifiersByType['milk'] || [];
-    return apiMilks.length > 0 ? apiMilks.map(transformModifier) : fallbackMilkModifiers;
-  }, [catalogModifiersByType]);
+    const apiMilks = catalogModifiers.milks || [];
+    return apiMilks.length > 0 ? apiMilks.map(m => transformModifier(m, 'milk')) : fallbackMilkModifiers;
+  }, [catalogModifiers.milks]);
 
   const syrupModifiers = useMemo(() => {
-    const apiSyrups = catalogModifiersByType['SYRUP'] || catalogModifiersByType['syrup'] || [];
-    return apiSyrups.length > 0 ? apiSyrups.map(transformModifier) : fallbackSyrupModifiers;
-  }, [catalogModifiersByType]);
+    const apiSyrups = catalogModifiers.syrups || [];
+    return apiSyrups.length > 0 ? apiSyrups.map(m => transformModifier(m, 'syrup')) : fallbackSyrupModifiers;
+  }, [catalogModifiers.syrups]);
 
   const toppingModifiers = useMemo(() => {
-    const apiToppings = catalogModifiersByType['TOPPING'] || catalogModifiersByType['topping'] || [];
-    return apiToppings.length > 0 ? apiToppings.map(transformModifier) : fallbackToppingModifiers;
-  }, [catalogModifiersByType]);
+    const apiToppings = catalogModifiers.toppings || [];
+    return apiToppings.length > 0 ? apiToppings.map(m => transformModifier(m, 'topping')) : fallbackToppingModifiers;
+  }, [catalogModifiers.toppings]);
 
   const [step, setStep] = useState<BuilderStep>("category");
-  const [drinkState, setDrinkState] = useState<ExtendedDrinkBuilderState>({
+  const [drinkState, setDrinkState] = useState<DrinkBuilderLocalState>({
     syrups: [],
     toppings: [],
     totalPrice: 0,
@@ -129,19 +136,19 @@ const DrinkBuilder: React.FC = () => {
     setStep("modifications");
   };
 
-  const handleStateUpdate = (updates: Partial<DrinkBuilderState>) => {
+  const handleStateUpdate = (updates: Partial<DrinkBuilderLocalState>) => {
     setDrinkState({ ...drinkState, ...updates });
   };
 
-  const handleMilkSelect = (milk: any) => {
+  const handleMilkSelect = (milk: ModifierComponent) => {
     setDrinkState({ ...drinkState, milk });
   };
 
-  const handleSyrupSelect = (syrup: any) => {
+  const handleSyrupSelect = (syrup: ModifierComponent) => {
     setDrinkState({ ...drinkState, syrups: [...drinkState.syrups, syrup] });
   };
 
-  const handleToppingSelect = (topping: any) => {
+  const handleToppingSelect = (topping: ModifierComponent) => {
     setDrinkState({
       ...drinkState,
       toppings: [...drinkState.toppings, topping],
@@ -205,7 +212,7 @@ const DrinkBuilder: React.FC = () => {
     const modifierIds: string[] = [];
     const modifierNames: string[] = [];
 
-    // Collect modifier info
+    // Collect modifier info - IDs are now Square modifier IDs
     if (drinkState.milk) {
       modifierIds.push(drinkState.milk.id);
       modifierNames.push(drinkState.milk.name);
@@ -219,14 +226,14 @@ const DrinkBuilder: React.FC = () => {
       modifierNames.push(t.name);
     });
 
-    // Create cart item
+    // Create cart item - baseId is now the Square item ID
     const cartItem: CartItem = {
       id: `item-${Date.now()}`,
-      baseId: drinkState.drinkType.id,
+      baseId: drinkState.drinkType.id, // This is now squareItemId
       baseName: drinkState.drinkType.name,
       size: drinkState.cupSize || CupSize.MEDIUM,
       isHot: drinkState.isHot ?? true,
-      modifierIds,
+      modifierIds, // These are now squareModifierIds
       modifierNames,
       quantity: 1,
       unitPrice: totalPrice,

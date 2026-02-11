@@ -1,18 +1,16 @@
 /**
  * useCatalog Hook
- * Fetches and manages catalog data (categories, bases)
+ * Fetches and manages mapped catalog data
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  getCatalog,
-  getModifiers,
-  CatalogData,
-  CategoryWithItems,
-  CatalogItem,
-  ModifierData,
-  getItemsByCategory as getItemsByCategoryUtil,
-  groupModifiersByType,
+  getMappedCatalog,
+  groupBasesByCategory,
+  MappedCatalog,
+  MappedBase,
+  MappedModifiers,
+  DerivedCategory,
 } from '../services/catalogService';
 import { ApiClientError } from '../services/api';
 
@@ -20,8 +18,8 @@ import { ApiClientError } from '../services/api';
  * Hook options
  */
 export interface UseCatalogOptions {
-  /** The business slug to fetch catalog for */
-  businessSlug?: string | null;
+  /** The business ID to fetch catalog for */
+  businessId?: string | null;
   /** Skip automatic fetch on mount */
   skip?: boolean;
 }
@@ -30,58 +28,39 @@ export interface UseCatalogOptions {
  * Hook return value
  */
 export interface UseCatalogResult {
-  /** The full catalog data */
-  catalog: CatalogData | null;
-  /** Categories array for easy access */
-  categories: CategoryWithItems[];
-  /** All modifiers */
-  modifiers: ModifierData[];
-  /** Modifiers grouped by type (MILK, SYRUP, TOPPING) */
-  modifiersByType: Record<string, ModifierData[]>;
+  /** The full mapped catalog data */
+  catalog: MappedCatalog | null;
+  /** Categories derived from bases */
+  categories: DerivedCategory[];
+  /** All bases (flat list) */
+  bases: MappedBase[];
+  /** Modifiers grouped by type */
+  modifiers: MappedModifiers;
   /** Loading state */
   loading: boolean;
   /** Error message if fetch failed */
   error: string | null;
-  /** Get items for a specific category */
-  getItemsByCategory: (categoryId: string) => CatalogItem[];
+  /** Get bases for a specific category */
+  getBasesByCategory: (categoryId: string) => MappedBase[];
   /** Function to manually refetch the data */
   refetch: () => void;
 }
 
 /**
- * Hook to fetch and manage catalog data
+ * Hook to fetch and manage mapped catalog data
  *
  * @param options - Hook options
  * @returns Catalog data, loading state, and error
- *
- * @example
- * ```tsx
- * const { categories, loading, error, getItemsByCategory } = useCatalog({
- *   businessSlug: business?.slug
- * });
- *
- * if (loading) return <IonSpinner />;
- * if (error) return <IonText color="danger">{error}</IonText>;
- *
- * return (
- *   <IonList>
- *     {categories.map(category => (
- *       <IonItem key={category.id}>{category.name}</IonItem>
- *     ))}
- *   </IonList>
- * );
- * ```
  */
 export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
-  const { businessSlug, skip = false } = options;
+  const { businessId, skip = false } = options;
 
-  const [catalog, setCatalog] = useState<CatalogData | null>(null);
-  const [modifiers, setModifiers] = useState<ModifierData[]>([]);
-  const [loading, setLoading] = useState<boolean>(!!businessSlug && !skip);
+  const [catalog, setCatalog] = useState<MappedCatalog | null>(null);
+  const [loading, setLoading] = useState<boolean>(!!businessId && !skip);
   const [error, setError] = useState<string | null>(null);
 
   const fetchCatalog = useCallback(async () => {
-    if (!businessSlug) {
+    if (!businessId) {
       setLoading(false);
       return;
     }
@@ -90,18 +69,11 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
     setError(null);
 
     try {
-      // Fetch catalog and modifiers in parallel
-      const [catalogData, modifiersData] = await Promise.all([
-        getCatalog(businessSlug),
-        getModifiers(businessSlug).catch(() => [] as ModifierData[]),
-      ]);
-
+      const catalogData = await getMappedCatalog(businessId);
       setCatalog(catalogData);
-      setModifiers(modifiersData);
       setError(null);
     } catch (err) {
       setCatalog(null);
-      setModifiers([]);
 
       if (err instanceof ApiClientError) {
         setError(err.message);
@@ -111,42 +83,49 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
     } finally {
       setLoading(false);
     }
-  }, [businessSlug]);
+  }, [businessId]);
 
-  // Fetch on mount or when businessSlug changes
+  // Fetch on mount or when businessId changes
   useEffect(() => {
-    if (!skip && businessSlug) {
+    if (!skip && businessId) {
       fetchCatalog();
     }
-  }, [skip, businessSlug, fetchCatalog]);
+  }, [skip, businessId, fetchCatalog]);
 
-  // Memoize categories array
+  // Derive categories from bases
   const categories = useMemo(() => {
-    return catalog?.categories || [];
+    return catalog ? groupBasesByCategory(catalog.bases) : [];
   }, [catalog]);
 
-  // Memoize modifiers grouped by type
-  const modifiersByType = useMemo(() => {
-    return groupModifiersByType(modifiers);
-  }, [modifiers]);
+  // Get flat bases array
+  const bases = useMemo(() => {
+    return catalog?.bases || [];
+  }, [catalog]);
 
-  // Helper function to get items by category
-  const getItemsByCategory = useCallback(
-    (categoryId: string): CatalogItem[] => {
-      if (!catalog) return [];
-      return getItemsByCategoryUtil(catalog, categoryId);
+  // Get modifiers (with defaults)
+  const modifiers = useMemo((): MappedModifiers => {
+    return catalog?.modifiers || { milks: [], syrups: [], toppings: [] };
+  }, [catalog]);
+
+  // Helper function to get bases by category
+  const getBasesByCategory = useCallback(
+    (categoryId: string): MappedBase[] => {
+      const category = categories.find(
+        (c) => c.id === categoryId || c.name.toLowerCase() === categoryId.toLowerCase()
+      );
+      return category?.items || [];
     },
-    [catalog]
+    [categories]
   );
 
   return {
     catalog,
     categories,
+    bases,
     modifiers,
-    modifiersByType,
     loading,
     error,
-    getItemsByCategory,
+    getBasesByCategory,
     refetch: fetchCatalog,
   };
 }

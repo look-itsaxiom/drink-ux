@@ -1,6 +1,6 @@
 /**
  * CatalogContext
- * Provides catalog data to all components with caching
+ * Provides mapped catalog data to all components
  */
 
 import React, { createContext, useContext, ReactNode } from 'react';
@@ -26,24 +26,16 @@ export interface CatalogProviderProps {
 /**
  * Catalog Provider component
  * Wraps children with catalog data context
- * Automatically fetches catalog when business is loaded
+ * Automatically fetches mapped catalog when business is loaded
  *
  * Note: Must be used within a BusinessProvider
- *
- * @example
- * ```tsx
- * <BusinessProvider>
- *   <CatalogProvider>
- *     <App />
- *   </CatalogProvider>
- * </BusinessProvider>
- * ```
  */
 export function CatalogProvider({ children }: CatalogProviderProps): JSX.Element {
   const { business } = useBusinessContext();
 
+  // Use business ID for the mapped catalog endpoint
   const catalogState = useCatalog({
-    businessSlug: business?.slug,
+    businessId: business?.id,
     skip: !business,
   });
 
@@ -59,22 +51,6 @@ export function CatalogProvider({ children }: CatalogProviderProps): JSX.Element
  *
  * @returns Catalog context value
  * @throws Error if used outside CatalogProvider
- *
- * @example
- * ```tsx
- * const { categories, loading, error, getItemsByCategory } = useCatalogContext();
- *
- * if (loading) return <IonSpinner />;
- * if (error) return <IonText color="danger">{error}</IonText>;
- *
- * return (
- *   <IonList>
- *     {categories.map(category => (
- *       <IonItem key={category.id}>{category.name}</IonItem>
- *     ))}
- *   </IonList>
- * );
- * ```
  */
 export function useCatalogContext(): CatalogContextValue {
   const context = useContext(CatalogContext);

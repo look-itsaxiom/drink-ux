@@ -12,14 +12,14 @@ import {
 import { cafeOutline, leafOutline, wineOutline, colorFillOutline, snowOutline, sparklesOutline, alertCircleOutline } from "ionicons/icons";
 import { DrinkCategory } from "@drink-ux/shared";
 import { useCatalogContext } from "../../context/CatalogContext";
-import { CategoryWithItems } from "../../services/catalogService";
+import { DerivedCategory } from "../../services/catalogService";
 import "./CategorySelector.css";
 
 interface CategorySelectorProps {
   onSelect: (category: DrinkCategory, categoryId: string) => void;
 }
 
-// Default category metadata for styling (used when API data is available)
+// Default category metadata for styling
 const categoryMetadata: Record<string, { color: string; icon: string; description: string; image: string }> = {
   coffee: {
     color: "#8B4513",
@@ -134,7 +134,7 @@ function getCategoryIcon(iconName: string | null): string {
 }
 
 /**
- * Map API category to DrinkCategory enum
+ * Map category name to DrinkCategory enum
  */
 function mapToDrinkCategory(categoryName: string): DrinkCategory {
   const normalized = categoryName.toLowerCase().replace(/[^a-z]/g, '_');
@@ -159,32 +159,32 @@ function mapToDrinkCategory(categoryName: string): DrinkCategory {
 }
 
 /**
- * Transform API category to display format
+ * Transform derived category to display format
  */
-function transformCategory(apiCategory: CategoryWithItems) {
-  const normalizedName = apiCategory.name.toLowerCase().replace(/[^a-z]/g, '_');
+function transformCategory(derivedCategory: DerivedCategory) {
+  const normalizedName = derivedCategory.name.toLowerCase().replace(/[^a-z]/g, '_');
   const metadata = categoryMetadata[normalizedName] || {
-    color: apiCategory.color || "#6B4423",
-    icon: apiCategory.icon || "cafe",
-    description: `${apiCategory.items.length} drinks available`,
+    color: "#6B4423",
+    icon: "cafe",
+    description: `${derivedCategory.items.length} drinks available`,
     image: "https://images.pexels.com/photos/324028/pexels-photo-324028.jpeg",
   };
 
   return {
-    id: apiCategory.id,
-    enumCategory: mapToDrinkCategory(apiCategory.name),
-    name: apiCategory.name,
+    id: derivedCategory.id,
+    enumCategory: mapToDrinkCategory(derivedCategory.name),
+    name: derivedCategory.name,
     description: metadata.description,
     image: metadata.image,
-    color: apiCategory.color || metadata.color,
-    icon: apiCategory.icon || metadata.icon,
-    itemCount: apiCategory.items.length,
+    color: metadata.color,
+    icon: metadata.icon,
+    itemCount: derivedCategory.items.length,
   };
 }
 
 const CategorySelector: React.FC<CategorySelectorProps> = ({ onSelect }) => {
   // Try to use catalog context, but handle the case where it's not available
-  let catalogData: { categories: CategoryWithItems[]; loading: boolean; error: string | null } = {
+  let catalogData: { categories: DerivedCategory[]; loading: boolean; error: string | null } = {
     categories: [],
     loading: false,
     error: null,

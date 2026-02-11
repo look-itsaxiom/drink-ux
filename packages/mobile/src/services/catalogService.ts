@@ -1,253 +1,124 @@
 /**
  * Catalog Service
- * Handles fetching catalog data (categories, bases, modifiers, presets)
+ * Handles fetching catalog data from the mapped catalog endpoint
  */
 
-import { TemperatureConstraint, CupSize, ModifierType } from '@drink-ux/shared';
 import { apiClient } from './api';
 
 /**
- * Catalog item (base drink) from API
+ * Base drink from mapped catalog
  */
-export interface CatalogItem {
-  id: string;
+export interface MappedBase {
+  squareItemId: string;
   name: string;
-  basePrice: number;
-  temperatureConstraint: TemperatureConstraint | string;
-  visualColor: string | null;
-}
-
-/**
- * Category with items from API
- */
-export interface CategoryWithItems {
-  id: string;
-  name: string;
-  displayOrder: number;
-  color: string | null;
-  icon: string | null;
-  items: CatalogItem[];
-}
-
-/**
- * Basic catalog data from GET /api/business/:slug/catalog
- */
-export interface CatalogData {
-  businessId: string;
-  categories: CategoryWithItems[];
-}
-
-/**
- * Modifier data structure
- */
-export interface ModifierData {
-  id: string;
-  name: string;
-  type: ModifierType | string;
   price: number;
-  available: boolean;
-  visualColor?: string | null;
-  visualLayerOrder?: number;
-  visualAnimationType?: string;
+  category: string;
+  sizes: string[];
+  temperatures: string[];
 }
 
 /**
- * Preset data structure
+ * Modifier from mapped catalog
  */
-export interface PresetData {
+export interface MappedModifier {
+  squareModifierId: string;
+  name: string;
+  price: number;
+}
+
+/**
+ * Grouped modifiers from mapped catalog
+ */
+export interface MappedModifiers {
+  milks: MappedModifier[];
+  syrups: MappedModifier[];
+  toppings: MappedModifier[];
+}
+
+/**
+ * Mapped catalog response shape
+ */
+export interface MappedCatalog {
+  bases: MappedBase[];
+  modifiers: MappedModifiers;
+}
+
+/**
+ * Category derived from bases
+ */
+export interface DerivedCategory {
   id: string;
   name: string;
-  baseId: string;
-  defaultSize: CupSize | string;
-  defaultHot: boolean;
-  price: number;
-  available: boolean;
-  imageUrl?: string | null;
-  modifierIds: string[];
+  items: MappedBase[];
 }
 
 /**
- * Full catalog data including modifiers and presets
- */
-export interface FullCatalogData extends CatalogData {
-  modifiers: ModifierData[];
-  presets: PresetData[];
-}
-
-/**
- * Fetch basic catalog (categories with bases) for a business
- * Uses the public endpoint GET /api/business/:slug/catalog
+ * Fetch mapped catalog for a business
+ * Uses GET /api/catalog/:businessId/mapped
  *
- * @param businessSlug - The business slug (subdomain)
- * @returns Catalog data with categories and items
+ * @param businessId - The business UUID
+ * @returns Mapped catalog data
  * @throws ApiClientError if business not found or other errors
  */
-export async function getCatalog(businessSlug: string): Promise<CatalogData> {
-  return apiClient.get<CatalogData>(`/api/business/${businessSlug}/catalog`);
+export async function getMappedCatalog(businessId: string): Promise<MappedCatalog> {
+  return apiClient.get<MappedCatalog>(`/api/catalog/${businessId}/mapped`);
 }
 
 /**
- * Fetch modifiers for a business
- * Uses the public endpoint GET /api/business/:slug/catalog/modifiers
+ * Group bases by category
  *
- * @param businessSlug - The business slug (subdomain)
- * @returns Array of modifiers
- * @throws ApiClientError if business not found or other errors
+ * @param bases - Array of bases from mapped catalog
+ * @returns Array of derived categories with their items
  */
-export async function getModifiers(businessSlug: string): Promise<ModifierData[]> {
-  return apiClient.get<ModifierData[]>(`/api/business/${businessSlug}/catalog/modifiers`);
+export function groupBasesByCategory(bases: MappedBase[]): DerivedCategory[] {
+  const categoryMap = new Map<string, MappedBase[]>();
+
+  for (const base of bases) {
+    const category = base.category || 'Other';
+    if (!categoryMap.has(category)) {
+      categoryMap.set(category, []);
+    }
+    categoryMap.get(category)!.push(base);
+  }
+
+  return Array.from(categoryMap.entries()).map(([name, items]) => ({
+    id: name.toLowerCase().replace(/\s+/g, '_'),
+    name,
+    items,
+  }));
 }
 
 /**
- * Fetch presets for a business
- * Uses the public endpoint GET /api/business/:slug/catalog/presets
- *
- * @param businessSlug - The business slug (subdomain)
- * @returns Array of presets
- * @throws ApiClientError if business not found or other errors
+ * Check if a base supports hot temperature
  */
-export async function getPresets(businessSlug: string): Promise<PresetData[]> {
-  return apiClient.get<PresetData[]>(`/api/business/${businessSlug}/catalog/presets`);
+export function supportsHot(temperatures: string[]): boolean {
+  return temperatures.includes('hot') || temperatures.includes('HOT');
 }
 
 /**
- * Fetch full catalog including modifiers and presets
- * This requires multiple API calls and authentication for some endpoints
- *
- * Note: The current API structure has modifiers and presets under /api/catalog/*
- * which requires authentication. This function will need to be updated
- * when public endpoints are available or authentication is integrated.
- *
- * @param businessSlug - The business slug (subdomain)
- * @returns Full catalog data
- * @throws ApiClientError if any request fails
+ * Check if a base supports iced temperature
  */
-export async function getFullCatalog(
-  businessSlug: string
-): Promise<FullCatalogData> {
-  // First, get the basic catalog
-  const catalog = await getCatalog(businessSlug);
-
-  // For now, modifiers and presets require auth, so we'll make parallel calls
-  // In the future, these should be public endpoints or included in the main catalog response
-  const [modifiers, presets] = await Promise.all([
-    apiClient.get<ModifierData[]>(
-      `/api/business/${businessSlug}/catalog/modifiers`
-    ),
-    apiClient.get<PresetData[]>(
-      `/api/business/${businessSlug}/catalog/presets`
-    ),
-  ]);
-
-  return {
-    ...catalog,
-    modifiers,
-    presets,
-  };
+export function supportsIced(temperatures: string[]): boolean {
+  return temperatures.includes('iced') || temperatures.includes('ICED');
 }
 
 /**
- * Get items (bases) for a specific category
- *
- * @param catalog - The catalog data
- * @param categoryId - The category ID to filter by
- * @returns Array of catalog items for the category
+ * Determine if drink should default to hot
+ * Returns undefined if both are supported (user must choose)
  */
-export function getItemsByCategory(
-  catalog: CatalogData,
-  categoryId: string
-): CatalogItem[] {
-  const category = catalog.categories.find((c) => c.id === categoryId);
-  return category?.items || [];
-}
+export function getDefaultIsHot(temperatures: string[]): boolean | undefined {
+  const hot = supportsHot(temperatures);
+  const iced = supportsIced(temperatures);
 
-/**
- * Get modifiers grouped by type
- *
- * @param modifiers - Array of modifiers
- * @returns Object with modifiers grouped by type
- */
-export function groupModifiersByType(
-  modifiers: ModifierData[]
-): Record<string, ModifierData[]> {
-  return modifiers.reduce(
-    (groups, modifier) => {
-      const type = modifier.type;
-      if (!groups[type]) {
-        groups[type] = [];
-      }
-      groups[type].push(modifier);
-      return groups;
-    },
-    {} as Record<string, ModifierData[]>
-  );
-}
-
-/**
- * Find a preset by ID
- *
- * @param presets - Array of presets
- * @param presetId - The preset ID to find
- * @returns The preset or undefined
- */
-export function findPreset(
-  presets: PresetData[],
-  presetId: string
-): PresetData | undefined {
-  return presets.find((p) => p.id === presetId);
-}
-
-/**
- * Get available presets (featured drinks)
- *
- * @param presets - Array of presets
- * @returns Array of available presets
- */
-export function getAvailablePresets(presets: PresetData[]): PresetData[] {
-  return presets.filter((p) => p.available);
-}
-
-/**
- * Check if a base supports hot drinks
- *
- * @param temperatureConstraint - The temperature constraint
- * @returns True if hot is supported
- */
-export function supportsHot(
-  temperatureConstraint: TemperatureConstraint | string
-): boolean {
-  return (
-    temperatureConstraint === TemperatureConstraint.HOT_ONLY ||
-    temperatureConstraint === TemperatureConstraint.BOTH ||
-    temperatureConstraint === 'HOT_ONLY' ||
-    temperatureConstraint === 'BOTH'
-  );
-}
-
-/**
- * Check if a base supports iced drinks
- *
- * @param temperatureConstraint - The temperature constraint
- * @returns True if iced is supported
- */
-export function supportsIced(
-  temperatureConstraint: TemperatureConstraint | string
-): boolean {
-  return (
-    temperatureConstraint === TemperatureConstraint.ICED_ONLY ||
-    temperatureConstraint === TemperatureConstraint.BOTH ||
-    temperatureConstraint === 'ICED_ONLY' ||
-    temperatureConstraint === 'BOTH'
-  );
+  if (hot && !iced) return true;
+  if (iced && !hot) return false;
+  return undefined; // Both supported, user chooses
 }
 
 export default {
-  getCatalog,
-  getFullCatalog,
-  getItemsByCategory,
-  groupModifiersByType,
-  findPreset,
-  getAvailablePresets,
+  getMappedCatalog,
+  groupBasesByCategory,
   supportsHot,
   supportsIced,
+  getDefaultIsHot,
 };
