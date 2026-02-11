@@ -73,10 +73,43 @@ app.use(cookieParser());
 // =============================================================================
 
 // Create POS adapter based on environment configuration
+// Priority:
+// 1. SQUARE_APPLICATION_ID + SQUARE_APPLICATION_SECRET → full OAuth mode
+// 2. SQUARE_ACCESS_TOKEN → dev mode (use token directly)
+// 3. Neither → MockPOSAdapter
+
 const squareAppId = process.env.SQUARE_APPLICATION_ID || process.env.SQUARE_APP_ID;
 const squareAppSecret = process.env.SQUARE_APPLICATION_SECRET || process.env.SQUARE_APP_SECRET;
-const useSquare = squareAppId && squareAppSecret;
-const posAdapter = useSquare ? new SquareAdapter() : new MockPOSAdapter();
+const squareAccessToken = process.env.SQUARE_ACCESS_TOKEN;
+const squareMerchantId = process.env.SQUARE_MERCHANT_ID || 'dev-merchant';
+const squareLocationId = process.env.SQUARE_LOCATION_ID;
+
+const hasOAuthConfig = !!(squareAppId && squareAppSecret);
+const hasDevToken = !!squareAccessToken;
+
+let posAdapter: MockPOSAdapter | SquareAdapter;
+let posMode: string;
+
+if (hasOAuthConfig) {
+  // Full OAuth mode - SquareAdapter will handle token exchange
+  posAdapter = new SquareAdapter();
+  posMode = 'Square (OAuth mode)';
+} else if (hasDevToken) {
+  // Dev mode - use access token directly without OAuth
+  posAdapter = new SquareAdapter();
+  posAdapter.setCredentials({
+    accessToken: squareAccessToken,
+    refreshToken: '', // No refresh token in dev mode
+    merchantId: squareMerchantId,
+    locationId: squareLocationId,
+    expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+  });
+  posMode = 'Square (dev mode - direct token)';
+} else {
+  // No Square config - use mock adapter
+  posAdapter = new MockPOSAdapter();
+  posMode = 'Mock (set SQUARE_APPLICATION_ID + SQUARE_APPLICATION_SECRET for OAuth, or SQUARE_ACCESS_TOKEN for dev mode)';
+}
 
 // Services that just need prisma
 const authService = new AuthService(prisma);
@@ -178,7 +211,7 @@ if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
     console.log(`API server running on port ${PORT}`);
     console.log(`CORS origins: ${corsOrigins.join(", ")}`);
-    console.log(`POS adapter: ${useSquare ? "Square" : "Mock (set SQUARE_APPLICATION_ID and SQUARE_APPLICATION_SECRET for Square)"}`);
+    console.log(`POS adapter: ${posMode}`);
   });
 }
 
