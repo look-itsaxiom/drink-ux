@@ -24,6 +24,7 @@ import { AccountStateService } from "./services/AccountStateService";
 import { AccountService } from "./services/AccountService";
 import { WebhookService } from "./services/WebhookService";
 import { ItemMappingService } from "./services/ItemMappingService";
+import { MappedCatalogService } from "./services/MappedCatalogService";
 
 // Routes
 import { createAuthRouter } from "./routes/auth";
@@ -39,6 +40,7 @@ import { createSubscriptionWebhooksRouter } from "./routes/subscriptionWebhooks"
 import { catalogSyncRouter } from "./routes/catalogSync";
 import { posRouter } from "./routes/pos";
 import { createMappingsRouter } from "./routes/mappings";
+import { createMappedCatalogRouter } from "./routes/catalog-mapped";
 
 // Middleware
 import { errorHandler } from "./middleware/errorHandler";
@@ -83,6 +85,7 @@ const ejectionService = new EjectionService(prisma);
 const accountStateService = new AccountStateService(prisma);
 const accountService = new AccountService(prisma);
 const itemMappingService = new ItemMappingService(prisma);
+const mappedCatalogService = new MappedCatalogService(prisma, posAdapter);
 
 // Services that need prisma + POS adapter
 const orderService = new OrderService(prisma, posAdapter);
@@ -145,6 +148,9 @@ app.use("/api/pos", posRouter);
 
 // Mappings routes
 app.use("/api/mappings", createMappingsRouter(itemMappingService));
+
+// Mapped catalog routes
+app.use("/api/catalog", createMappedCatalogRouter(mappedCatalogService));
 
 // =============================================================================
 // ERROR HANDLING
