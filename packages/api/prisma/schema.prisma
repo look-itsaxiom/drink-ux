@@ -45,6 +45,13 @@ enum ModifierType {
   TOPPING
 }
 
+enum ItemType {
+  BASE
+  MODIFIER
+  HIDDEN
+  COMBO
+}
+
 enum CupSize {
   SMALL
   MEDIUM
@@ -83,7 +90,7 @@ enum SyncStatus {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
-  passwordHash  String
+  hashedPassword String
   name          String?
   emailVerified Boolean   @default(false)
   createdAt     DateTime  @default(now())
@@ -157,6 +164,7 @@ model Business {
   syncHistory        SyncHistory[]
   stateHistory       AccountStateHistory[]
   subscription       Subscription?
+  itemMappings       ItemMapping[]
 }
 
 // =============================================================================
@@ -467,4 +475,26 @@ model Subscription {
   // Relations
   business              Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
   plan                  SubscriptionPlan    @relation(fields: [planId], references: [id])
+}
+
+// =============================================================================
+// ITEM MAPPING
+// =============================================================================
+
+model ItemMapping {
+  id                 String   @id @default(cuid())
+  businessId         String
+  business           Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  squareItemId       String
+  squareVariationId  String?
+  itemType           ItemType
+  category           String?
+  displayName        String?
+  displayOrder       Int      @default(0)
+  temperatureOptions String   @default("[]")  // JSON array for SQLite compatibility
+  sizeOptions        String   @default("[]")  // JSON array for SQLite compatibility
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([businessId, squareItemId])
 }
