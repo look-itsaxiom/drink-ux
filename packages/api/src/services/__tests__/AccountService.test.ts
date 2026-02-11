@@ -286,7 +286,7 @@ describe('AccountService', () => {
       const anotherUser = await prisma.user.create({
         data: {
           email: 'another@example.com',
-          passwordHash: 'hash',
+          hashedPassword: 'hash',
           businesses: {
             create: {
               name: 'Another Shop',
@@ -698,7 +698,7 @@ describe('AccountService', () => {
       const user = await prisma.user.create({
         data: {
           email: 'nobusiness@example.com',
-          passwordHash: 'hash',
+          hashedPassword: 'hash',
         },
       });
 

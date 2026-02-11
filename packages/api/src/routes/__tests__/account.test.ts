@@ -273,7 +273,7 @@ describe('Account Routes', () => {
       await prisma.user.create({
         data: {
           email: 'another@example.com',
-          passwordHash: 'hash',
+          hashedPassword: 'hash',
           businesses: {
             create: {
               name: 'Another Shop',
@@ -613,7 +613,7 @@ describe('Account Routes', () => {
       const userWithoutBusiness = await prisma.user.create({
         data: {
           email: 'nobusiness@example.com',
-          passwordHash: 'hash',
+          hashedPassword: 'hash',
         },
       });
 

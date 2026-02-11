@@ -63,7 +63,7 @@ describe('AuthService', () => {
         businessName: 'Secure Coffee',
       });
 
-      expect((result.user as any).passwordHash).toBeUndefined();
+      expect((result.user as any).hashedPassword).toBeUndefined();
     });
 
     it('sets emailVerified to false by default', async () => {
@@ -263,7 +263,7 @@ describe('AuthService', () => {
       await prisma.user.create({
         data: {
           email: 'preexisting@test.com',
-          passwordHash: 'hash',
+          hashedPassword: 'hash',
           businesses: {
             create: {
               name: 'Existing',
@@ -341,7 +341,7 @@ describe('AuthService', () => {
         password: 'SecureP@ss1',
       });
 
-      expect((result.user as any).passwordHash).toBeUndefined();
+      expect((result.user as any).hashedPassword).toBeUndefined();
     });
 
     // Success scenarios
@@ -467,7 +467,7 @@ describe('AuthService', () => {
     it('does not return password hash', async () => {
       const user = await authService.validateSession(sessionToken);
 
-      expect((user as any)?.passwordHash).toBeUndefined();
+      expect((user as any)?.hashedPassword).toBeUndefined();
     });
 
     // Failure scenarios

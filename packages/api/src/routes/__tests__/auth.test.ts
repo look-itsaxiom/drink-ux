@@ -70,7 +70,7 @@ describe('Auth Routes', () => {
           businessName: 'Test Coffee',
         });
 
-      expect(response.body.data.user.passwordHash).toBeUndefined();
+      expect(response.body.data.user.hashedPassword).toBeUndefined();
     });
 
     it('returns emailVerificationToken (for testing only, should be removed in production)', async () => {
@@ -225,7 +225,7 @@ describe('Auth Routes', () => {
           password: 'SecureP@ss1',
         });
 
-      expect(response.body.data.user.passwordHash).toBeUndefined();
+      expect(response.body.data.user.hashedPassword).toBeUndefined();
     });
 
     // Failure scenarios
@@ -343,7 +343,7 @@ describe('Auth Routes', () => {
         .get('/api/auth/me')
         .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`);
 
-      expect(response.body.data.user.passwordHash).toBeUndefined();
+      expect(response.body.data.user.hashedPassword).toBeUndefined();
     });
 
     // Failure scenarios

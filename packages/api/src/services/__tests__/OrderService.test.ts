@@ -15,7 +15,7 @@ async function createTestBusinessWithCatalog(name: string = 'Test Business'): Pr
   const user = await prisma.user.create({
     data: {
       email: `owner-${Date.now()}-${Math.random().toString(36).substring(7)}@test.com`,
-      passwordHash: 'hashed_password',
+      hashedPassword: 'hashed_password',
       businesses: {
         create: {
           name,

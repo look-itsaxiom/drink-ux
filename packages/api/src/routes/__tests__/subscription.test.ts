@@ -49,7 +49,7 @@ beforeAll(async () => {
   const user = await prisma.user.create({
     data: {
       email: 'subscription-routes-test@example.com',
-      passwordHash: 'not-used-in-this-test',
+      hashedPassword: 'not-used-in-this-test',
     },
   });
   testUserId = user.id;
@@ -168,7 +168,7 @@ describe('Subscription Routes', () => {
         const otherUser = await prisma.user.create({
           data: {
             email: 'other-user@example.com',
-            passwordHash: 'not-used',
+            hashedPassword: 'not-used',
           },
         });
         const otherBusiness = await prisma.business.create({

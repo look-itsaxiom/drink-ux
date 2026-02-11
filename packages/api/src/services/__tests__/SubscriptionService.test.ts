@@ -66,7 +66,7 @@ async function createTestBusiness(): Promise<{
   const user = await prisma.user.create({
     data: {
       email: `owner-${uniqueSuffix}@test.com`,
-      passwordHash: 'hashed_password',
+      hashedPassword: 'hashed_password',
       businesses: {
         create: {
           name: 'Test Coffee Shop',

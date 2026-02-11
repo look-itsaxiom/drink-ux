@@ -35,7 +35,7 @@ describe("Database Schema", () => {
       const user = await prisma.user.create({
         data: {
           email: "test@example.com",
-          passwordHash: "hashed_password_here",
+          hashedPassword: "hashed_password_here",
           name: "Test User",
         },
       });
@@ -52,7 +52,7 @@ describe("Database Schema", () => {
         prisma.user.create({
           data: {
             email: "test@example.com",
-            passwordHash: "another_hash",
+            hashedPassword: "another_hash",
           },
         })
       ).rejects.toThrow();
@@ -171,7 +171,7 @@ describe("Database Schema", () => {
     it("should cascade delete when business is deleted", async () => {
       // Create a temporary business and category
       const tempUser = await prisma.user.create({
-        data: { email: "temp@test.com", passwordHash: "hash" },
+        data: { email: "temp@test.com", hashedPassword: "hash" },
       });
       const tempBusiness = await prisma.business.create({
         data: { name: "Temp", slug: "temp-shop", ownerId: tempUser.id },

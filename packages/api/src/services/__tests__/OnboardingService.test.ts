@@ -67,7 +67,7 @@ describe('OnboardingService', () => {
     const user = await prisma.user.create({
       data: {
         email: 'test@example.com',
-        passwordHash: 'hash',
+        hashedPassword: 'hash',
         businesses: {
           create: {
             name: 'Test Coffee Shop',
@@ -475,7 +475,7 @@ describe('OnboardingService', () => {
         const user = await prisma.user.create({
           data: {
             email: 'import@example.com',
-            passwordHash: 'hash',
+            hashedPassword: 'hash',
             businesses: {
               create: {
                 name: 'Import Coffee Shop',
@@ -683,7 +683,7 @@ describe('OnboardingService', () => {
         const user = await prisma.user.create({
           data: {
             email: 'template@example.com',
-            passwordHash: 'hash',
+            hashedPassword: 'hash',
             businesses: {
               create: {
                 name: 'Template Coffee Shop',
@@ -792,7 +792,7 @@ describe('OnboardingService', () => {
         const user = await prisma.user.create({
           data: {
             email: 'fresh@example.com',
-            passwordHash: 'hash',
+            hashedPassword: 'hash',
             businesses: {
               create: {
                 name: 'Fresh Coffee Shop',
@@ -849,7 +849,7 @@ describe('OnboardingService', () => {
       const user = await prisma.user.create({
         data: {
           email: 'branding@example.com',
-          passwordHash: 'hash',
+          hashedPassword: 'hash',
           businesses: {
             create: {
               name: 'Branding Coffee Shop',
@@ -996,7 +996,7 @@ describe('OnboardingService', () => {
       const user = await prisma.user.create({
         data: {
           email: 'review@example.com',
-          passwordHash: 'hash',
+          hashedPassword: 'hash',
           businesses: {
             create: {
               name: 'Review Coffee Shop',
@@ -1072,7 +1072,7 @@ describe('OnboardingService', () => {
         const user = await prisma.user.create({
           data: {
             email: 'sync@example.com',
-            passwordHash: 'hash',
+            hashedPassword: 'hash',
             businesses: {
               create: {
                 name: 'Sync Coffee Shop',
@@ -1114,7 +1114,7 @@ describe('OnboardingService', () => {
         const user = await prisma.user.create({
           data: {
             email: 'incomplete@example.com',
-            passwordHash: 'hash',
+            hashedPassword: 'hash',
             businesses: {
               create: {
                 name: 'Incomplete Shop',
@@ -1158,7 +1158,7 @@ describe('OnboardingService', () => {
       const user = await prisma.user.create({
         data: {
           email: 'reset@example.com',
-          passwordHash: 'hash',
+          hashedPassword: 'hash',
           businesses: {
             create: {
               name: 'Reset Coffee Shop',

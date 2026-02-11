@@ -147,7 +147,7 @@ export class AuthService {
     }
 
     // Hash password
-    const passwordHash = await hashPassword(password);
+    const hashedPassword = await hashPassword(password);
 
     // Generate email verification token
     const emailVerificationToken = generateSecureToken(32);
@@ -163,7 +163,7 @@ export class AuthService {
       const user = await tx.user.create({
         data: {
           email: normalizedEmail,
-          passwordHash,
+          hashedPassword,
           emailVerificationToken,
           emailVerificationExpires,
           businesses: {
@@ -223,7 +223,7 @@ export class AuthService {
     }
 
     // Verify password
-    const isValidPassword = await verifyPassword(password, user.passwordHash);
+    const isValidPassword = await verifyPassword(password, user.hashedPassword);
     if (!isValidPassword) {
       throw new AuthError('INVALID_CREDENTIALS', 'Invalid email or password');
     }
@@ -372,14 +372,14 @@ export class AuthService {
     }
 
     // Hash new password
-    const passwordHash = await hashPassword(newPassword);
+    const hashedPassword = await hashPassword(newPassword);
 
     // Update password and clear reset token
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: user.id },
         data: {
-          passwordHash,
+          hashedPassword,
           passwordResetToken: null,
           passwordResetExpires: null,
         },

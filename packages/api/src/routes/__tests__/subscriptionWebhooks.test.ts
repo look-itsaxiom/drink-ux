@@ -67,7 +67,7 @@ beforeEach(async () => {
   const user = await prisma.user.create({
     data: {
       email: 'webhook-test@test.com',
-      passwordHash: 'test-hash',
+      hashedPassword: 'test-hash',
       businesses: {
         create: {
           name: 'Webhook Test Business',

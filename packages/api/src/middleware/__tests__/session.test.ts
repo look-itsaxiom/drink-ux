@@ -86,7 +86,7 @@ describe('sessionMiddleware', () => {
       .get('/test')
       .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`);
 
-    expect(response.body.user.passwordHash).toBeUndefined();
+    expect(response.body.user.hashedPassword).toBeUndefined();
   });
 
   // No session scenarios
