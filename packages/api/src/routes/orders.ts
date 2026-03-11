@@ -78,6 +78,10 @@ export function createOrderRouter(orderService: OrderService): Router {
           temperature: item.temperature,
           modifiers: item.modifiers || [],
           notes: item.notes,
+          // Mapped flow fields (optional - sent when using Square IDs)
+          unitPrice: item.unitPrice,
+          itemName: item.itemName,
+          modifierDetails: item.modifierDetails,
         })),
         notes,
       };

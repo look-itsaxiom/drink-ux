@@ -27,7 +27,14 @@ export interface CreateOrderInput {
 }
 
 /**
- * Input for a single order item
+ * Input for a single order item.
+ *
+ * Supports two flows:
+ * - **Legacy**: `baseId` is a Drink-UX Base model ID, modifiers are Modifier model IDs.
+ *   Prices are looked up from the database.
+ * - **Mapped (new)**: `baseId` is a Square item ID that exists in ItemMapping.
+ *   `modifiers` are Square modifier IDs. `unitPrice` and `itemName` should be
+ *   provided since prices come from the live Square catalog.
  */
 export interface OrderItemInput {
   baseId: string;
@@ -36,6 +43,12 @@ export interface OrderItemInput {
   temperature: 'HOT' | 'ICED';
   modifiers: string[];
   notes?: string;
+  /** Client-provided unit price (mapped flow). Includes base + size + modifiers. */
+  unitPrice?: number;
+  /** Client-provided item name (mapped flow). */
+  itemName?: string;
+  /** Client-provided modifier details (mapped flow). */
+  modifierDetails?: Array<{ id: string; name: string; price: number }>;
 }
 
 /**
@@ -108,9 +121,11 @@ interface CalculatedItem {
   unitPrice: number;
   totalPrice: number;
   modifiers: ModifierInfo[];
+  /** When true, baseId is a Square item ID (no translation needed for POS). */
+  isMapped?: boolean;
 }
 
-// Size multipliers for pricing
+// Size multipliers for pricing (legacy flow)
 const SIZE_MULTIPLIERS: Record<string, number> = {
   SMALL: 1.0,
   MEDIUM: 1.25,
@@ -125,7 +140,10 @@ const PICKUP_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const PICKUP_CODE_LENGTH = 4;
 
 /**
- * Order Service - handles order creation, retrieval, and status management
+ * Order Service - handles order creation, retrieval, and status management.
+ *
+ * Supports both the legacy Base/Modifier model flow and the new mapping-layer
+ * flow where the mobile app submits Square IDs directly.
  */
 export class OrderService {
   constructor(
@@ -372,7 +390,14 @@ export class OrderService {
   }
 
   /**
-   * Calculate item prices and validate references
+   * Calculate item prices and validate references.
+   *
+   * Supports two resolution strategies:
+   * 1. **Mapped flow**: If client provides `unitPrice` and the baseId matches an
+   *    ItemMapping, trust the client-provided price (it came from Square via
+   *    MappedCatalogService). Modifier details are also client-provided.
+   * 2. **Legacy flow**: Look up Base and Modifier models from the database and
+   *    calculate prices using size multipliers.
    */
   private async calculateItems(
     businessId: string,
@@ -381,62 +406,117 @@ export class OrderService {
     const result: CalculatedItem[] = [];
 
     for (const item of items) {
-      // Validate base exists
-      const base = await this.prisma.base.findFirst({
+      // Try mapped flow first: check if baseId is a Square item ID in ItemMapping
+      const mapping = await this.prisma.itemMapping.findUnique({
         where: {
-          id: item.baseId,
-          businessId,
+          businessId_squareItemId: { businessId, squareItemId: item.baseId },
         },
       });
 
-      if (!base) {
-        throw new OrderError('INVALID_ITEM', `Invalid item reference: ${item.baseId}`);
+      if (mapping && item.unitPrice !== undefined) {
+        // Mapped flow: Square IDs with client-provided prices
+        result.push(this.calculateMappedItem(item, mapping.displayName || item.itemName || 'Custom Drink'));
+      } else {
+        // Legacy flow: Drink-UX Base/Modifier model IDs
+        const legacyItem = await this.calculateLegacyItem(businessId, item);
+        result.push(legacyItem);
       }
-
-      // Calculate base price with size multiplier
-      const sizeMultiplier = SIZE_MULTIPLIERS[item.size] || 1.0;
-      let unitPrice = this.roundPrice(base.basePrice * sizeMultiplier);
-
-      // Get modifier details and add their prices
-      const modifierInfos: ModifierInfo[] = [];
-      if (item.modifiers && item.modifiers.length > 0) {
-        const modifiers = await this.prisma.modifier.findMany({
-          where: {
-            id: { in: item.modifiers },
-            businessId,
-          },
-        });
-
-        for (const mod of modifiers) {
-          modifierInfos.push({
-            id: mod.id,
-            name: mod.name,
-            price: mod.price,
-          });
-          unitPrice = this.roundPrice(unitPrice + mod.price);
-        }
-      }
-
-      const totalPrice = this.roundPrice(unitPrice * item.quantity);
-
-      result.push({
-        baseId: item.baseId,
-        quantity: item.quantity,
-        size: item.size,
-        temperature: item.temperature,
-        notes: item.notes,
-        name: base.name,
-        unitPrice,
-        totalPrice,
-        modifiers: modifierInfos,
-      });
     }
 
     return result;
   }
 
   /**
-   * Submit order to POS
+   * Calculate item using mapped flow (Square IDs, client-provided prices).
+   */
+  private calculateMappedItem(item: OrderItemInput, name: string): CalculatedItem {
+    const unitPrice = this.roundPrice(item.unitPrice!);
+    const totalPrice = this.roundPrice(unitPrice * item.quantity);
+
+    const modifiers: ModifierInfo[] = (item.modifierDetails || []).map(m => ({
+      id: m.id,
+      name: m.name,
+      price: m.price,
+    }));
+
+    return {
+      baseId: item.baseId,
+      quantity: item.quantity,
+      size: item.size,
+      temperature: item.temperature,
+      notes: item.notes,
+      name,
+      unitPrice,
+      totalPrice,
+      modifiers,
+      isMapped: true,
+    };
+  }
+
+  /**
+   * Calculate item using legacy flow (Drink-UX Base/Modifier IDs, DB prices).
+   */
+  private async calculateLegacyItem(
+    businessId: string,
+    item: OrderItemInput
+  ): Promise<CalculatedItem> {
+    // Validate base exists
+    const base = await this.prisma.base.findFirst({
+      where: {
+        id: item.baseId,
+        businessId,
+      },
+    });
+
+    if (!base) {
+      throw new OrderError('INVALID_ITEM', `Invalid item reference: ${item.baseId}`);
+    }
+
+    // Calculate base price with size multiplier
+    const sizeMultiplier = SIZE_MULTIPLIERS[item.size] || 1.0;
+    let unitPrice = this.roundPrice(base.basePrice * sizeMultiplier);
+
+    // Get modifier details and add their prices
+    const modifierInfos: ModifierInfo[] = [];
+    if (item.modifiers && item.modifiers.length > 0) {
+      const modifiers = await this.prisma.modifier.findMany({
+        where: {
+          id: { in: item.modifiers },
+          businessId,
+        },
+      });
+
+      for (const mod of modifiers) {
+        modifierInfos.push({
+          id: mod.id,
+          name: mod.name,
+          price: mod.price,
+        });
+        unitPrice = this.roundPrice(unitPrice + mod.price);
+      }
+    }
+
+    const totalPrice = this.roundPrice(unitPrice * item.quantity);
+
+    return {
+      baseId: item.baseId,
+      quantity: item.quantity,
+      size: item.size,
+      temperature: item.temperature,
+      notes: item.notes,
+      name: base.name,
+      unitPrice,
+      totalPrice,
+      modifiers: modifierInfos,
+      isMapped: false,
+    };
+  }
+
+  /**
+   * Submit order to POS.
+   *
+   * For mapped items, Square IDs are used directly (no translation needed).
+   * For legacy items, POS IDs are looked up from Base/Modifier models.
    */
   private async submitToPOS(
     order: Order,
@@ -448,38 +528,42 @@ export class OrderService {
       return undefined;
     }
 
-    // Get base items with POS IDs
-    const bases = await this.prisma.base.findMany({
-      where: {
-        id: { in: items.map((i: CalculatedItem) => i.baseId) },
-      },
-    });
+    const posItems = [];
 
-    const baseMap = new Map(bases.map((b) => [b.id, b]));
+    for (const item of items) {
+      if (item.isMapped) {
+        // Mapped flow: baseId IS the Square item ID, modifier IDs ARE Square modifier IDs
+        posItems.push({
+          posItemId: item.baseId,
+          quantity: item.quantity,
+          modifierIds: item.modifiers.length > 0
+            ? item.modifiers.map((m: ModifierInfo) => m.id)
+            : undefined,
+        });
+      } else {
+        // Legacy flow: look up POS IDs from Base/Modifier models
+        const base = await this.prisma.base.findUnique({
+          where: { id: item.baseId },
+        });
 
-    // Get modifiers with POS IDs
-    const allModifierIds = items.flatMap((i: CalculatedItem) => i.modifiers.map((m: ModifierInfo) => m.id));
-    const modifiers = await this.prisma.modifier.findMany({
-      where: {
-        id: { in: allModifierIds },
-      },
-    });
+        const modifierIds = item.modifiers.map((m: ModifierInfo) => m.id);
+        const modifiers = modifierIds.length > 0
+          ? await this.prisma.modifier.findMany({
+              where: { id: { in: modifierIds } },
+            })
+          : [];
 
-    const modifierMap = new Map(modifiers.map((m) => [m.id, m]));
+        const posModifierIds = modifiers
+          .map((m) => m.posModifierId)
+          .filter((id): id is string => !!id);
 
-    // Build POS order submission
-    const posItems = items.map((item: CalculatedItem) => {
-      const base = baseMap.get(item.baseId);
-      const posModifierIds = item.modifiers
-        .map((m: ModifierInfo) => modifierMap.get(m.id)?.posModifierId)
-        .filter((id): id is string => !!id);
-
-      return {
-        posItemId: base?.posItemId || '',
-        quantity: item.quantity,
-        modifierIds: posModifierIds.length > 0 ? posModifierIds : undefined,
-      };
-    });
+        posItems.push({
+          posItemId: base?.posItemId || '',
+          quantity: item.quantity,
+          modifierIds: posModifierIds.length > 0 ? posModifierIds : undefined,
+        });
+      }
+    }
 
     const submission: OrderSubmission = {
       items: posItems,

@@ -26,13 +26,28 @@
 
 .cup-outline {
   fill: #ffffff;
-  stroke: #d0d0d0;
-  stroke-width: 2;
+  stroke: #d4d4d4;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
 }
 
-/* Drink Layer Animations */
+/* Empty cup has softer styling */
+.empty-cup .cup-outline {
+  fill: #fafafa;
+  stroke: #ddd;
+  stroke-dasharray: none;
+}
+
+.empty-cup-container {
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+/* =============================================================================
+   DRINK LAYER ANIMATIONS
+   ============================================================================= */
+
 .drink-layer {
-  /* Make transform/clip-path operate in the path's own box */
   transform-box: fill-box;
   transform-origin: bottom center;
   transition: opacity 0.3s ease;
@@ -47,34 +62,31 @@
   opacity: var(--layer-opacity, 0.8);
 }
 
+/* Layer shine overlay - subtle, no animation of its own */
+.layer-shine {
+  pointer-events: none;
+  opacity: 0;
+}
+.layer-shine.visible {
+  animation: shineReveal 0.6s ease-out forwards;
+  animation-delay: calc(var(--layer-delay, 0ms) + 300ms);
+  animation-fill-mode: both;
+}
+
+@keyframes shineReveal {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Fill Animation - Liquid pouring in from bottom */
 .fill-layer.visible {
   animation: fillAnimation 0.8s ease-out forwards;
   animation-delay: var(--layer-delay, 0ms);
-  animation-fill-mode: both; /* apply 0% styles during delay, keep 100% after */
-  /* Hold at 'empty' until animation runs to avoid flash of full content */
+  animation-fill-mode: both;
   clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
   opacity: 0;
 }
 
-.foam-layer.visible {
-  animation: foamAnimation 0.7s ease-out forwards;
-  animation-delay: var(--layer-delay, 0ms);
-  animation-fill-mode: both;
-}
-
-.drizzle-layer {
-  transform-box: fill-box;
-  transform-origin: top center;
-}
-
-.drizzle-layer.visible {
-  /* Reveal downward from the top for a more natural syrup look */
-  animation: drizzleReveal 0.5s ease-out forwards;
-  animation-delay: var(--layer-delay, 0ms);
-  animation-fill-mode: both;
-}
-
-/* Fill Animation - Liquid pouring in */
 @keyframes fillAnimation {
   0% {
     clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
@@ -96,10 +108,15 @@
   stroke-width: 0.75;
 }
 
-/* Foam Animation - Bubbling effect */
-/* Make foam grow from the top so it appears at the drink surface */
+/* Foam Animation - grows from the top surface */
 .foam-layer {
   transform-origin: top center;
+}
+
+.foam-layer.visible {
+  animation: foamAnimation 0.7s ease-out forwards;
+  animation-delay: var(--layer-delay, 0ms);
+  animation-fill-mode: both;
 }
 
 @keyframes foamAnimation {
@@ -117,20 +134,16 @@
   }
 }
 
-/* Drizzle Animation - Syrup swirling in */
-@keyframes drizzleAnimation {
-  0% {
-    transform: scale(0.8) rotate(-5deg);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1) rotate(2deg);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-    opacity: var(--layer-opacity, 0.3);
-  }
+/* Drizzle Animation - Syrup reveal */
+.drizzle-layer {
+  transform-box: fill-box;
+  transform-origin: top center;
+}
+
+.drizzle-layer.visible {
+  animation: drizzleReveal 0.5s ease-out forwards;
+  animation-delay: var(--layer-delay, 0ms);
+  animation-fill-mode: both;
 }
 
 /* Top-down clip reveal for syrup/drizzle */
@@ -148,20 +161,22 @@
   }
 }
 
-/* Topping Animations */
+/* =============================================================================
+   TOPPING PARTICLE ANIMATIONS
+   ============================================================================= */
+
 .foam-bubble {
   animation: bubblePop 2.2s ease-in-out infinite;
   transform-origin: center;
 }
 
 @keyframes bubblePop {
-  0%,
-  100% {
+  0%, 100% {
     transform: scale(1);
-    opacity: 0.7;
+    opacity: 0.65;
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.15);
     opacity: 0.9;
   }
 }
@@ -177,11 +192,11 @@
     opacity: 1;
   }
   50% {
-    transform: translateY(0px) rotate(160deg);
-    opacity: 0.8;
+    transform: translateY(1px) rotate(180deg);
+    opacity: 0.75;
   }
   100% {
-    transform: translateY(-3px) rotate(320deg);
+    transform: translateY(-3px) rotate(360deg);
     opacity: 1;
   }
 }
@@ -191,13 +206,12 @@
 }
 
 @keyframes dustFloat {
-  0%,
-  100% {
+  0%, 100% {
     transform: translate(0, 0);
-    opacity: 0.6;
+    opacity: 0.55;
   }
   25% {
-    transform: translate(1px, -1px);
+    transform: translate(1.5px, -1.5px);
     opacity: 0.8;
   }
   50% {
@@ -205,51 +219,166 @@
     opacity: 0.4;
   }
   75% {
-    transform: translate(1px, 1px);
+    transform: translate(1px, 1.5px);
     opacity: 0.7;
   }
 }
 
-/* Legacy classes for backward compatibility */
-.drink-fill-cold {
-  fill: #8b4513;
-  opacity: 0.8;
+/* =============================================================================
+   STEAM ANIMATION (hot drinks)
+   ============================================================================= */
+
+.steam-group {
+  opacity: 0;
+  animation: steamAppear 0.8s ease-out 0.6s forwards;
 }
 
-.drink-fill-hot {
-  fill: #3e2723;
-  opacity: 0.8;
+@keyframes steamAppear {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 
-.milk-layer {
-  fill: #fff9e6;
-  opacity: 0.7;
+.steam-wisp {
+  animation: steamRise 3s ease-in-out infinite;
+  opacity: 0;
 }
+
+@keyframes steamRise {
+  0% {
+    stroke-dashoffset: 80;
+    stroke-dasharray: 20 60;
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  85% {
+    opacity: 0.1;
+  }
+  100% {
+    stroke-dashoffset: -20;
+    stroke-dasharray: 20 60;
+    opacity: 0;
+  }
+}
+
+/* =============================================================================
+   ICE CUBE ANIMATION (cold drinks)
+   ============================================================================= */
+
+.ice-group {
+  opacity: 0;
+  animation: iceAppear 0.5s ease-out 0.5s forwards;
+}
+
+@keyframes iceAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ice-cube {
+  animation: iceFloat 4s ease-in-out infinite;
+}
+
+@keyframes iceFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-1.5px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(0.5px) rotate(-0.5deg);
+  }
+  75% {
+    transform: translateY(-1px) rotate(0.5deg);
+  }
+}
+
+/* =============================================================================
+   STRAW (cold drinks)
+   ============================================================================= */
+
+.straw-group {
+  opacity: 0;
+  animation: strawAppear 0.4s ease-out 0.3s forwards;
+}
+
+@keyframes strawAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =============================================================================
+   CUP SLEEVE (hot drinks)
+   ============================================================================= */
+
+.cup-sleeve {
+  opacity: 0;
+  animation: sleeveAppear 0.4s ease-out 0.2s forwards;
+}
+
+@keyframes sleeveAppear {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* =============================================================================
+   SURFACE HIGHLIGHT
+   ============================================================================= */
+
+.surface-highlight {
+  opacity: 0;
+  animation: surfaceAppear 0.5s ease-out 0.8s forwards;
+}
+
+@keyframes surfaceAppear {
+  0% { opacity: 0; }
+  100% { opacity: 0.3; }
+}
+
+/* =============================================================================
+   CUP LID & INFO
+   ============================================================================= */
 
 .cup-lid {
   fill: #f5f5f5;
   stroke: #d0d0d0;
-  stroke-width: 2;
+  stroke-width: 1.5;
 }
 
 .large-cup-lid-top {
   fill: #f5f5f5;
   stroke: #d0d0d0;
-  stroke-width: 2;
+  stroke-width: 1.5;
 }
 
 /* Cup Information Styling */
 .empty-cup-hint {
   text-align: center;
-  color: #666;
+  color: #888;
   font-style: italic;
-  animation: fadeInOut 2s ease-in-out infinite;
+  animation: fadeInOut 2.5s ease-in-out infinite;
 }
 
 @keyframes fadeInOut {
-  0%,
-  100% {
-    opacity: 0.7;
+  0%, 100% {
+    opacity: 0.6;
   }
   50% {
     opacity: 1;
@@ -258,7 +387,7 @@
 
 .empty-cup-hint p {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .cup-info {
@@ -303,7 +432,10 @@
   font-style: italic;
 }
 
-/* Responsive Design */
+/* =============================================================================
+   RESPONSIVE
+   ============================================================================= */
+
 @media (max-width: 480px) {
   .visual-cup {
     max-width: 250px;
