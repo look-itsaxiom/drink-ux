@@ -124,12 +124,28 @@ const DrinkBuilder: React.FC = () => {
     setStep("type");
   };
 
+  // Drink types that traditionally include milk
+  const milkDrinkNames = [
+    'latte', 'cappuccino', 'flat white', 'mocha', 'macchiato',
+    'chai latte', 'matcha latte', 'hot chocolate', 'frappe',
+  ];
+
   const handleTypeSelect = (drinkType: DrinkType) => {
     const newState = { ...drinkState, drinkType };
 
     // Set temperature based on drink type constraints
     if (drinkType.isHot !== undefined) {
       newState.isHot = drinkType.isHot;
+    }
+
+    // Auto-select Whole Milk for drinks that traditionally include milk
+    const nameLower = drinkType.name.toLowerCase();
+    const needsMilk = milkDrinkNames.some(n => nameLower.includes(n));
+    if (needsMilk && !newState.milk) {
+      const wholeMilk = milkModifiers.find(m => m.name.toLowerCase().includes('whole'));
+      if (wholeMilk) {
+        newState.milk = wholeMilk;
+      }
     }
 
     setDrinkState(newState);

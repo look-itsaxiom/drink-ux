@@ -71,6 +71,16 @@ interface DrinkProfile {
   milkBlends: boolean;
   /** How much milk lightens the base (higher = more milk visible) */
   milkBlendStrength: number;
+  /**
+   * When true and milk is selected, renders as separate layers:
+   * concentrate at bottom → milk layer on top → foam.
+   * `espressoHeight` controls the concentrate, `milkLayerHeight` the milk.
+   */
+  milkIsLayered?: boolean;
+  /** Height of the concentrate layer at the bottom (when milkIsLayered) */
+  espressoHeight?: number;
+  /** Height of the milk layer above the concentrate (when milkIsLayered) */
+  milkLayerHeight?: number;
 }
 
 /**
@@ -80,22 +90,28 @@ interface DrinkProfile {
 const DRINK_PROFILES: Record<string, DrinkProfile> = {
   // ── Coffee drinks ─────────────────────────────────────────
   'latte': {
-    baseColor: '#4A3728',       // Dark espresso concentrate
-    baseHeight: 0.76,           // Mostly milk-blended body
+    baseColor: '#1A0A02',       // Dark espresso concentrate at bottom
+    baseHeight: 0.76,           // Fallback when no milk selected
     hasFoam: true,
     foamHeight: 0.10,           // Thin foam cap
     foamColor: '#F0E0C8',       // Warm cream foam
     milkBlends: true,
-    milkBlendStrength: 0.65,    // Heavy milk — latte is very milky
+    milkBlendStrength: 0.65,
+    milkIsLayered: true,
+    espressoHeight: 0.14,       // Small espresso shot at bottom
+    milkLayerHeight: 0.62,      // Large steamed milk layer
   },
   'cappuccino': {
-    baseColor: '#3E2A1A',       // Dark espresso base
-    baseHeight: 0.50,           // Less body — more foam
+    baseColor: '#1A0A02',       // Dark espresso concentrate
+    baseHeight: 0.50,           // Fallback when no milk selected
     hasFoam: true,
     foamHeight: 0.28,           // Thick, pillowy foam — signature of cappuccino
     foamColor: '#F5E6D0',       // Coffee-tinted foam
     milkBlends: true,
-    milkBlendStrength: 0.45,    // Less milk blend than latte
+    milkBlendStrength: 0.45,
+    milkIsLayered: true,
+    espressoHeight: 0.20,       // Equal thirds concept — espresso
+    milkLayerHeight: 0.30,      // Steamed milk — less than latte
   },
   'americano': {
     baseColor: '#1C0E04',       // Very dark — espresso + hot water
@@ -143,31 +159,40 @@ const DRINK_PROFILES: Record<string, DrinkProfile> = {
     milkBlendStrength: 0.20,
   },
   'mocha': {
-    baseColor: '#3E1E0E',       // Chocolate-espresso blend
-    baseHeight: 0.72,
+    baseColor: '#3E1E0E',       // Chocolate-espresso blend at bottom
+    baseHeight: 0.72,           // Fallback when no milk selected
     hasFoam: true,
     foamHeight: 0.10,
     foamColor: '#E8D4BE',       // Chocolate-tinged foam
     milkBlends: true,
     milkBlendStrength: 0.50,
+    milkIsLayered: true,
+    espressoHeight: 0.18,       // Espresso + chocolate concentrate
+    milkLayerHeight: 0.50,      // Steamed milk
   },
   'macchiato': {
-    baseColor: '#1E0E04',       // Dark espresso with just a "stain" of milk
+    baseColor: '#1E0E04',       // Dark espresso — macchiato is mostly espresso
     baseHeight: 0.68,
     hasFoam: true,
     foamHeight: 0.16,           // Dollop of foam on top
     foamColor: '#F2E4D0',
     milkBlends: true,
-    milkBlendStrength: 0.20,    // Very little milk
+    milkBlendStrength: 0.20,
+    milkIsLayered: true,
+    espressoHeight: 0.50,       // Mostly espresso
+    milkLayerHeight: 0.14,      // Just a "stain" of milk
   },
   'flat white': {
-    baseColor: '#4A3728',       // Similar to latte but denser
-    baseHeight: 0.82,           // Less foam than latte
+    baseColor: '#1A0A02',       // Dense espresso at bottom
+    baseHeight: 0.82,           // Fallback when no milk selected
     hasFoam: true,
     foamHeight: 0.05,           // Microfoam — very thin
     foamColor: '#F0E8DC',
     milkBlends: true,
     milkBlendStrength: 0.60,
+    milkIsLayered: true,
+    espressoHeight: 0.18,       // Double ristretto shot
+    milkLayerHeight: 0.60,      // Velvety steamed milk
   },
   'frappe': {
     baseColor: '#5C3D28',       // Blended iced coffee
@@ -217,22 +242,28 @@ const DRINK_PROFILES: Record<string, DrinkProfile> = {
     milkBlendStrength: 0.45,
   },
   'chai latte': {
-    baseColor: '#6B3E22',       // Spiced dark tea
-    baseHeight: 0.74,
+    baseColor: '#6B3E22',       // Spiced chai concentrate at bottom
+    baseHeight: 0.74,           // Fallback when no milk selected
     hasFoam: true,
     foamHeight: 0.12,
     foamColor: '#F0E2D0',       // Creamy spiced foam
     milkBlends: true,
     milkBlendStrength: 0.55,
+    milkIsLayered: true,
+    espressoHeight: 0.18,       // Chai concentrate
+    milkLayerHeight: 0.52,      // Steamed milk
   },
   'matcha latte': {
-    baseColor: '#5E8C3A',       // Vivid matcha green
-    baseHeight: 0.76,
+    baseColor: '#5E8C3A',       // Vivid matcha concentrate at bottom
+    baseHeight: 0.76,           // Fallback when no milk selected
     hasFoam: true,
     foamHeight: 0.10,
     foamColor: '#E8F0D8',       // Green-tinted foam
     milkBlends: true,
     milkBlendStrength: 0.50,
+    milkIsLayered: true,
+    espressoHeight: 0.16,       // Matcha concentrate
+    milkLayerHeight: 0.56,      // Steamed milk
   },
 
   // ── Italian sodas ─────────────────────────────────────────
@@ -297,13 +328,16 @@ const DRINK_PROFILES: Record<string, DrinkProfile> = {
 
   // ── Specialty ─────────────────────────────────────────────
   'hot chocolate': {
-    baseColor: '#3E1A0A',       // Rich dark chocolate
-    baseHeight: 0.72,
+    baseColor: '#3E1A0A',       // Rich dark chocolate at bottom
+    baseHeight: 0.72,           // Fallback when no milk selected
     hasFoam: true,
     foamHeight: 0.12,           // Marshmallow/foam cap
     foamColor: '#FFF4E8',
     milkBlends: true,
     milkBlendStrength: 0.35,
+    milkIsLayered: true,
+    espressoHeight: 0.16,       // Chocolate concentrate
+    milkLayerHeight: 0.52,      // Steamed milk
   },
   'steamer': {
     baseColor: '#F0E4D0',       // Steamed milk — very pale
@@ -509,37 +543,73 @@ export class DrinkVisualizer {
       });
     }
 
-    // ── 2) Main body (base drink + milk blended together) ───
+    // ── 2) Main body ─────────────────────────────────────────
+    // For layered drinks (lattes, cappuccinos, etc.) with milk selected:
+    //   → concentrate at bottom → separate milk layer on top
+    // For blended drinks or no milk: single body with milk blended in
     if (state.drinkType && state.category) {
-      let bodyColor: string;
+      const useLayered = profile?.milkIsLayered && milkPresent && state.milk
+        && profile.espressoHeight && profile.milkLayerHeight;
 
-      if (profile) {
-        bodyColor = profile.baseColor;
-        // Blend milk into body if applicable
-        if (milkPresent && state.milk && profile.milkBlends) {
-          const milkProps = this.getMilkProperties(state.milk.name);
-          // Use profile's blend strength as multiplier on the milk's own strength
-          const effectiveBlend = Math.min(1, milkProps.blendStrength * (profile.milkBlendStrength / 0.50));
-          bodyColor = mixColors(bodyColor, milkProps.color, effectiveBlend);
-        }
+      if (useLayered && profile) {
+        // Concentrate layer at bottom (espresso, chai, matcha, etc.)
+        const concentrateHeight = Math.max(0.08, profile.espressoHeight! - syrupHeight - whippedHeight * 0.3);
+        layers.push({
+          id: 'base',
+          name: state.drinkType.name,
+          color: profile.baseColor,
+          opacity: 0.96,
+          height: concentrateHeight,
+          order: order++,
+          animated: true,
+          animationType: 'fill',
+        });
+
+        // Milk layer on top of concentrate
+        const milkProps = this.getMilkProperties(state.milk!.name);
+        // Slightly tint the milk with the base color for realism
+        const milkColor = mixColors(milkProps.color, profile.baseColor, 0.08);
+        const milkHeight = Math.max(0.10, profile.milkLayerHeight! - whippedHeight * 0.7);
+        layers.push({
+          id: 'milk',
+          name: state.milk!.name,
+          color: milkColor,
+          opacity: milkProps.opacity,
+          height: milkHeight,
+          order: order++,
+          animated: true,
+          animationType: 'fill',
+        });
       } else {
-        bodyColor = this.getBaseDrinkColor(state);
-        if (milkPresent && state.milk) {
-          const milkProps = this.getMilkProperties(state.milk.name);
-          bodyColor = mixColors(bodyColor, milkProps.color, milkProps.blendStrength);
-        }
-      }
+        // Non-layered: single body with milk blended in
+        let bodyColor: string;
 
-      layers.push({
-        id: 'base',
-        name: milkPresent ? `${state.drinkType.name} with ${state.milk?.name}` : state.drinkType.name,
-        color: bodyColor,
-        opacity: 0.94,
-        height: baseHeight,
-        order: order++,
-        animated: true,
-        animationType: 'fill',
-      });
+        if (profile) {
+          bodyColor = profile.baseColor;
+          if (milkPresent && state.milk && profile.milkBlends) {
+            const milkProps = this.getMilkProperties(state.milk.name);
+            const effectiveBlend = Math.min(1, milkProps.blendStrength * (profile.milkBlendStrength / 0.50));
+            bodyColor = mixColors(bodyColor, milkProps.color, effectiveBlend);
+          }
+        } else {
+          bodyColor = this.getBaseDrinkColor(state);
+          if (milkPresent && state.milk) {
+            const milkProps = this.getMilkProperties(state.milk.name);
+            bodyColor = mixColors(bodyColor, milkProps.color, milkProps.blendStrength);
+          }
+        }
+
+        layers.push({
+          id: 'base',
+          name: milkPresent ? `${state.drinkType.name} with ${state.milk?.name}` : state.drinkType.name,
+          color: bodyColor,
+          opacity: 0.94,
+          height: baseHeight,
+          order: order++,
+          animated: true,
+          animationType: 'fill',
+        });
+      }
     }
 
     // ── 3) Foam cap ─────────────────────────────────────────
