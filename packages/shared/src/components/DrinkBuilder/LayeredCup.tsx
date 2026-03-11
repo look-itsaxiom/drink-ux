@@ -33,7 +33,6 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
 
     if (layers.length === 0) return;
 
-    // Use rAF to ensure the "hidden" frame paints before we show layers
     animFrameRef.current = requestAnimationFrame(() => {
       setVisibleLayers(new Set(layers.map(l => l.id)));
     });
@@ -67,7 +66,7 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
   const calculateLayerPath = (layer: DrinkLayer, isVisible: boolean): string => {
     if (!isVisible) return '';
 
-    const inset = 3; // inset from cup walls
+    const inset = 3;
     const liquidTopY = cup.lidY + 8;
     const liquidBottomY = cup.bottomY - 4;
     const totalHeight = Math.max(1, liquidBottomY - liquidTopY);
@@ -90,6 +89,21 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
     const isBottomLayer = heightBelow < 0.01;
     const bottomCurveAmt = isBottomLayer ? cup.bottomCurve * 0.55 : 3;
 
+    // Foam layers get a wavy top edge to look airy
+    const isFoamLayer = layer.animationType === 'foam';
+    if (isFoamLayer) {
+      const midX = cup.cx;
+      const q1x = leftTop + (rightTop - leftTop) * 0.25;
+      const q3x = leftTop + (rightTop - leftTop) * 0.75;
+      const wave = layerHeightPx * 0.18; // wave amplitude
+      return `M ${leftTop} ${topY + wave * 0.5}
+              Q ${q1x} ${topY - wave} ${midX} ${topY + wave * 0.3}
+              Q ${q3x} ${topY - wave * 0.6} ${rightTop} ${topY + wave * 0.4}
+              L ${rightBot} ${bottomY}
+              Q ${cup.cx} ${bottomY + 3} ${leftBot} ${bottomY}
+              Z`;
+    }
+
     return `M ${leftTop} ${topY}
             L ${leftBot} ${bottomY}
             Q ${cup.cx} ${bottomY + bottomCurveAmt} ${rightBot} ${bottomY}
@@ -108,7 +122,7 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
 
   const getToppingElements = () => {
     if (!hasTopping || !toppingType) return null;
-    const props = TOPPING_PROPERTIES[toppingType as keyof typeof TOPPING_PROPERTIES] || TOPPING_PROPERTIES.default;
+    const props = TOPPING_PROPERTIES[toppingType] || TOPPING_PROPERTIES.default;
     const surfaceY = getSurfaceY();
     const elements = [];
 
@@ -152,7 +166,7 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
           return (
             <path key={`steam-${i}`} className="steam-wisp"
               d={`M ${x} ${baseY} Q ${x + 5} ${baseY - 16} ${x - 4} ${baseY - 30} Q ${x + 6} ${baseY - 42} ${x + 1} ${baseY - 52}`}
-              fill="none" stroke="rgba(180, 180, 180, 0.6)" strokeWidth="2.5" strokeLinecap="round"
+              fill="none" stroke="rgba(180, 180, 180, 0.5)" strokeWidth="2" strokeLinecap="round"
               style={{ animationDelay: `${i * 700}ms` }} />
           );
         })}
@@ -176,10 +190,10 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
           <g key={`ice-${i}`} className="ice-cube" style={{ animationDelay: `${i * 200 + 400}ms` }}>
             <rect x={c.x} y={c.y} width={c.size} height={c.size} rx="2.5"
               transform={`rotate(${c.rot} ${c.x + c.size / 2} ${c.y + c.size / 2})`}
-              fill="rgba(210, 235, 255, 0.5)" stroke="rgba(170, 210, 255, 0.45)" strokeWidth="0.8" />
+              fill="rgba(200, 230, 255, 0.45)" stroke="rgba(150, 200, 255, 0.4)" strokeWidth="0.8" />
             <rect x={c.x + 2} y={c.y + 1.5} width={c.size * 0.35} height={c.size * 0.22} rx="1"
               transform={`rotate(${c.rot} ${c.x + c.size / 2} ${c.y + c.size / 2})`}
-              fill="rgba(255, 255, 255, 0.55)" />
+              fill="rgba(255, 255, 255, 0.5)" />
           </g>
         ))}
       </g>
@@ -192,11 +206,11 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
     return (
       <g className="straw-group">
         <line x1={strawX} y1={cup.lidY - 30} x2={strawX + 3} y2={cup.bottomY - 24}
-          stroke="#d4d4d4" strokeWidth="4.5" strokeLinecap="round" className="straw" />
+          stroke="#c0c0c0" strokeWidth="4.5" strokeLinecap="round" className="straw" />
         <line x1={strawX} y1={cup.lidY - 30} x2={strawX + 3} y2={cup.bottomY - 24}
-          stroke="#f0f0f0" strokeWidth="2.2" strokeLinecap="round" />
+          stroke="#e8e8e8" strokeWidth="2.2" strokeLinecap="round" />
         <line x1={strawX - 0.2} y1={cup.lidY - 30} x2={strawX + 2.8} y2={cup.bottomY - 24}
-          stroke="rgba(102, 126, 234, 0.25)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="5 7" />
+          stroke="rgba(139, 94, 60, 0.2)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="5 7" />
       </g>
     );
   };
@@ -205,7 +219,7 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
     if (layers.length === 0) return null;
     const y = getSurfaceY();
     const w = widthAtY(y) - 12;
-    return <ellipse cx={cup.cx} cy={y} rx={w / 2} ry="2.5" fill="rgba(255, 255, 255, 0.22)" className="surface-highlight" />;
+    return <ellipse cx={cup.cx} cy={y} rx={w / 2} ry="2.5" fill="rgba(255, 255, 255, 0.18)" className="surface-highlight" />;
   };
 
   const getSleeve = () => {
@@ -216,7 +230,7 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
     const w1 = widthAtY(y1), w2 = widthAtY(y2);
     return (
       <path d={`M ${cup.cx - w1 / 2} ${y1} L ${cup.cx - w2 / 2} ${y2} L ${cup.cx + w2 / 2} ${y2} L ${cup.cx + w1 / 2} ${y1} Z`}
-        fill="rgba(170, 130, 90, 0.12)" stroke="rgba(170, 130, 90, 0.18)" strokeWidth="0.5" className="cup-sleeve" />
+        fill="rgba(160, 120, 80, 0.14)" stroke="rgba(160, 120, 80, 0.2)" strokeWidth="0.5" className="cup-sleeve" />
     );
   };
 
@@ -238,9 +252,9 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
           <stop offset="100%" stopColor="#e8e8e8" />
         </linearGradient>
         <linearGradient id="layerShine" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="rgba(0,0,0,0.06)" />
-          <stop offset="28%" stopColor="rgba(255,255,255,0.1)" />
-          <stop offset="50%" stopColor="rgba(255,255,255,0.04)" />
+          <stop offset="0%" stopColor="rgba(0,0,0,0.05)" />
+          <stop offset="30%" stopColor="rgba(255,255,255,0.1)" />
+          <stop offset="50%" stopColor="rgba(255,255,255,0.03)" />
           <stop offset="100%" stopColor="rgba(0,0,0,0.04)" />
         </linearGradient>
         <filter id="cupShadow" x="-10%" y="-5%" width="120%" height="115%">
@@ -248,7 +262,7 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
         </filter>
       </defs>
 
-      {/* Steam (rendered first so it's behind the lid) */}
+      {/* Steam (behind the lid) */}
       {getSteamElements()}
 
       {/* Cup body */}
