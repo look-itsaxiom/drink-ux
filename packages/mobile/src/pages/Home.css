@@ -1,25 +1,84 @@
 .home-page {
-  --background: var(--theme-surface);
+  --background: var(--theme-background, #FAF7F4);
 }
 
 .welcome-section {
   text-align: center;
-  padding: 48px 16px 24px;
+  padding: 40px 24px 20px;
   color: var(--theme-text);
 }
 
+.welcome-section .page-title {
+  font-size: 1.8rem;
+  background: var(--theme-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
+.welcome-section .page-subtitle {
+  max-width: 320px;
+  margin: 0 auto;
+}
+
 .action-section {
-  padding: 16px 0;
+  padding: 8px 24px 16px;
 }
 
 .promo-icon {
-  font-size: 2.5rem;
-  color: var(--theme-accent);
-  margin-bottom: 8px;
+  font-size: 2.2rem;
+  color: var(--theme-secondary);
+  margin-bottom: 4px;
   display: flex;
   justify-content: center;
 }
 
 .promo-icon ion-icon {
-  font-size: 3rem;
+  font-size: 2.5rem;
+}
+
+/* Featured drinks cards */
+.card-elevated ion-card-header {
+  padding-bottom: 4px;
+}
+
+.card-elevated ion-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.card-elevated ion-card-content {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  padding-top: 4px;
+}
+
+/* Error banner */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(212, 144, 60, 0.08);
+  border: 1px solid rgba(212, 144, 60, 0.2);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.error-banner span {
+  font-size: 0.85rem;
+  color: var(--theme-warning);
+  font-weight: 500;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  gap: 16px;
+  color: var(--theme-textSecondary);
 }
