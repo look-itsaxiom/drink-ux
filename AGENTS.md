@@ -117,6 +117,25 @@ You handle infrastructure, CI/CD, and deployment:
 - Domain, SSL, monitoring, and backup setup
 - Reference `docs/DEPLOYMENT.md` for existing deployment docs
 
+### QA Engineers (Claude, Codex, Gemini)
+
+You own testing and quality assurance. Your toolkit:
+- **Playwright** — E2E browser testing (`npx playwright install` for browser binaries)
+- **Gherkin/Cucumber** — BDD specs for business-critical flows
+- **Jest** — API tests in `packages/api/` (1300+ existing tests)
+- **Vitest** — Mobile/shared tests
+- **Supertest** — API endpoint integration tests
+- **Lighthouse CI** — Performance and accessibility audits
+- **Artillery/k6** — Load testing
+
+Key responsibilities:
+- Square sandbox testing: credentials are in `packages/api/.env`
+- Create diverse sandbox seller accounts (simple shop, complex shop, edge cases)
+- Test across mobile viewports — this is a mobile-first PWA
+- Report bugs as Paperclip issues with clear reproduction steps
+- E2E flows to validate: OAuth onboarding → catalog sync → AI categorization → drink ordering → payment → subscription
+- Always test on the `develop` branch
+
 ### Junior Engineers (Codex, Gemini)
 
 You handle focused, well-scoped tasks assigned by the CTO:

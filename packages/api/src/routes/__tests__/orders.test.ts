@@ -40,6 +40,12 @@ async function createAuthenticatedUser(emailPrefix?: string) {
 
 // Test helper to create a test business with catalog items
 async function setupBusinessWithCatalog(businessId: string) {
+  // Set business to ACTIVE so it can accept orders (subscription enforcement)
+  await prisma.business.update({
+    where: { id: businessId },
+    data: { accountState: 'ACTIVE' },
+  });
+
   // Create category
   const category = await prisma.category.create({
     data: {
@@ -729,6 +735,10 @@ describe('Order Routes', () => {
       const { business: noPosAuth, sessionToken: noPosToken } = await createAuthenticatedUser('nopos');
 
       const noPosBusinessId = noPosAuth.id;
+      await prisma.business.update({
+        where: { id: noPosBusinessId },
+        data: { accountState: 'ACTIVE' },
+      });
       const noPosCategory = await prisma.category.create({
         data: {
           businessId: noPosBusinessId,

@@ -28,6 +28,12 @@ async function createTestBusinessWithCatalog(name: string = 'Test Business'): Pr
 
   const businessId = user.businesses[0].id;
 
+  // Set business to ACTIVE so it can accept orders (subscription enforcement)
+  await prisma.business.update({
+    where: { id: businessId },
+    data: { accountState: 'ACTIVE' },
+  });
+
   // Create category
   const category = await prisma.category.create({
     data: {

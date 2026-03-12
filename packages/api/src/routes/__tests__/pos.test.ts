@@ -5,7 +5,9 @@ import { posRouter } from '../pos';
 // Mock environment variables
 const mockEnv = {
   SQUARE_APP_ID: 'test-app-id',
+  SQUARE_APPLICATION_ID: 'test-app-id',
   SQUARE_APP_SECRET: 'test-app-secret',
+  SQUARE_APPLICATION_SECRET: 'test-app-secret',
   SQUARE_ENVIRONMENT: 'sandbox',
   POS_OAUTH_CALLBACK_URL: 'http://localhost:3001/api/pos/oauth/callback',
 };
