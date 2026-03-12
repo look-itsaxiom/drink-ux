@@ -2,6 +2,7 @@ import { OrderStatus } from '../../../generated/prisma';
 import {
   POSAdapter,
   POSCredentials,
+  POSLocation,
   TokenResult,
   RawCatalogData,
   CatalogItem,
@@ -330,6 +331,33 @@ export class SquareAdapter implements POSAdapter {
     } while (cursor);
 
     return result;
+  }
+
+  async getLocations(): Promise<POSLocation[]> {
+    if (!this.credentials) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${this.getBaseUrl()}/v2/locations`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${this.credentials.accessToken}`,
+        'Content-Type': 'application/json',
+        'Square-Version': SQUARE_API_VERSION,
+      },
+    });
+
+    const data = await response.json() as { locations?: Array<{ id: string; name: string }>; errors?: Array<{ detail: string }> };
+
+    if (!response.ok) {
+      const errorMessage = data.errors?.[0]?.detail || 'Failed to fetch locations';
+      throw new Error(errorMessage);
+    }
+
+    return (data.locations || []).map(loc => ({
+      id: loc.id,
+      name: loc.name,
+    }));
   }
 
   async pushItem(item: CatalogItem): Promise<string> {

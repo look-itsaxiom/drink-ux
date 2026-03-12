@@ -19,6 +19,7 @@ const mockPOSAdapter: jest.Mocked<POSAdapter> = {
     items: [],
     modifiers: [],
   }),
+  getLocations: jest.fn(),
   pushItem: jest.fn(),
   pushModifier: jest.fn(),
   updateItem: jest.fn(),

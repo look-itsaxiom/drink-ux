@@ -2,6 +2,7 @@ import { OrderStatus } from '../../../generated/prisma';
 import {
   POSAdapter,
   POSCredentials,
+  POSLocation,
   TokenResult,
   RawCatalogData,
   CatalogItem,
@@ -137,6 +138,15 @@ export class MockPOSAdapter implements POSAdapter {
     this.trackCall('importCatalog', []);
     this.checkError('importCatalog');
     return { ...this.catalogResponse };
+  }
+
+  async getLocations(): Promise<POSLocation[]> {
+    this.trackCall('getLocations', []);
+    this.checkError('getLocations');
+    return [
+      { id: 'mock-location-1', name: 'Mock Coffee Shop' },
+      { id: 'mock-location-2', name: 'Mock Roastery' },
+    ];
   }
 
   async pushItem(item: CatalogItem): Promise<string> {

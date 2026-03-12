@@ -4,7 +4,7 @@
 
 import { PrismaClient } from '../../../generated/prisma';
 import { HealthCheckService, HealthStatus } from '../HealthCheckService';
-import { POSAdapter, POSCredentials, TokenResult, RawCatalogData, CatalogItem, CatalogModifier, OrderSubmission } from '../../adapters/pos/POSAdapter';
+import { POSAdapter, POSCredentials, POSLocation, TokenResult, RawCatalogData, CatalogItem, CatalogModifier, OrderSubmission } from '../../adapters/pos/POSAdapter';
 import { OrderStatus } from '../../../generated/prisma';
 
 // Mock POS adapter
@@ -28,6 +28,7 @@ class MockPOSAdapter implements POSAdapter {
   async updateItem(_posItemId: string, _item: CatalogItem): Promise<void> {}
   async createOrder(_order: OrderSubmission): Promise<string> { return 'order-id'; }
   async getOrderStatus(_posOrderId: string): Promise<OrderStatus> { return 'PENDING'; }
+  async getLocations(): Promise<POSLocation[]> { return []; }
   async getPaymentLink(_orderId: string): Promise<string> { return 'https://payment.link'; }
 
   // Test helpers

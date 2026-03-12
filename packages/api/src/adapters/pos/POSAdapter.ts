@@ -60,6 +60,14 @@ export interface RawPOSCategory {
 }
 
 /**
+ * Location data from a POS system
+ */
+export interface POSLocation {
+  id: string;
+  name: string;
+}
+
+/**
  * Catalog item to push to POS
  */
 export interface CatalogItem {
@@ -113,6 +121,11 @@ export interface POSAdapter {
 
   // Catalog read
   importCatalog(): Promise<RawCatalogData>;
+
+  /**
+   * Get available locations for the authenticated merchant
+   */
+  getLocations(): Promise<POSLocation[]>;
 
   // Catalog write
   pushItem(item: CatalogItem): Promise<string>;
