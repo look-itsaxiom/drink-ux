@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || 'http://localhost:3002';
 const DEMO_URL = import.meta.env.VITE_DEMO_URL || 'https://look-itsaxiom.github.io/drink-ux/';
@@ -296,8 +297,8 @@ function App() {
               </div>
               <div className="footer-column">
                 <h4>Legal</h4>
-                <a href={`${DEMO_URL}terms`} target="_blank" rel="noopener noreferrer">Terms of Service</a>
-                <a href={`${DEMO_URL}privacy`} target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+                <Link to="/terms">Terms of Service</Link>
+                <Link to="/privacy">Privacy Policy</Link>
               </div>
             </div>
           </div>
