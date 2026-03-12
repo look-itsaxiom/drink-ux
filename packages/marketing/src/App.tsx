@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 const ADMIN_URL = import.meta.env.VITE_ADMIN_URL || 'http://localhost:3002';
+const DEMO_URL = import.meta.env.VITE_DEMO_URL || 'https://look-itsaxiom.github.io/drink-ux/';
 
 function App() {
   const [email, setEmail] = useState('');
@@ -26,6 +27,7 @@ function App() {
             <a href="#features">Features</a>
             <a href="#how-it-works">How It Works</a>
             <a href="#pricing">Pricing</a>
+            <a href={DEMO_URL} className="btn btn-secondary" target="_blank" rel="noopener noreferrer">Try Demo</a>
             <a href={`${ADMIN_URL}/signup`} className="btn btn-primary">Get Started</a>
           </div>
         </div>
@@ -43,8 +45,8 @@ function App() {
             <a href={`${ADMIN_URL}/signup`} className="btn btn-primary btn-large">
               Start Free Trial
             </a>
-            <a href="#how-it-works" className="btn btn-secondary btn-large">
-              See How It Works
+            <a href={DEMO_URL} className="btn btn-secondary btn-large" target="_blank" rel="noopener noreferrer">
+              Try Live Demo
             </a>
           </div>
           <p className="hero-note">No credit card required. 14-day free trial.</p>
@@ -288,15 +290,14 @@ function App() {
                 <a href="#pricing">Pricing</a>
               </div>
               <div className="footer-column">
-                <h4>Company</h4>
-                <a href="/about">About</a>
-                <a href="/contact">Contact</a>
-                <a href="/blog">Blog</a>
+                <h4>Resources</h4>
+                <a href={DEMO_URL} target="_blank" rel="noopener noreferrer">Live Demo</a>
+                <a href="mailto:support@drink-ux.com">Support</a>
               </div>
               <div className="footer-column">
                 <h4>Legal</h4>
-                <a href="/terms">Terms of Service</a>
-                <a href="/privacy">Privacy Policy</a>
+                <a href={`${DEMO_URL}terms`} target="_blank" rel="noopener noreferrer">Terms of Service</a>
+                <a href={`${DEMO_URL}privacy`} target="_blank" rel="noopener noreferrer">Privacy Policy</a>
               </div>
             </div>
           </div>
