@@ -25,6 +25,7 @@ import { AccountService } from "./services/AccountService";
 import { WebhookService } from "./services/WebhookService";
 import { ItemMappingService } from "./services/ItemMappingService";
 import { MappedCatalogService } from "./services/MappedCatalogService";
+import { SubscriptionExpiryService } from "./services/SubscriptionExpiryService";
 
 // Routes
 import { createAuthRouter } from "./routes/auth";
@@ -120,6 +121,7 @@ const accountStateService = new AccountStateService(prisma);
 const accountService = new AccountService(prisma);
 const itemMappingService = new ItemMappingService(prisma);
 const mappedCatalogService = new MappedCatalogService(prisma, posAdapter);
+const subscriptionExpiryService = new SubscriptionExpiryService(prisma);
 
 // Services that need prisma + POS adapter
 const orderService = new OrderService(prisma, posAdapter);
@@ -189,6 +191,17 @@ app.use("/api/catalog", createMappedCatalogRouter(mappedCatalogService));
 // Payment routes (processes payment for existing orders)
 app.use("/api/orders", createPaymentRouter(prisma));
 
+// Admin: trigger subscription expiry sweep
+app.post("/api/admin/subscription-expiry", async (req, res) => {
+  try {
+    const result = await subscriptionExpiryService.runExpirySweep();
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error("Expiry sweep error:", error);
+    res.status(500).json({ success: false, error: { code: "EXPIRY_SWEEP_FAILED", message: "Failed to run expiry sweep" } });
+  }
+});
+
 // =============================================================================
 // ERROR HANDLING
 // =============================================================================
@@ -216,6 +229,9 @@ if (process.env.NODE_ENV !== "test") {
     console.log(`API server running on port ${PORT}`);
     console.log(`CORS origins: ${corsOrigins.join(", ")}`);
     console.log(`POS adapter: ${posMode}`);
+
+    // Start periodic subscription expiry checks (every hour)
+    subscriptionExpiryService.start();
   });
 }
 
