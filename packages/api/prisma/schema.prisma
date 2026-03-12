@@ -134,6 +134,7 @@ model Business {
   accountState       AccountState @default(ONBOARDING)
   subscriptionStatus String?      // Square subscription ID or status
   gracePeriodEndsAt  DateTime?    // When grace period expires (null if not in grace period)
+  trialEndsAt        DateTime?    // When free trial expires (null if not in trial)
 
   // Theme (stored as JSON)
   theme              Json?        // { primaryColor, secondaryColor, backgroundColor, logoUrl }

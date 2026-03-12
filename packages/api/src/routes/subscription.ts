@@ -660,6 +660,119 @@ export function createSubscriptionRouter(prisma: PrismaClient): Router {
   });
 
   /**
+   * POST /api/subscription/start-trial
+   * Start a free trial for a business
+   */
+  router.post('/start-trial', requireAuth, async (req: SubscriptionRequest, res: Response) => {
+    try {
+      const { businessId } = req.body;
+
+      if (!businessId) {
+        const response: ApiResponse<never> = {
+          success: false,
+          error: {
+            code: 'BUSINESS_ID_REQUIRED',
+            message: 'Business ID is required',
+          },
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      // Look up business
+      const business = await prisma.business.findUnique({
+        where: { id: businessId },
+      });
+
+      if (!business) {
+        const response: ApiResponse<never> = {
+          success: false,
+          error: {
+            code: 'BUSINESS_NOT_FOUND',
+            message: 'Business not found',
+          },
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      // Check ownership
+      if (business.ownerId !== req.user!.id) {
+        const response: ApiResponse<never> = {
+          success: false,
+          error: {
+            code: 'AUTHORIZATION_ERROR',
+            message: 'You do not have permission to manage this business',
+          },
+        };
+        res.status(403).json(response);
+        return;
+      }
+
+      // Must be in SETUP_COMPLETE state
+      if (business.accountState !== 'SETUP_COMPLETE') {
+        const response: ApiResponse<never> = {
+          success: false,
+          error: {
+            code: 'INVALID_STATE',
+            message: 'Trial can only be started after completing setup',
+          },
+        };
+        res.status(400).json(response);
+        return;
+      }
+
+      const TRIAL_DAYS = 14;
+      const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+
+      // Transition to TRIAL state
+      await prisma.$transaction([
+        prisma.accountStateHistory.create({
+          data: {
+            businessId,
+            fromState: business.accountState,
+            toState: 'TRIAL',
+            reason: `Free trial started (${TRIAL_DAYS} days)`,
+          },
+        }),
+        prisma.business.update({
+          where: { id: businessId },
+          data: {
+            accountState: 'TRIAL',
+            trialEndsAt,
+            subscriptionStatus: JSON.stringify({
+              status: 'trial',
+              planId: null,
+              trialEndsAt: trialEndsAt.toISOString(),
+            }),
+          },
+        }),
+      ]);
+
+      const response: ApiResponse<{ status: string; trialEndsAt: string; trialDays: number }> = {
+        success: true,
+        data: {
+          status: 'trial',
+          trialEndsAt: trialEndsAt.toISOString(),
+          trialDays: TRIAL_DAYS,
+        },
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      console.error('Start trial error:', error);
+      const response: ApiResponse<never> = {
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to start trial',
+        },
+      };
+      res.status(500).json(response);
+    }
+  });
+
+  /**
    * GET /api/subscription/plans
    * List available subscription plans
    * Public endpoint - no authentication required

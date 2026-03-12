@@ -1,4 +1,4 @@
-import { PrismaClient, OrderStatus, Order, OrderItem, Business } from '../../generated/prisma';
+import { PrismaClient, OrderStatus, Order, OrderItem, Business, AccountState } from '../../generated/prisma';
 import { POSAdapter, OrderSubmission } from '../adapters/pos/POSAdapter';
 
 /**
@@ -164,6 +164,23 @@ export class OrderService {
 
     if (!business) {
       throw new OrderError('INVALID_BUSINESS', 'Business not found');
+    }
+
+    // Check if business can accept orders (must be ACTIVE or TRIAL)
+    const orderAllowedStates: AccountState[] = ['ACTIVE', 'TRIAL'];
+    if (!orderAllowedStates.includes(business.accountState)) {
+      throw new OrderError(
+        'BUSINESS_NOT_ACCEPTING_ORDERS',
+        'This shop is not currently accepting orders'
+      );
+    }
+
+    // Check if trial has expired
+    if (business.accountState === 'TRIAL' && business.trialEndsAt && business.trialEndsAt < new Date()) {
+      throw new OrderError(
+        'TRIAL_EXPIRED',
+        'This shop\'s free trial has expired. Please subscribe to continue accepting orders.'
+      );
     }
 
     // Validate items

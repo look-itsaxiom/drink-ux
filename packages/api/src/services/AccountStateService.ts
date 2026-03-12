@@ -442,6 +442,78 @@ export class AccountStateService {
   }
 
   // ===========================================================================
+  // TRIAL MANAGEMENT
+  // ===========================================================================
+
+  /** Default trial duration in days */
+  static readonly TRIAL_DURATION_DAYS = 14;
+
+  /**
+   * Start a free trial for a business
+   * @param businessId - The business ID
+   * @param durationDays - Trial duration in days (default: 14)
+   * @returns The updated business
+   */
+  async startTrial(businessId: string, durationDays: number = AccountStateService.TRIAL_DURATION_DAYS): Promise<Business> {
+    const business = await this.getBusiness(businessId);
+
+    if (business.accountState !== AccountState.SETUP_COMPLETE) {
+      throw new AccountStateError(
+        'INVALID_TRANSITION',
+        `Cannot start trial from ${business.accountState} state`
+      );
+    }
+
+    const trialEndsAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+
+    // Transition to TRIAL and set trial end date
+    await this.transitionTo(businessId, AccountState.TRIAL, `Free trial started (${durationDays} days)`);
+
+    return this.prisma.business.update({
+      where: { id: businessId },
+      data: { trialEndsAt },
+    });
+  }
+
+  /**
+   * Check if a business trial has expired
+   * @param businessId - The business ID
+   * @returns true if the trial has expired
+   */
+  async isTrialExpired(businessId: string): Promise<boolean> {
+    const business = await this.getBusiness(businessId);
+
+    if (business.accountState !== AccountState.TRIAL) {
+      return false;
+    }
+
+    if (!business.trialEndsAt) {
+      return false;
+    }
+
+    return business.trialEndsAt < new Date();
+  }
+
+  /**
+   * Expire a trial and suspend the business
+   * @param businessId - The business ID
+   * @returns The updated business
+   */
+  async expireTrial(businessId: string): Promise<Business> {
+    const business = await this.getBusiness(businessId);
+
+    if (business.accountState !== AccountState.TRIAL) {
+      throw new AccountStateError('NOT_IN_TRIAL', 'Business is not in trial');
+    }
+
+    return this.transitionTo(
+      businessId,
+      AccountState.SUSPENDED,
+      'Free trial expired without subscription'
+    );
+  }
+
+  // ===========================================================================
   // STATE HISTORY
   // ===========================================================================
 
