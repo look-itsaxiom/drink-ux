@@ -6,6 +6,8 @@ import DrinkBuilder from './pages/DrinkBuilder';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import OrderConfirmation from './pages/OrderConfirmation';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import { ThemeProvider } from './theme';
 import { AppProvider, useBusinessContext } from './context';
 import { SubscriptionGate } from './components/SubscriptionGate';
@@ -44,6 +46,8 @@ function ProtectedRoutes(): React.ReactElement {
   if (!subdomain) {
     return (
       <IonRouterOutlet>
+        <Route path="/terms" component={TermsOfService} exact />
+        <Route path="/privacy" component={PrivacyPolicy} exact />
         <Route path="/home" component={Home} exact />
         <Route path="/drink/:id" component={DrinkBuilder} exact />
         <Route path="/cart" component={Cart} exact />
@@ -69,6 +73,8 @@ function ProtectedRoutes(): React.ReactElement {
       previewMode={previewMode}
     >
       <IonRouterOutlet>
+        <Route path="/terms" component={TermsOfService} exact />
+        <Route path="/privacy" component={PrivacyPolicy} exact />
         <Route path="/home" component={Home} exact />
         <Route path="/drink/:id" component={DrinkBuilder} exact />
         <Route path="/cart" component={Cart} exact />
