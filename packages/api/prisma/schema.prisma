@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -354,7 +354,7 @@ model OrderItem {
   totalPrice  Float
 
   // Modifiers as JSON array: [{ id, name, price }]
-  modifiers   String  @default("[]")  // JSON stored as string for SQLite compatibility
+  modifiers   Json    @default("[]")
 
   notes       String?
 
@@ -434,7 +434,7 @@ model SubscriptionPlan {
   description     String?
   price           Float           // Price in dollars
   interval        BillingInterval @default(MONTHLY)
-  features        String          @default("[]")  // JSON array of feature strings
+  features        String[]        @default([])
   isActive        Boolean         @default(true)
   displayOrder    Int             @default(0)
 
@@ -491,8 +491,8 @@ model ItemMapping {
   category           String?
   displayName        String?
   displayOrder       Int      @default(0)
-  temperatureOptions String   @default("[]")  // JSON array for SQLite compatibility
-  sizeOptions        String   @default("[]")  // JSON array for SQLite compatibility
+  temperatureOptions String[] @default([])
+  sizeOptions        String[] @default([])
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

@@ -217,7 +217,7 @@ describe('MappedCatalogService', () => {
           squareItemId: 'ITEM_LATTE',
           itemType: 'BASE',
           category: 'espresso',
-          temperatureOptions: JSON.stringify(['HOT', 'ICED']),
+          temperatureOptions: ['HOT', 'ICED'],
         },
       });
 

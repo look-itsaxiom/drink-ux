@@ -97,7 +97,7 @@ async function createTestPlan(squarePlanId?: string): Promise<string> {
       description: 'Full access to all features',
       price: 29.99,
       interval: 'MONTHLY',
-      features: JSON.stringify(['Unlimited orders', 'Custom branding', 'Analytics']),
+      features: ['Unlimited orders', 'Custom branding', 'Analytics'],
       isActive: true,
     },
   });

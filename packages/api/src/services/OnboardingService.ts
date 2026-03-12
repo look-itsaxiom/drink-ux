@@ -15,6 +15,7 @@ import {
   Business,
   TemperatureConstraint,
   ModifierType,
+  ItemType,
   Prisma,
 } from '../../generated/prisma';
 import { POSAdapter, POSCredentials, RawCatalogData } from '../adapters/pos/POSAdapter';
@@ -652,7 +653,8 @@ export class OnboardingService {
     }
 
     // Create categories
-    const categoryMap = new Map<string, string>();
+    const categoryMap = new Map<string, string>(); // Square category ID → DB category ID
+    const categoryNameMap = new Map<string, string>(); // Square category ID → category name
     for (const cat of catalogData.categories) {
       const category = await this.prisma.category.create({
         data: {
@@ -662,6 +664,7 @@ export class OnboardingService {
         },
       });
       categoryMap.set(cat.id, category.id);
+      categoryNameMap.set(cat.id, cat.name);
     }
 
     // Create a default category if none exist
@@ -710,6 +713,20 @@ export class OnboardingService {
           temperatureConstraint: TemperatureConstraint.BOTH,
         },
       });
+
+      // Create ItemMapping so MappedCatalogService can find this item
+      const categoryName = item.categoryId ? categoryNameMap.get(item.categoryId) : 'Uncategorized';
+      await this.prisma.itemMapping.create({
+        data: {
+          businessId,
+          squareItemId: item.id,
+          itemType: ItemType.BASE,
+          category: categoryName || 'Uncategorized',
+          displayName: name,
+          displayOrder: catalogData.items.indexOf(item),
+          temperatureOptions: ['hot', 'iced'],
+        },
+      });
     }
 
     // Determine modifier types from list names
@@ -722,13 +739,28 @@ export class OnboardingService {
 
     // Create modifiers
     for (const mod of catalogData.modifiers) {
+      const modType = getModifierType(mod.modifierListId, mod.name);
       await this.prisma.modifier.create({
         data: {
           businessId,
           name: mod.name,
-          type: getModifierType(mod.modifierListId, mod.name),
+          type: modType,
           price: (mod.price || 0) / 100,
           posModifierId: mod.id,
+        },
+      });
+
+      // Create ItemMapping for modifier so MappedCatalogService can include it
+      const modCategory = modType === ModifierType.MILK ? 'milk'
+        : modType === ModifierType.SYRUP ? 'syrup'
+        : 'topping';
+      await this.prisma.itemMapping.create({
+        data: {
+          businessId,
+          squareItemId: mod.id,
+          itemType: ItemType.MODIFIER,
+          category: modCategory,
+          displayName: mod.name,
         },
       });
     }

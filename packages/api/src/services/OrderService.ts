@@ -206,7 +206,7 @@ export class OrderService {
             temperature: item.temperature,
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice,
-            modifiers: JSON.stringify(item.modifiers),
+            modifiers: item.modifiers as object[],
             notes: item.notes,
           })),
         },
@@ -678,7 +678,7 @@ export class OrderService {
         temperature: item.temperature,
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice,
-        modifiers: calculatedItems?.[index]?.modifiers || this.parseModifiers(item.modifiers),
+        modifiers: calculatedItems?.[index]?.modifiers || (item.modifiers as unknown as ModifierInfo[]) || [],
         notes: item.notes || undefined,
       })),
       subtotal: order.subtotal,
@@ -696,14 +696,4 @@ export class OrderService {
     };
   }
 
-  /**
-   * Parse modifiers JSON string
-   */
-  private parseModifiers(modifiersJson: string): ModifierInfo[] {
-    try {
-      return JSON.parse(modifiersJson) as ModifierInfo[];
-    } catch {
-      return [];
-    }
-  }
 }

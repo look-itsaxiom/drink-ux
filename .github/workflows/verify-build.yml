@@ -17,6 +17,21 @@ jobs:
       matrix:
         node-version: [18.x, 20.x]
 
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: drinkux
+          POSTGRES_PASSWORD: drinkux_test
+          POSTGRES_DB: drinkux_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,7 +53,7 @@ jobs:
           cd packages/api
           npx prisma migrate deploy
         env:
-          DATABASE_URL: "file:./prisma/test.db"
+          DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"
 
       - name: Build shared package first
         run: npm run build --workspace=@drink-ux/shared
@@ -58,7 +73,7 @@ jobs:
       - name: Build API package
         run: npm run build --workspace=@drink-ux/api
         env:
-          DATABASE_URL: "file:./prisma/test.db"
+          DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"
 
       - name: Verify API package build
         run: |
@@ -93,7 +108,7 @@ jobs:
       - name: Run API tests
         run: npm run test --workspace=@drink-ux/api
         env:
-          DATABASE_URL: "file:./prisma/test.db"
+          DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"
 
       - name: Verify API tests passed
         run: |

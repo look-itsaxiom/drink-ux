@@ -1,5 +1,8 @@
 import { PrismaClient, ItemMapping } from '../../generated/prisma';
 import { POSAdapter, RawCatalogData, RawPOSItem, RawPOSModifier } from '../adapters/pos/POSAdapter';
+import { decryptToken } from '../utils/encryption';
+
+const ENCRYPTION_KEY = process.env.POS_TOKEN_ENCRYPTION_KEY || 'test-key-must-be-32-chars-long!!';
 
 export type MappedCatalogErrorCode = 'BUSINESS_NOT_FOUND' | 'NO_POS_CREDENTIALS' | 'SQUARE_API_ERROR';
 
@@ -92,10 +95,10 @@ export class MappedCatalogService {
       throw new MappedCatalogError('NO_POS_CREDENTIALS', 'Business has no POS credentials');
     }
 
-    // Set credentials on adapter
+    // Set credentials on adapter (tokens are stored encrypted)
     this.posAdapter.setCredentials({
-      accessToken: business.posAccessToken,
-      refreshToken: business.posRefreshToken,
+      accessToken: decryptToken(business.posAccessToken, ENCRYPTION_KEY),
+      refreshToken: business.posRefreshToken ? decryptToken(business.posRefreshToken, ENCRYPTION_KEY) : '',
       merchantId: business.posMerchantId || '',
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // placeholder
     });
@@ -159,7 +162,7 @@ export class MappedCatalogService {
           name: v.name,
           price: v.price,
         })),
-        temperatures: this.parseTemperatures(mapping.temperatureOptions),
+        temperatures: mapping.temperatureOptions,
       });
     }
 
@@ -204,12 +207,4 @@ export class MappedCatalogService {
     };
   }
 
-  private parseTemperatures(value: string): string[] {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
 }
