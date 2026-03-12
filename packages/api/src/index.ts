@@ -41,6 +41,7 @@ import { catalogSyncRouter } from "./routes/catalogSync";
 import { posRouter } from "./routes/pos";
 import { createMappingsRouter } from "./routes/mappings";
 import { createMappedCatalogRouter } from "./routes/catalog-mapped";
+import { createPaymentRouter } from "./routes/payments";
 
 // Middleware
 import { errorHandler } from "./middleware/errorHandler";
@@ -184,6 +185,9 @@ app.use("/api/mappings", createMappingsRouter(itemMappingService));
 
 // Mapped catalog routes
 app.use("/api/catalog", createMappedCatalogRouter(mappedCatalogService));
+
+// Payment routes (processes payment for existing orders)
+app.use("/api/orders", createPaymentRouter(prisma));
 
 // =============================================================================
 // ERROR HANDLING

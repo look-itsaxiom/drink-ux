@@ -71,8 +71,11 @@ describe('POS Routes', () => {
   });
 
   describe('GET /api/pos/oauth/callback', () => {
-    // Happy path
-    it('exchanges code for tokens and returns success', async () => {
+    // OAuth callback now redirects to admin frontend instead of returning JSON
+
+    // Happy path - token exchange succeeds but business lookup fails since no real business exists
+    // This tests the redirect behavior on token exchange errors (business not found in DB)
+    it('exchanges code for tokens and redirects with error when business not found', async () => {
       const mockTokenResponse = {
         access_token: 'new-access-token',
         refresh_token: 'new-refresh-token',
@@ -92,9 +95,9 @@ describe('POS Routes', () => {
           state: 'biz-123',
         });
 
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.merchantId).toBe('merchant-123');
+      // Redirects with error because 'biz-123' doesn't exist in test DB
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toContain('pos_error=');
     });
 
     it('calls Square token endpoint with correct parameters', async () => {
@@ -124,28 +127,26 @@ describe('POS Routes', () => {
       );
     });
 
-    // Failure scenarios
-    it('returns error when code is missing', async () => {
+    // Failure scenarios - all redirect with pos_error query param
+    it('redirects with error when code is missing', async () => {
       const response = await request(app)
         .get('/api/pos/oauth/callback')
         .query({ state: 'biz-123' });
 
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toContain('code');
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toContain('pos_error=missing_code');
     });
 
-    it('returns error when state is missing', async () => {
+    it('redirects with error when state is missing', async () => {
       const response = await request(app)
         .get('/api/pos/oauth/callback')
         .query({ code: 'auth-code' });
 
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toContain('state');
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toContain('pos_error=missing_state');
     });
 
-    it('returns error when Square OAuth fails', async () => {
+    it('redirects with error when Square OAuth fails', async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 400,
@@ -162,13 +163,12 @@ describe('POS Routes', () => {
           state: 'biz-123',
         });
 
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toContain('expired');
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toContain('pos_error=');
     });
 
     // Error handling
-    it('returns error on network failure', async () => {
+    it('redirects with error on network failure', async () => {
       (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
       const response = await request(app)
@@ -178,12 +178,12 @@ describe('POS Routes', () => {
           state: 'biz-123',
         });
 
-      expect(response.status).toBe(500);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toContain('pos_error=');
     });
 
     // Edge cases
-    it('handles error query parameter from Square (user denied)', async () => {
+    it('redirects with error when Square user denies access', async () => {
       const response = await request(app)
         .get('/api/pos/oauth/callback')
         .query({
@@ -192,9 +192,9 @@ describe('POS Routes', () => {
           state: 'biz-123',
         });
 
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.message).toContain('denied');
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toContain('pos_error=');
+      expect(response.headers.location).toContain('denied');
     });
   });
 

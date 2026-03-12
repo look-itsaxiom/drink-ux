@@ -5,5 +5,7 @@ process.env.NODE_ENV = "test";
 // dotenv doesn't override existing env vars by default
 require('dotenv').config();
 
-// Override DATABASE_URL for tests to use isolated test database
-process.env.DATABASE_URL = "file:./test.db";
+// Use DATABASE_URL from environment if provided, otherwise fall back to local test database
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = "postgresql://paperclip:paperclip@localhost:54329/drinkux_test";
+}

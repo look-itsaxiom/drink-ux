@@ -2,6 +2,9 @@ import { PrismaClient } from '../../../generated/prisma';
 import { MappedCatalogService, MappedCatalogError } from '../MappedCatalogService';
 import { MockPOSAdapter } from '../../adapters/pos/MockPOSAdapter';
 import { RawCatalogData } from '../../adapters/pos/POSAdapter';
+import { encryptToken } from '../../utils/encryption';
+
+const TEST_ENCRYPTION_KEY = process.env.POS_TOKEN_ENCRYPTION_KEY || 'test-key-must-be-32-chars-long!!';
 
 const prisma = new PrismaClient();
 
@@ -123,8 +126,8 @@ describe('MappedCatalogService', () => {
         slug: 'test-coffee-shop',
         ownerId: user.id,
         posProvider: 'SQUARE',
-        posAccessToken: 'test-access-token',
-        posRefreshToken: 'test-refresh-token',
+        posAccessToken: encryptToken('test-access-token', TEST_ENCRYPTION_KEY),
+        posRefreshToken: encryptToken('test-refresh-token', TEST_ENCRYPTION_KEY),
         posMerchantId: 'test-merchant-id',
       },
     });
@@ -272,8 +275,8 @@ describe('MappedCatalogService', () => {
           slug: 'other-shop',
           ownerId: user2.id,
           posProvider: 'SQUARE',
-          posAccessToken: 'test-token-2',
-          posRefreshToken: 'test-refresh-2',
+          posAccessToken: encryptToken('test-token-2', TEST_ENCRYPTION_KEY),
+          posRefreshToken: encryptToken('test-refresh-2', TEST_ENCRYPTION_KEY),
           posMerchantId: 'merchant-2',
         },
       });

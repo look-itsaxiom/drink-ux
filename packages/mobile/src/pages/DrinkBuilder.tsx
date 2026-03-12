@@ -229,17 +229,21 @@ const DrinkBuilder: React.FC = () => {
     const modifierNames: string[] = [];
 
     // Collect modifier info - IDs are now Square modifier IDs
+    const modifierDetails: Array<{ id: string; name: string; price: number }> = [];
     if (drinkState.milk) {
       modifierIds.push(drinkState.milk.id);
       modifierNames.push(drinkState.milk.name);
+      modifierDetails.push({ id: drinkState.milk.id, name: drinkState.milk.name, price: drinkState.milk.price });
     }
     drinkState.syrups.forEach((s) => {
       modifierIds.push(s.id);
       modifierNames.push(s.name);
+      modifierDetails.push({ id: s.id, name: s.name, price: s.price });
     });
     drinkState.toppings.forEach((t) => {
       modifierIds.push(t.id);
       modifierNames.push(t.name);
+      modifierDetails.push({ id: t.id, name: t.name, price: t.price });
     });
 
     // Create cart item - baseId is now the Square item ID
@@ -254,6 +258,7 @@ const DrinkBuilder: React.FC = () => {
       quantity: 1,
       unitPrice: totalPrice,
       totalPrice: totalPrice,
+      modifierDetails,
     };
 
     if (cartAvailable && addToCart) {

@@ -14,7 +14,7 @@ import { ApiClientError } from '../services/api';
 export interface CartItem {
   /** Unique ID for this cart item */
   id: string;
-  /** Base drink ID */
+  /** Base drink ID (Square item ID in mapped flow) */
   baseId: string;
   /** Base drink name */
   baseName: string;
@@ -34,6 +34,8 @@ export interface CartItem {
   totalPrice: number;
   /** Special instructions */
   notes?: string;
+  /** Modifier details for mapped flow (id, name, price per modifier) */
+  modifierDetails?: Array<{ id: string; name: string; price: number }>;
 }
 
 /**
@@ -303,6 +305,7 @@ export function CartProvider({ businessId, children }: CartProviderProps): JSX.E
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice,
             notes: item.notes,
+            modifierDetails: item.modifierDetails,
           })),
         };
 

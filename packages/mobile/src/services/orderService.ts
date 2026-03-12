@@ -10,7 +10,7 @@ import { apiClient } from './api';
  * Order item input for creating an order
  */
 export interface OrderItemInput {
-  /** Base drink ID */
+  /** Base drink ID (Square item ID in mapped flow) */
   baseId: string;
   /** Base drink name (for display) */
   baseName: string;
@@ -28,6 +28,8 @@ export interface OrderItemInput {
   totalPrice: number;
   /** Optional notes/special instructions */
   notes?: string;
+  /** Modifier details for mapped flow (id, name, price per modifier) */
+  modifierDetails?: Array<{ id: string; name: string; price: number }>;
 }
 
 /**
@@ -89,7 +91,26 @@ export interface OrderResponse {
  * @throws ApiClientError on validation or other errors
  */
 export async function submitOrder(order: OrderInput): Promise<OrderResponse> {
-  return apiClient.post<OrderResponse>('/api/orders', order);
+  // Transform mobile field names to API-expected format
+  const apiPayload = {
+    businessId: order.businessId,
+    customerName: order.customerName,
+    customerEmail: order.customerEmail,
+    customerPhone: order.customerPhone,
+    items: order.items.map((item) => ({
+      baseId: item.baseId,
+      quantity: item.quantity,
+      size: item.size,
+      temperature: item.isHot ? 'HOT' : 'ICED',
+      modifiers: item.modifierIds,
+      notes: item.notes,
+      // Mapped flow fields
+      unitPrice: item.unitPrice,
+      itemName: item.baseName,
+      modifierDetails: item.modifierDetails,
+    })),
+  };
+  return apiClient.post<OrderResponse>('/api/orders', apiPayload);
 }
 
 /**
@@ -243,10 +264,46 @@ export function getStatusStep(status: OrderStatus): number {
   }
 }
 
+/**
+ * Payment result from API
+ */
+export interface PaymentResponse {
+  payment: {
+    success: boolean;
+    paymentId?: string;
+    status?: string;
+    error?: {
+      code: string;
+      message: string;
+      detail?: string;
+    };
+  };
+}
+
+/**
+ * Submit payment for an existing order
+ *
+ * @param orderId - The order ID to pay for
+ * @param sourceId - Payment token from Square Web Payments SDK
+ * @param amount - Amount to charge in dollars
+ * @returns Payment result
+ */
+export async function payOrder(
+  orderId: string,
+  sourceId: string,
+  amount: number
+): Promise<PaymentResponse> {
+  return apiClient.post<PaymentResponse>(`/api/orders/${orderId}/pay`, {
+    sourceId,
+    amount,
+  });
+}
+
 export default {
   submitOrder,
   getOrder,
   getOrderByPickupCode,
+  payOrder,
   calculateOrderTotal,
   formatOrderItemDescription,
   formatOrderStatus,

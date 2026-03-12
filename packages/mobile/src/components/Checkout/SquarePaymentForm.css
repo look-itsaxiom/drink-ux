@@ -1,0 +1,40 @@
+.square-payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payment-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--ion-color-medium);
+}
+
+.payment-loading p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.card-container {
+  min-height: 40px;
+}
+
+.card-container.hidden {
+  height: 0;
+  overflow: hidden;
+}
+
+.payment-error p {
+  margin: 0;
+  font-size: 14px;
+  padding: 8px 0;
+}
+
+.pay-button {
+  margin-top: 8px;
+  --border-radius: 8px;
+  font-weight: 600;
+}
