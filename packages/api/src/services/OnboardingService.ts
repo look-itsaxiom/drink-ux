@@ -375,9 +375,35 @@ export class OnboardingService {
    * Get available Square locations
    */
   async getAvailableLocations(businessId: string): Promise<{ id: string; name: string }[]> {
-    // This would call the Square API to get locations
-    // For now, return empty array
-    return [];
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+    });
+
+    if (!business || !business.posAccessToken) {
+      return [];
+    }
+
+    // Set up adapter credentials
+    const credentials: POSCredentials = {
+      accessToken: decryptToken(business.posAccessToken, ENCRYPTION_KEY),
+      refreshToken: business.posRefreshToken ? decryptToken(business.posRefreshToken, ENCRYPTION_KEY) : '',
+      merchantId: business.posMerchantId || '',
+      locationId: business.posLocationId || undefined,
+      expiresAt: new Date(Date.now() + 3600000),
+    };
+
+    this.posAdapter.setCredentials(credentials);
+
+    try {
+      const locations = await this.posAdapter.getLocations();
+      return locations.map(loc => ({
+        id: loc.id,
+        name: loc.name,
+      }));
+    } catch (error) {
+      console.error('Failed to fetch locations from POS:', error);
+      return [];
+    }
   }
 
   /**
