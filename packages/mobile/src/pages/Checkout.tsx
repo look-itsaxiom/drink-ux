@@ -17,7 +17,6 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonBadge,
-  IonSpinner,
 } from '@ionic/react';
 import { useHistory } from 'react-router';
 import AppHeader from '../components/AppHeader';
@@ -40,42 +39,14 @@ const Checkout: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [pendingOrder, setPendingOrder] = useState<OrderResponse | null>(null);
 
-  // Try to use cart context
-  let cartData: {
-    items: CartItem[];
-    total: number;
-    submitOrder: (info: { customerName: string; customerEmail?: string; customerPhone?: string }) => Promise<OrderResponse>;
-    orderError: string | null;
-  } = {
-    items: [],
-    total: 0,
-    submitOrder: async () => ({ id: '' } as OrderResponse),
-    orderError: null,
-  };
-
-  let cartAvailable = false;
-
-  try {
-    const cart = useCart();
-    cartData = {
-      items: cart.items,
-      total: cart.total,
-      submitOrder: cart.submitOrder,
-      orderError: cart.orderError,
-    };
-    cartAvailable = true;
-  } catch {
-    // Cart context not available
-  }
-
-  const { items, total, submitOrder, orderError } = cartData;
+  const { items, total, submitOrder, orderError } = useCart();
 
   // Redirect to home if cart is empty and we're not in payment step
   useEffect(() => {
-    if (cartAvailable && items.length === 0 && step === 'review') {
+    if (items.length === 0 && step === 'review') {
       history.push('/home');
     }
-  }, [cartAvailable, items.length, history, step]);
+  }, [items.length, history, step]);
 
   const formatSize = (size: string): string => {
     switch (size) {
@@ -151,21 +122,6 @@ const Checkout: React.FC = () => {
       setPaymentProcessing(false);
     }
   }, [pendingOrder, history]);
-
-  // Loading state
-  if (!cartAvailable) {
-    return (
-      <IonPage>
-        <AppHeader title="Checkout" showBackButton={true} backHref="/cart" />
-        <IonContent className="checkout-page">
-          <div className="loading-container">
-            <IonSpinner name="crescent" />
-            <p>Loading...</p>
-          </div>
-        </IonContent>
-      </IonPage>
-    );
-  }
 
   return (
     <IonPage>

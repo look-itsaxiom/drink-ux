@@ -14,17 +14,14 @@ import { CartProvider } from './CartContext';
 function InnerProviders({ children }: { children: ReactNode }): JSX.Element {
   const { business } = useBusinessContext();
 
-  // Only render cart provider when we have a business ID
-  if (business?.id) {
-    return (
-      <CatalogProvider>
-        <CartProvider businessId={business.id}>{children}</CartProvider>
-      </CatalogProvider>
-    );
-  }
+  // Always provide CartProvider — use business ID when available, "demo" for demo mode
+  const cartBusinessId = business?.id || 'demo';
 
-  // Render just catalog provider (which will skip fetching without business)
-  return <CatalogProvider>{children}</CatalogProvider>;
+  return (
+    <CatalogProvider>
+      <CartProvider businessId={cartBusinessId}>{children}</CartProvider>
+    </CatalogProvider>
+  );
 }
 
 /**
