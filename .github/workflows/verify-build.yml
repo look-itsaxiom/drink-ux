@@ -5,9 +5,6 @@ on:
     branches: [main, develop]
   push:
     branches: [main, develop]
-  # Also run on pushes to any branch that has an open PR
-  pull_request_target:
-    branches: [main, develop]
 
 jobs:
   verify-build:
@@ -55,75 +52,29 @@ jobs:
         env:
           DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"
 
+      - name: Type check all packages
+        run: npm run typecheck
+        env:
+          DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"
+
+      - name: Lint all packages
+        run: npm run lint
+
       - name: Build shared package first
         run: npm run build --workspace=@drink-ux/shared
-
-      - name: Verify shared package build output
-        run: |
-          if [ ! -f "packages/shared/dist/index.js" ]; then
-            echo "❌ Shared package build failed - missing dist/index.js"
-            exit 1
-          fi
-          if [ ! -f "packages/shared/dist/index.d.ts" ]; then
-            echo "❌ Shared package build failed - missing dist/index.d.ts"
-            exit 1
-          fi
-          echo "✅ Shared package built successfully"
 
       - name: Build API package
         run: npm run build --workspace=@drink-ux/api
         env:
           DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"
 
-      - name: Verify API package build
-        run: |
-          if [ ! -f "packages/api/dist/index.js" ]; then
-            echo "❌ API package build failed - missing dist/index.js"
-            exit 1
-          fi
-          echo "✅ API package built successfully"
-
       - name: Build Admin package
         run: npm run build --workspace=@drink-ux/admin
-
-      - name: Verify Admin package build
-        run: |
-          if [ ! -d "packages/admin/dist" ]; then
-            echo "❌ Admin package build failed - missing dist directory"
-            exit 1
-          fi
-          echo "✅ Admin package built successfully"
 
       - name: Build Mobile package
         run: npm run build --workspace=@drink-ux/mobile
 
-      - name: Verify Mobile package build
-        run: |
-          if [ ! -d "packages/mobile/dist" ]; then
-            echo "❌ Mobile package build failed - missing dist directory"
-            exit 1
-          fi
-          echo "✅ Mobile package built successfully"
-
-      - name: Run API tests
-        run: npm run test --workspace=@drink-ux/api
-        env:
-          DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"
-
-      - name: Verify API tests passed
-        run: |
-          echo "✅ API tests completed successfully"
-
-      - name: Run tests (if any)
+      - name: Run all tests
         run: npm run test --workspaces --if-present
         env:
           DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"
-
-      - name: Build summary
-        run: |
-          echo "🎉 All packages built and tested successfully!"
-          echo "📦 Packages verified:"
-          echo "  - @drink-ux/shared ✅"
-          echo "  - @drink-ux/api ✅ (with tests)"
-          echo "  - @drink-ux/admin ✅"
-          echo "  - @drink-ux/mobile ✅"
