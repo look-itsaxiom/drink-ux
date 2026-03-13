@@ -79,6 +79,46 @@ curl -X POST http://localhost:3100/api/issues \
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing — that leaves work stranded locally
 - If push fails, resolve and retry until it succeeds
+- Always work on a feature branch, never commit directly to `main`
+
+## Branch Strategy & Git Flow
+
+### Protected Branches
+
+- **`main`** — production, auto-deploys mobile PWA to GitHub Pages. **No direct pushes.** All changes via PR only.
+
+### Branch Naming
+
+All branches: `{agent-name}/{SKI-ID}-{short-description}` (lowercase, kebab-case)
+
+Examples:
+- `backendengineer/SKI-9-subscription-flow`
+- `productdesigner/SKI-34-drink-customizer-redesign`
+- `devopsengineer/SKI-62-fix-ci-cd`
+
+### Merge Workflow
+
+1. Create branch from `main` before starting work
+2. Commit with conventional messages: `type(scope): description` (e.g., `feat(api): add subscription expiry`)
+3. Push branch to origin when ready
+4. **Open a PR** against `main` — include issue ID in title (e.g., "SKI-62: Fix CI/CD pipeline")
+5. **Request a peer review** from another engineer — any engineer can review and approve
+6. CI must pass and at least 1 peer review approval required before merge
+7. Squash merge preferred for clean history
+
+### PR Reviews
+
+- Engineers review each other's PRs. You do NOT need board or CTO approval for routine work.
+- The PR author must NOT approve their own PR.
+- Board only reviews: pricing, strategy, design approvals, public-facing content.
+
+### Rules
+
+- **NEVER push directly to `main`** — your push will be rejected
+- Never force push to shared branches
+- Never merge your own PR without a peer review
+- Never commit secrets or `.env` files
+- Delete your branch after merge
 - Always work on a feature branch, never commit directly to `develop` or `main`
 
 ## Branch Strategy

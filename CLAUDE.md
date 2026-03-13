@@ -91,3 +91,51 @@ When modifying types in `@drink-ux/shared`, rebuild it before other packages can
 | mobile  | 3000     |
 | api     | 3001     |
 | admin   | 3002     |
+
+## Git Flow
+
+**All agents and contributors MUST follow these rules.**
+
+### Branch Protection
+
+- `main` is protected. No direct pushes. All changes go through pull requests.
+- PRs require at least 1 approving review and CI must pass before merge.
+- No force pushes to `main`. No branch deletions on `main`.
+
+### Branch Naming
+
+All branches follow: `{agent-name}/{SKI-ID}-{short-description}`
+
+Examples:
+- `backendengineer/SKI-9-subscription-flow`
+- `productdesigner/SKI-34-drink-customizer-redesign`
+- `devopsengineer/SKI-62-fix-ci-cd`
+
+Rules:
+- Lowercase, kebab-case
+- Always include the Paperclip issue ID
+- Agent name matches your Paperclip agent name (lowercase, no spaces)
+
+### Workflow
+
+1. **Create branch** from `main` before starting work
+2. **Commit often** with descriptive messages: `type(scope): description` (e.g., `feat(api): add subscription expiry service`)
+3. **Push branch** to origin when work is ready for review
+4. **Open a PR** against `main` with a clear description of changes
+5. **Request review** from another engineer — any engineer can review and approve PRs
+6. **CI must pass** before merge — tests, builds, and linting
+7. **Squash merge** preferred for feature branches to keep `main` history clean
+
+### PR Reviews
+
+- Engineers review each other's PRs. You do NOT need board or CTO approval for routine engineering work.
+- The PR author must NOT approve their own PR — get a peer review.
+- Board only reviews: pricing decisions, strategy changes, design approvals, public-facing content.
+
+### What NOT to Do
+
+- Never push directly to `main`
+- Never force push to shared branches
+- Never merge your own PR without a peer review
+- Never commit secrets, `.env` files, or credentials
+- Never leave stale branches — delete after merge
