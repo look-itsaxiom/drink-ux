@@ -64,6 +64,8 @@ const MenuManagement: React.FC = () => {
   const [modalType, setModalType] = useState<ModalType>(null);
   const [editingItem, setEditingItem] = useState<Category | Base | Modifier | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: ModalType; id: string; name: string } | null>(null);
+  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
+  const [dropTargetCategoryId, setDropTargetCategoryId] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<Record<string, string | number | boolean>>({});
@@ -289,6 +291,135 @@ const MenuManagement: React.FC = () => {
     return id ? `${base}/${id}` : base;
   };
 
+  const reorderCategories = async (nextCategoryIds: string[]) => {
+    const previousCategories = [...categories];
+    const byId = new Map(previousCategories.map((category) => [category.id, category]));
+    const optimisticCategories = nextCategoryIds
+      .map((categoryId, index) => {
+        const category = byId.get(categoryId);
+        if (!category) return null;
+        return {
+          ...category,
+          displayOrder: index,
+        };
+      })
+      .filter((category): category is Category => category !== null);
+
+    setCategories(optimisticCategories);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/catalog/categories/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          businessId,
+          categoryIds: nextCategoryIds,
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error?.message || 'Failed to reorder categories');
+      }
+
+      await fetchCatalogData();
+    } catch (err) {
+      setCategories(previousCategories);
+      setError(err instanceof Error ? err.message : 'Failed to reorder categories');
+    }
+  };
+
+  const handleCategoryDrop = async (targetCategoryId: string) => {
+    if (!draggedCategoryId || draggedCategoryId === targetCategoryId) {
+      setDraggedCategoryId(null);
+      setDropTargetCategoryId(null);
+      return;
+    }
+
+    const sortedIds = [...categories]
+      .sort((a, b) => a.displayOrder - b.displayOrder)
+      .map((category) => category.id);
+    const sourceIndex = sortedIds.indexOf(draggedCategoryId);
+    const targetIndex = sortedIds.indexOf(targetCategoryId);
+
+    if (sourceIndex < 0 || targetIndex < 0) {
+      setDraggedCategoryId(null);
+      setDropTargetCategoryId(null);
+      return;
+    }
+
+    const [movedCategoryId] = sortedIds.splice(sourceIndex, 1);
+    sortedIds.splice(targetIndex, 0, movedCategoryId);
+
+    setDraggedCategoryId(null);
+    setDropTargetCategoryId(null);
+    await reorderCategories(sortedIds);
+  };
+
+  const toggleBaseAvailability = async (base: Base) => {
+    const nextAvailable = !base.available;
+    setSaving(true);
+    setError(null);
+
+    setBases((prevBases) => prevBases.map((item) => (
+      item.id === base.id ? { ...item, available: nextAvailable } : item
+    )));
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/catalog/bases/${base.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ available: nextAvailable }),
+      });
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error?.message || 'Failed to update base availability');
+      }
+    } catch (err) {
+      setBases((prevBases) => prevBases.map((item) => (
+        item.id === base.id ? { ...item, available: base.available } : item
+      )));
+      setError(err instanceof Error ? err.message : 'Failed to update base availability');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleModifierAvailability = async (modifier: Modifier) => {
+    const nextAvailable = !modifier.available;
+    setSaving(true);
+    setError(null);
+
+    setModifiers((prevModifiers) => prevModifiers.map((item) => (
+      item.id === modifier.id ? { ...item, available: nextAvailable } : item
+    )));
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/catalog/modifiers/${modifier.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ available: nextAvailable }),
+      });
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error?.message || 'Failed to update modifier availability');
+      }
+    } catch (err) {
+      setModifiers((prevModifiers) => prevModifiers.map((item) => (
+        item.id === modifier.id ? { ...item, available: modifier.available } : item
+      )));
+      setError(err instanceof Error ? err.message : 'Failed to update modifier availability');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const renderTabs = () => (
     <div className="tabs" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
       <button
@@ -322,7 +453,12 @@ const MenuManagement: React.FC = () => {
   const renderCategories = () => (
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h3>Categories</h3>
+        <div>
+          <h3 style={{ margin: 0 }}>Categories</h3>
+          <p style={{ margin: '6px 0 0', color: '#7f8c8d', fontSize: '13px' }}>
+            Drag and drop rows to reorder menu categories.
+          </p>
+        </div>
         <button className="btn btn-primary" onClick={() => openAddModal('category')}>Add Category</button>
       </div>
       {categories.length === 0 ? (
@@ -341,8 +477,33 @@ const MenuManagement: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {categories.sort((a, b) => a.displayOrder - b.displayOrder).map((category) => (
-              <tr key={category.id} style={{ borderBottom: '1px solid #ecf0f1' }}>
+            {[...categories].sort((a, b) => a.displayOrder - b.displayOrder).map((category) => (
+              <tr
+                key={category.id}
+                draggable
+                onDragStart={() => setDraggedCategoryId(category.id)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDropTargetCategoryId(category.id);
+                }}
+                onDragLeave={() => {
+                  if (dropTargetCategoryId === category.id) {
+                    setDropTargetCategoryId(null);
+                  }
+                }}
+                onDrop={() => {
+                  void handleCategoryDrop(category.id);
+                }}
+                onDragEnd={() => {
+                  setDraggedCategoryId(null);
+                  setDropTargetCategoryId(null);
+                }}
+                style={{
+                  borderBottom: '1px solid #ecf0f1',
+                  backgroundColor: dropTargetCategoryId === category.id ? '#eef6ff' : 'transparent',
+                  cursor: 'grab',
+                }}
+              >
                 <td style={{ padding: '10px' }}>{category.displayOrder}</td>
                 <td style={{ padding: '10px', fontWeight: 500 }}>{category.name}</td>
                 <td style={{ padding: '10px' }}>{category.icon || '-'}</td>
@@ -432,10 +593,18 @@ const MenuManagement: React.FC = () => {
                       <td style={{ padding: '10px' }}>
                         <span style={{
                           color: base.available ? '#27ae60' : '#e74c3c',
-                          fontWeight: 500
+                          fontWeight: 500,
+                          marginRight: '10px',
                         }}>
                           {base.available ? 'Available' : 'Unavailable'}
                         </span>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => void toggleBaseAvailability(base)}
+                          disabled={saving}
+                        >
+                          {base.available ? 'Disable' : 'Enable'}
+                        </button>
                       </td>
                       <td style={{ padding: '10px', textAlign: 'right' }}>
                         <button
@@ -507,10 +676,18 @@ const MenuManagement: React.FC = () => {
                       <td style={{ padding: '10px' }}>
                         <span style={{
                           color: modifier.available ? '#27ae60' : '#e74c3c',
-                          fontWeight: 500
+                          fontWeight: 500,
+                          marginRight: '10px',
                         }}>
                           {modifier.available ? 'Available' : 'Unavailable'}
                         </span>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => void toggleModifierAvailability(modifier)}
+                          disabled={saving}
+                        >
+                          {modifier.available ? 'Disable' : 'Enable'}
+                        </button>
                       </td>
                       <td style={{ padding: '10px', textAlign: 'right' }}>
                         <button
