@@ -1,7 +1,8 @@
 import React from 'react';
 
-interface GracePeriodBannerProps {
+export interface GracePeriodBannerProps {
   daysRemaining: number;
+  businessName?: string;
 }
 
 export const GracePeriodBanner: React.FC<GracePeriodBannerProps> = ({ daysRemaining }) => {

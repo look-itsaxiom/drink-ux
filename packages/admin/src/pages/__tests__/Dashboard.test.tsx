@@ -16,8 +16,9 @@ vi.mock('../../contexts/AuthContext', () => ({
   }),
 }));
 
-// Mock fetch to return empty data
+// Mock fetch to return empty data — save original for restore
 const mockFetch = vi.fn();
+const originalFetch = global.fetch;
 global.fetch = mockFetch;
 
 import Dashboard from '../Dashboard';
@@ -25,11 +26,16 @@ import Dashboard from '../Dashboard';
 describe('Dashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    global.fetch = mockFetch;
     // Default: all fetches return empty success
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ success: true, data: [] }),
     });
+  });
+
+  afterAll(() => {
+    global.fetch = originalFetch;
   });
 
   const renderDashboard = () =>

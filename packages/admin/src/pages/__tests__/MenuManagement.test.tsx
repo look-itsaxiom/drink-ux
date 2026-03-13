@@ -18,6 +18,7 @@ vi.mock('../../contexts/AuthContext', () => ({
 }));
 
 const mockFetch = vi.fn();
+const originalFetch = global.fetch;
 global.fetch = mockFetch;
 
 import MenuManagement from '../MenuManagement';
@@ -25,10 +26,15 @@ import MenuManagement from '../MenuManagement';
 describe('MenuManagement', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    global.fetch = mockFetch;
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ success: true, data: [] }),
     });
+  });
+
+  afterAll(() => {
+    global.fetch = originalFetch;
   });
 
   const renderMenu = () =>
