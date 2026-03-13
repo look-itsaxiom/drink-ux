@@ -188,19 +188,25 @@ describe('ThemeProvider', () => {
 
   it('exposes loadTheme function for manual theme loading', async () => {
     vi.mocked(global.fetch).mockRejectedValueOnce(new Error('No API'));
+
     const TestComponent: React.FC = () => {
-      const { loadTheme, theme } = useTheme();
+      const { loadTheme, theme, isLoading } = useTheme();
+      const [applied, setApplied] = React.useState(false);
 
       React.useEffect(() => {
-        loadTheme({
-          ...defaultTheme,
-          name: 'custom',
-          colors: {
-            ...defaultTheme.colors,
-            primary: '#123456',
-          },
-        });
-      }, [loadTheme]);
+        // Wait until provider has finished initializing before calling loadTheme
+        if (!isLoading && !applied) {
+          loadTheme({
+            ...defaultTheme,
+            name: 'custom',
+            colors: {
+              ...defaultTheme.colors,
+              primary: '#123456',
+            },
+          });
+          setApplied(true);
+        }
+      }, [loadTheme, isLoading, applied]);
 
       return <span data-testid="loaded-primary">{theme.colors.primary}</span>;
     };
