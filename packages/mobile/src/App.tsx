@@ -60,9 +60,10 @@ function ProtectedRoutes(): React.ReactElement {
     );
   }
 
-  // Check for preview mode via query parameter
+  // Enable preview mode via query parameter or GitHub Pages build
   const searchParams = new URLSearchParams(window.location.search);
-  const previewMode = searchParams.get('preview') === 'true';
+  const previewMode = searchParams.get('preview') === 'true'
+    || import.meta.env.VITE_DEMO_MODE === 'true';
 
   return (
     <SubscriptionGate

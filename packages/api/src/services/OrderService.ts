@@ -576,6 +576,8 @@ export class OrderService {
 
         posItems.push({
           posItemId: base?.posItemId || '',
+          // Use posVariationId when available — Square orders require variation ID, not item ID
+          variationId: base?.posVariationId || undefined,
           quantity: item.quantity,
           modifierIds: posModifierIds.length > 0 ? posModifierIds : undefined,
         });
