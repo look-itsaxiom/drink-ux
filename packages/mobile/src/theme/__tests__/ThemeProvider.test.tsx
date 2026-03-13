@@ -187,6 +187,7 @@ describe('ThemeProvider', () => {
   });
 
   it('exposes loadTheme function for manual theme loading', async () => {
+    vi.mocked(global.fetch).mockRejectedValueOnce(new Error('No API'));
     const TestComponent: React.FC = () => {
       const { loadTheme, theme } = useTheme();
 
