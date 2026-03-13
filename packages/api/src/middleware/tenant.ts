@@ -17,7 +17,7 @@ export interface TenantBusiness {
   name: string;
   slug: string;
   accountState: AccountState;
-  theme: Record<string, any> | null;
+  theme: Record<string, unknown> | null;
 }
 
 /**
@@ -64,7 +64,7 @@ function toTenantBusiness(business: Business): TenantBusiness {
     name: business.name,
     slug: business.slug,
     accountState: business.accountState,
-    theme: business.theme as Record<string, any> | null,
+    theme: business.theme as Record<string, unknown> | null,
   };
 }
 

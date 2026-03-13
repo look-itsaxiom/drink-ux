@@ -1,0 +1,61 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate Prisma client
+        run: npx prisma generate --schema=packages/api/prisma/schema.prisma
+
+      - name: Setup test database
+        run: npx prisma migrate deploy --schema=packages/api/prisma/schema.prisma
+        env:
+          DATABASE_URL: file:./packages/api/prisma/test.db
+
+      - name: Build shared package
+        run: npm run build --workspace=@drink-ux/shared
+
+      - name: Run e2e tests
+        run: npm run test:e2e
+        env:
+          CI: true
+          DATABASE_URL: file:./packages/api/prisma/test.db
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload test screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-screenshots
+          path: test-results/
+          retention-days: 7
