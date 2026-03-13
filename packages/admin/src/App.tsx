@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import MenuManagement from './pages/MenuManagement';
+import OrderManagement from './pages/OrderManagement';
 import POSIntegration from './pages/POSIntegration';
 import Onboarding from './pages/Onboarding';
 import './App.css';
@@ -33,6 +34,9 @@ function AppLayout() {
             <Link to="/menu">Menu Management</Link>
           </li>
           <li>
+            <Link to="/orders">Order Management</Link>
+          </li>
+          <li>
             <Link to="/pos">POS Integration</Link>
           </li>
         </ul>
@@ -51,6 +55,7 @@ function AppLayout() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/menu" element={<MenuManagement />} />
+          <Route path="/orders" element={<OrderManagement />} />
           <Route path="/pos" element={<POSIntegration />} />
         </Routes>
       </main>
