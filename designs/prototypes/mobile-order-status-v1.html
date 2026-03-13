@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390px, initial-scale=1.0">
+  <title>Drink-UX — Order Status v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --theme-primary: #6B4226;
+      --theme-primaryDark: #4a2e1a;
+      --theme-secondary: #D4A574;
+      --theme-background: #FDF8F5;
+      --theme-surface: #FFFFFF;
+      --theme-text: #2C1810;
+      --theme-textSecondary: #8B7E74;
+      --theme-border: rgba(107, 66, 38, 0.12);
+      --theme-shadow: rgba(107, 66, 38, 0.15);
+      --theme-success: #2D9B6F;
+      --theme-gradient-primary: linear-gradient(135deg, #6B4226, #a0622f);
+    }
+    [data-theme="ocean"] {
+      --theme-primary: #1A6B8A; --theme-primaryDark: #0f4d65;
+      --theme-secondary: #5BC4D4; --theme-background: #F0F9FC;
+      --theme-surface: #FFFFFF; --theme-text: #0D2D3A;
+      --theme-textSecondary: #4A7A8A; --theme-border: rgba(26,107,138,0.12);
+      --theme-shadow: rgba(26,107,138,0.15);
+      --theme-gradient-primary: linear-gradient(135deg, #1A6B8A, #2589ad);
+    }
+    [data-theme="cherry"] {
+      --theme-primary: #C0392B; --theme-primaryDark: #922b21;
+      --theme-secondary: #F1948A; --theme-background: #FFF5F5;
+      --theme-surface: #FFFFFF; --theme-text: #2C1010;
+      --theme-textSecondary: #8B6060; --theme-border: rgba(192,57,43,0.12);
+      --theme-shadow: rgba(192,57,43,0.15);
+      --theme-gradient-primary: linear-gradient(135deg, #C0392B, #e04e40);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: #f0f0f0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 16px; }
+    .theme-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; background: white; padding: 10px 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-wrap: wrap; justify-content: center; max-width: 420px; width: 100%; }
+    .theme-bar span { font-size: 12px; font-weight: 600; color: #666; }
+    .theme-btn { border: none; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; }
+    .theme-btn.active { outline: 2px solid #333; outline-offset: 1px; }
+    .theme-btn[data-t="espresso"] { background: #6B4226; color: white; }
+    .theme-btn[data-t="ocean"]    { background: #1A6B8A; color: white; }
+    .theme-btn[data-t="cherry"]   { background: #C0392B; color: white; }
+
+    /* Status stage buttons */
+    .stage-bar { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; }
+    .stage-btn { border: none; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; background: #e0e0e0; color: #555; }
+    .stage-btn.active { background: #333; color: white; }
+
+    .phone { width: 390px; height: 844px; background: var(--theme-background); border-radius: 40px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.25); position: relative; display: flex; flex-direction: column; }
+
+    /* ── Hero: full-bleed gradient header ───────────────── */
+    .order-hero {
+      background: var(--theme-gradient-primary);
+      padding: 54px 24px 36px;
+      text-align: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    /* Decorative circles */
+    .hero-circle-1 {
+      position: absolute; top: -30px; right: -30px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+    }
+    .hero-circle-2 {
+      position: absolute; bottom: -20px; left: -20px;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .order-emoji {
+      font-size: 36px;
+      margin-bottom: 8px;
+      display: block;
+      animation: bounce 1s ease infinite alternate;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-6px); }
+    }
+
+    .order-congrats {
+      font-size: 22px; font-weight: 800;
+      color: white; letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .order-subtitle {
+      font-size: 13px; color: rgba(255,255,255,0.7);
+      margin-bottom: 24px;
+    }
+
+    /* Pickup code card */
+    .pickup-card {
+      background: rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 16px 24px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.25);
+      display: inline-block;
+      min-width: 200px;
+    }
+
+    .pickup-label {
+      font-size: 11px; font-weight: 700;
+      color: rgba(255,255,255,0.6);
+      text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 6px;
+    }
+
+    .pickup-code {
+      font-size: 52px; font-weight: 900;
+      color: white;
+      letter-spacing: 8px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pickup-order-num {
+      font-size: 12px; color: rgba(255,255,255,0.55);
+      margin-top: 6px;
+    }
+
+    /* ── Scroll content ──────────────────────────────────── */
+    .scroll-content { flex: 1; overflow-y: auto; scrollbar-width: none; }
+    .scroll-content::-webkit-scrollbar { display: none; }
+
+    /* ── Status Timeline ─────────────────────────────────── */
+    .timeline-section {
+      padding: 24px 20px 8px;
+    }
+
+    .timeline-title {
+      font-size: 16px; font-weight: 700; color: var(--theme-text);
+      letter-spacing: -0.2px; margin-bottom: 20px;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 16px;
+    }
+
+    /* Vertical line */
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background: var(--theme-border);
+    }
+
+    .timeline-progress {
+      position: absolute;
+      left: 15px;
+      top: 10px;
+      width: 2px;
+      background: var(--theme-primary);
+      transition: height 0.6s ease;
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .timeline-dot {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2.5px solid var(--theme-border);
+      background: var(--theme-surface);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.3s;
+      font-size: 14px;
+      z-index: 1;
+      margin-left: -1px;
+    }
+
+    .timeline-dot.done {
+      background: var(--theme-primary);
+      border-color: var(--theme-primary);
+    }
+
+    .timeline-dot.active {
+      background: var(--theme-surface);
+      border-color: var(--theme-primary);
+      box-shadow: 0 0 0 4px rgba(107,66,38,0.15);
+    }
+
+    /* Pulse animation for active */
+    .timeline-dot.active::after {
+      content: '';
+      position: absolute;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--theme-primary);
+      animation: pulse 1.5s ease infinite;
+      opacity: 0;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+
+    .timeline-content { padding-top: 4px; flex: 1; }
+    .timeline-step-title { font-size: 14px; font-weight: 700; color: var(--theme-textSecondary); }
+    .timeline-step-title.active { color: var(--theme-text); }
+    .timeline-step-title.done { color: var(--theme-success); }
+    .timeline-step-desc { font-size: 12px; color: var(--theme-textSecondary); margin-top: 2px; }
+    .timeline-time { font-size: 11px; color: var(--theme-textSecondary); margin-top: 2px; font-weight: 500; }
+
+    /* ── Order Items Summary ─────────────────────────────── */
+    .order-items-section { padding: 4px 20px 16px; }
+
+    .order-items-card {
+      background: var(--theme-surface);
+      border-radius: 18px;
+      border: 1.5px solid var(--theme-border);
+      overflow: hidden;
+      box-shadow: 0 2px 8px var(--theme-shadow);
+    }
+
+    .order-items-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--theme-border);
+    }
+
+    .order-items-title { font-size: 14px; font-weight: 700; color: var(--theme-text); }
+    .order-items-total { font-size: 15px; font-weight: 700; color: var(--theme-primary); }
+
+    .order-item-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--theme-border);
+    }
+    .order-item-row:last-child { border-bottom: none; }
+
+    .order-item-left { display: flex; align-items: center; gap: 10px; }
+    .order-item-qty {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: var(--theme-background);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--theme-primary);
+    }
+    .order-item-name { font-size: 13px; font-weight: 600; color: var(--theme-text); }
+    .order-item-mods { font-size: 11px; color: var(--theme-textSecondary); margin-top: 1px; }
+    .order-item-price { font-size: 13px; font-weight: 600; color: var(--theme-textSecondary); }
+
+    /* ── CTA buttons ─────────────────────────────────────── */
+    .cta-section {
+      padding: 8px 20px 32px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .cta-primary {
+      height: 52px; border-radius: 16px;
+      background: var(--theme-gradient-primary);
+      border: none; cursor: pointer;
+      font-size: 15px; font-weight: 700; color: white;
+      font-family: 'Outfit', sans-serif;
+      box-shadow: 0 4px 16px var(--theme-shadow);
+    }
+
+    .cta-secondary {
+      height: 52px; border-radius: 16px;
+      background: transparent;
+      border: 1.5px solid var(--theme-border);
+      cursor: pointer;
+      font-size: 15px; font-weight: 600; color: var(--theme-textSecondary);
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* Status stage switcher (demo only) */
+    .demo-note {
+      text-align: center;
+      font-size: 11px;
+      color: #999;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="theme-bar">
+    <span>Theme:</span>
+    <button class="theme-btn active" data-t="espresso" onclick="setTheme('espresso',this)">☕ Espresso</button>
+    <button class="theme-btn" data-t="ocean" onclick="setTheme('ocean',this)">🌊 Ocean</button>
+    <button class="theme-btn" data-t="cherry" onclick="setTheme('cherry',this)">🍒 Cherry</button>
+  </div>
+
+  <div class="demo-note">Simulate order progress →</div>
+  <div class="stage-bar">
+    <button class="stage-btn" onclick="setStage(0,this)">Pending</button>
+    <button class="stage-btn active" onclick="setStage(1,this)">Confirmed</button>
+    <button class="stage-btn" onclick="setStage(2,this)">Preparing</button>
+    <button class="stage-btn" onclick="setStage(3,this)">Ready ✓</button>
+  </div>
+
+  <div class="phone" id="phone">
+
+    <!-- Hero Header -->
+    <div class="order-hero" id="orderHero">
+      <div class="hero-circle-1"></div>
+      <div class="hero-circle-2"></div>
+      <span class="order-emoji" id="heroEmoji">☕</span>
+      <div class="order-congrats" id="heroTitle">Order Confirmed!</div>
+      <div class="order-subtitle" id="heroSubtitle">Brew & Co. has your order — hang tight</div>
+
+      <div class="pickup-card">
+        <div class="pickup-label">Your Pickup Code</div>
+        <div class="pickup-code">7X2K</div>
+        <div class="pickup-order-num">Order #A42</div>
+      </div>
+    </div>
+
+    <!-- Scroll Content -->
+    <div class="scroll-content">
+
+      <!-- Timeline -->
+      <div class="timeline-section">
+        <div class="timeline-title">Order Status</div>
+        <div class="timeline" id="timeline">
+          <div class="timeline-progress" id="timelineProgress" style="height: 38%;"></div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot done" id="dot0">✓</div>
+            <div class="timeline-content">
+              <div class="timeline-step-title done" id="step0-title">Order Received</div>
+              <div class="timeline-step-desc">We got your order and payment</div>
+              <div class="timeline-time" id="step0-time">9:41 AM</div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot active" id="dot1">
+              <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="var(--theme-primary)"/></svg>
+            </div>
+            <div class="timeline-content">
+              <div class="timeline-step-title active" id="step1-title">Confirmed</div>
+              <div class="timeline-step-desc" id="step1-desc">Barista has accepted your order</div>
+              <div class="timeline-time" id="step1-time">9:43 AM · ~8 min wait</div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot" id="dot2"></div>
+            <div class="timeline-content">
+              <div class="timeline-step-title" id="step2-title">Preparing</div>
+              <div class="timeline-step-desc">Your drinks are being crafted</div>
+              <div class="timeline-time" id="step2-time"></div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot" id="dot3"></div>
+            <div class="timeline-content">
+              <div class="timeline-step-title" id="step3-title">Ready for Pickup</div>
+              <div class="timeline-step-desc">Come grab your order at the counter!</div>
+              <div class="timeline-time" id="step3-time"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Items -->
+      <div class="order-items-section">
+        <div class="order-items-card">
+          <div class="order-items-header">
+            <span class="order-items-title">Your Order</span>
+            <span class="order-items-total">$14.34</span>
+          </div>
+          <div class="order-item-row">
+            <div class="order-item-left">
+              <div class="order-item-qty">×1</div>
+              <div>
+                <div class="order-item-name">Vanilla Oat Latte</div>
+                <div class="order-item-mods">Med · Hot · Oat milk · Vanilla</div>
+              </div>
+            </div>
+            <span class="order-item-price">$6.75</span>
+          </div>
+          <div class="order-item-row">
+            <div class="order-item-left">
+              <div class="order-item-qty">×1</div>
+              <div>
+                <div class="order-item-name">Nitro Cold Brew</div>
+                <div class="order-item-mods">Large · Iced · No milk</div>
+              </div>
+            </div>
+            <span class="order-item-price">$6.50</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-section">
+        <button class="cta-primary">Order Again</button>
+        <button class="cta-secondary">Back to Menu</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Stage data
+    const stages = [
+      { emoji: '⏳', title: 'Order Sent!', subtitle: 'Waiting for Brew & Co. to confirm', progressH: '0%' },
+      { emoji: '☕', title: 'Order Confirmed!', subtitle: 'Brew & Co. has your order — hang tight', progressH: '38%' },
+      { emoji: '🔥', title: 'Being Crafted!', subtitle: 'Your barista is making your drinks now', progressH: '68%' },
+      { emoji: '🎉', title: 'Ready for Pickup!', subtitle: 'Come grab your order — code: 7X2K', progressH: '100%' },
+    ];
+
+    function setStage(stage, btn) {
+      document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const s = stages[stage];
+      document.getElementById('heroEmoji').textContent = s.emoji;
+      document.getElementById('heroTitle').textContent = s.title;
+      document.getElementById('heroSubtitle').textContent = s.subtitle;
+      document.getElementById('timelineProgress').style.height = s.progressH;
+
+      // Update dots
+      for (let i = 0; i <= 3; i++) {
+        const dot = document.getElementById(`dot${i}`);
+        const title = document.getElementById(`step${i}-title`);
+        const timeEl = document.getElementById(`step${i}-time`);
+        dot.className = 'timeline-dot';
+        title.className = 'timeline-step-title';
+
+        if (i < stage) {
+          dot.className = 'timeline-dot done';
+          dot.textContent = '✓';
+          title.className = 'timeline-step-title done';
+        } else if (i === stage) {
+          dot.className = 'timeline-dot active';
+          dot.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="var(--theme-primary)"/></svg>';
+          title.className = 'timeline-step-title active';
+        } else {
+          dot.textContent = '';
+        }
+      }
+
+      // Update times
+      const times = ['9:41 AM', '9:43 AM · ~8 min wait', '9:48 AM', '9:55 AM'];
+      for (let i = 0; i <= stage; i++) {
+        const timeEl = document.getElementById(`step${i}-time`);
+        if (timeEl) timeEl.textContent = times[i] || '';
+      }
+      for (let i = stage + 1; i <= 3; i++) {
+        const timeEl = document.getElementById(`step${i}-time`);
+        if (timeEl) timeEl.textContent = '';
+      }
+    }
+
+    function setTheme(theme, btn) {
+      const phone = document.getElementById('phone');
+      phone.removeAttribute('data-theme');
+      if (theme !== 'espresso') phone.setAttribute('data-theme', theme);
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>
