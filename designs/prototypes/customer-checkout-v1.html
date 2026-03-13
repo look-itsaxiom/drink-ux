@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Checkout – Drink-UX Prototype v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── White-label CSS custom properties ── */
+    :root {
+      --theme-primary: #6B4226;
+      --theme-primaryDark: #4A2C1A;
+      --theme-secondary: #8B5A3C;
+      --theme-background: #FAF8F5;
+      --theme-surface: #FFFFFF;
+      --theme-text: #1A1A1A;
+      --theme-textSecondary: #6B6B6B;
+      --theme-accent: #D4A574;
+      --theme-border: #E8E0D8;
+      --theme-shadow: rgba(107,66,38,0.12);
+      --theme-gradient-primary: linear-gradient(135deg,#6B4226 0%,#4A2C1A 100%);
+      --theme-gradient-secondary: linear-gradient(135deg,#8B5A3C 0%,#6B4226 100%);
+      --theme-primary-light: rgba(107,66,38,0.08);
+      --theme-primary-border: rgba(107,66,38,0.25);
+    }
+    [data-theme="ocean"] {
+      --theme-primary:#0077BE; --theme-primaryDark:#005A8E; --theme-secondary:#00A8CC;
+      --theme-background:#F0F7FF; --theme-surface:#FFFFFF; --theme-text:#0A1628;
+      --theme-textSecondary:#4A6080; --theme-accent:#00D4FF; --theme-border:#C8DCF0;
+      --theme-shadow:rgba(0,119,190,0.12);
+      --theme-gradient-primary:linear-gradient(135deg,#0077BE 0%,#005A8E 100%);
+      --theme-gradient-secondary:linear-gradient(135deg,#00A8CC 0%,#0077BE 100%);
+      --theme-primary-light:rgba(0,119,190,0.08); --theme-primary-border:rgba(0,119,190,0.25);
+    }
+    [data-theme="bloom"] {
+      --theme-primary:#C0392B; --theme-primaryDark:#922B21; --theme-secondary:#E74C3C;
+      --theme-background:#FFF5F5; --theme-surface:#FFFFFF; --theme-text:#1A0A0A;
+      --theme-textSecondary:#6B3A3A; --theme-accent:#FF8A80; --theme-border:#F5C6C6;
+      --theme-shadow:rgba(192,57,43,0.12);
+      --theme-gradient-primary:linear-gradient(135deg,#C0392B 0%,#922B21 100%);
+      --theme-gradient-secondary:linear-gradient(135deg,#E74C3C 0%,#C0392B 100%);
+      --theme-primary-light:rgba(192,57,43,0.08); --theme-primary-border:rgba(192,57,43,0.25);
+    }
+    [data-theme="forest"] {
+      --theme-primary:#1B6840; --theme-primaryDark:#134D2E; --theme-secondary:#27AE60;
+      --theme-background:#F0FAF4; --theme-surface:#FFFFFF; --theme-text:#0A1F14;
+      --theme-textSecondary:#3A6050; --theme-accent:#5CDB95; --theme-border:#C0E0CC;
+      --theme-shadow:rgba(27,104,64,0.12);
+      --theme-gradient-primary:linear-gradient(135deg,#1B6840 0%,#134D2E 100%);
+      --theme-gradient-secondary:linear-gradient(135deg,#27AE60 0%,#1B6840 100%);
+      --theme-primary-light:rgba(27,104,64,0.08); --theme-primary-border:rgba(27,104,64,0.25);
+    }
+
+    * { font-family:'Outfit',sans-serif; box-sizing:border-box; margin:0; padding:0; }
+    body { background:#1A1A2E; display:flex; flex-direction:column; align-items:center; padding:24px 16px; gap:16px; min-height:100vh; }
+
+    /* ── Controls bar ── */
+    .controls { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+    .controls-label { color:rgba(255,255,255,0.5); font-size:12px; }
+    .theme-dot { width:28px; height:28px; border-radius:50%; cursor:pointer; border:3px solid transparent; transition:all 0.2s; flex-shrink:0; }
+    .theme-dot:hover, .theme-dot.active { border-color:white; transform:scale(1.15); }
+    .state-btn { background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:4px 12px; font-size:11px; font-family:'Outfit',sans-serif; cursor:pointer; transition:all 0.15s; }
+    .state-btn:hover { background:rgba(255,255,255,0.2); }
+    .state-btn.active { background:rgba(255,255,255,0.3); border-color:white; }
+
+    /* ── Phone shell ── */
+    .phone { width:390px; height:844px; background:var(--theme-background); border-radius:48px;
+      box-shadow:0 40px 100px rgba(0,0,0,0.7), 0 0 0 12px #16162A, 0 0 0 14px #2D2D44;
+      overflow:hidden; position:relative; display:flex; flex-direction:column; transition:background 0.3s; }
+    .notch { height:44px; background:var(--theme-background); display:flex; align-items:center; justify-content:space-between; padding:0 28px; font-size:12px; font-weight:600; color:var(--theme-text); transition:background 0.3s; }
+    .notch-time { font-weight:700; }
+    .notch-icons { display:flex; gap:6px; align-items:center; }
+
+    /* ── Header ── */
+    .hdr { background:var(--theme-gradient-primary); padding:14px 20px 18px; display:flex; align-items:center; gap:12px; }
+    .back { width:36px; height:36px; background:rgba(255,255,255,0.18); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+    .hdr-text h1 { font-size:18px; font-weight:700; color:white; }
+    .hdr-text p { font-size:12px; color:rgba(255,255,255,0.7); margin-top:1px; }
+
+    /* ── Scrollable screen ── */
+    .screen { flex:1; overflow-y:auto; padding-bottom:108px; }
+    .screen::-webkit-scrollbar { display:none; }
+    .content { padding:14px; display:flex; flex-direction:column; gap:12px; }
+
+    /* ── Cards ── */
+    .card { background:var(--theme-surface); border-radius:20px; border:1px solid var(--theme-border);
+      box-shadow:0 2px 12px var(--theme-shadow); overflow:hidden; transition:background 0.3s, border-color 0.3s; }
+    .card-hdr { padding:14px 16px 10px; display:flex; align-items:center; justify-content:space-between; }
+    .card-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--theme-textSecondary); }
+    .card-body { padding:0 16px 16px; }
+
+    /* ── Order items ── */
+    .order-item { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid var(--theme-border); }
+    .order-item:last-child { border-bottom:none; }
+    .oi-qty { min-width:24px; height:24px; background:var(--theme-primary-light); border-radius:8px;
+      display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:var(--theme-primary); }
+    .oi-info { flex:1; }
+    .oi-name { font-size:14px; font-weight:600; color:var(--theme-text); }
+    .oi-mods { font-size:11px; color:var(--theme-textSecondary); margin-top:2px; line-height:1.4; }
+    .oi-price { font-size:14px; font-weight:700; color:var(--theme-text); white-space:nowrap; }
+
+    /* ── Toggle ── */
+    .toggle-btn { display:flex; align-items:center; gap:5px; font-size:13px; font-weight:600; color:var(--theme-primary); cursor:pointer; }
+
+    /* ── Input ── */
+    .field { width:100%; background:var(--theme-primary-light); border:1.5px solid var(--theme-primary-border);
+      border-radius:12px; padding:13px 15px; font-size:15px; font-family:'Outfit',sans-serif;
+      color:var(--theme-text); outline:none; transition:border-color 0.2s; }
+    .field:focus { border-color:var(--theme-primary); }
+    .field::placeholder { color:var(--theme-textSecondary); }
+    .field-hint { font-size:11px; color:var(--theme-textSecondary); margin-top:7px; }
+
+    /* ── Square iframe region ── */
+    .sq-wrapper { border:2px dashed var(--theme-border); border-radius:16px; padding:16px; background:rgba(248,249,250,0.5); }
+    .sq-iframe-mock { width:100%; background:#F8F9FA; border:1px solid #DEE2E6; border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px; position:relative; }
+    .sq-row { display:flex; gap:8px; }
+    .sq-field { height:42px; background:white; border:1.5px solid #CED4DA; border-radius:8px;
+      display:flex; align-items:center; padding:0 12px; font-size:13px; color:#6C757D; gap:8px; flex:1; }
+    .sq-field-sm { flex:0 0 72px; }
+    .sq-badge { background:#EBF5FB; color:#1A73E8; font-size:10px; font-weight:700; padding:4px 8px; border-radius:20px; display:inline-flex; align-items:center; gap:4px; }
+    .sq-corner-label { position:absolute; top:8px; right:10px; font-size:9px; color:#ADB5BD; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; }
+    .sq-security { display:flex; align-items:center; gap:6px; margin-top:10px; justify-content:center; }
+    .sq-security span { font-size:10px; color:var(--theme-textSecondary); }
+
+    /* ── Totals ── */
+    .tot-row { display:flex; justify-content:space-between; padding:5px 0; }
+    .tot-label { font-size:14px; color:var(--theme-textSecondary); }
+    .tot-val { font-size:14px; font-weight:600; color:var(--theme-text); }
+    .tot-grand { border-top:1.5px solid var(--theme-border); margin-top:8px; padding-top:12px; }
+    .tot-grand .tot-label { font-size:16px; font-weight:700; color:var(--theme-text); }
+    .tot-grand .tot-val { font-size:18px; font-weight:800; color:var(--theme-primary); }
+
+    /* ── Processing overlay ── */
+    .proc-panel { display:none; margin-top:10px; background:var(--theme-primary-light); border-radius:12px; padding:14px; text-align:center; }
+    .proc-panel.show { display:block; }
+    .proc-inner { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:4px; }
+    .proc-inner span { font-size:14px; font-weight:600; color:var(--theme-text); }
+    .proc-hint { font-size:12px; color:var(--theme-textSecondary); }
+
+    /* ── Error banner ── */
+    .err-banner { display:none; margin-top:10px; background:#FFF5F5; border:1px solid #FCC; border-radius:12px; padding:12px 14px; }
+    .err-banner.show { display:flex; align-items:flex-start; gap:10px; }
+    .err-banner p { font-size:13px; color:#C0392B; line-height:1.4; }
+    .err-banner .err-title { font-weight:700; margin-bottom:2px; }
+
+    /* ── Spinner ── */
+    .spin { width:18px; height:18px; border:2px solid rgba(255,255,255,0.35); border-top-color:white; border-radius:50%; animation:rot 0.7s linear infinite; }
+    .spin-theme { border-color:var(--theme-primary-border); border-top-color:var(--theme-primary); }
+    @keyframes rot { to { transform:rotate(360deg); } }
+
+    /* ── Footer CTA ── */
+    .footer { position:absolute; bottom:0; left:0; right:0; background:var(--theme-surface);
+      border-top:1px solid var(--theme-border); padding:12px 16px 28px; z-index:20;
+      transition:background 0.3s, border-color 0.3s; }
+    .pay-btn { width:100%; background:var(--theme-gradient-primary); color:white; border:none;
+      border-radius:16px; padding:17px; font-size:17px; font-weight:700; font-family:'Outfit',sans-serif;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;
+      box-shadow:0 6px 24px var(--theme-shadow); transition:opacity 0.2s, transform 0.1s; }
+    .pay-btn:active { transform:scale(0.98); }
+    .pay-btn.dim { opacity:0.65; cursor:not-allowed; background:linear-gradient(135deg,#888 0%,#555 100%); }
+  </style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="controls">
+  <span class="controls-label">Theme:</span>
+  <div class="theme-dot active" style="background:linear-gradient(135deg,#6B4226,#4A2C1A)" title="Espresso" onclick="setTheme('',this)"></div>
+  <div class="theme-dot" style="background:linear-gradient(135deg,#0077BE,#005A8E)" title="Ocean" onclick="setTheme('ocean',this)"></div>
+  <div class="theme-dot" style="background:linear-gradient(135deg,#C0392B,#922B21)" title="Bloom" onclick="setTheme('bloom',this)"></div>
+  <div class="theme-dot" style="background:linear-gradient(135deg,#1B6840,#134D2E)" title="Forest" onclick="setTheme('forest',this)"></div>
+  <span class="controls-label" style="margin-left:8px">State:</span>
+  <button class="state-btn active" id="btn-idle" onclick="setState('idle')">Idle</button>
+  <button class="state-btn" id="btn-processing" onclick="setState('processing')">Processing</button>
+  <button class="state-btn" id="btn-error" onclick="setState('error')">Card Error</button>
+</div>
+
+<!-- Phone -->
+<div class="phone" id="phone">
+  <div class="notch">
+    <span class="notch-time">9:41</span>
+    <div class="notch-icons">
+      <svg width="16" height="12" fill="none" viewBox="0 0 16 12"><rect x="0" y="3" width="3" height="9" rx="1" fill="currentColor" opacity="0.4"/><rect x="4.5" y="2" width="3" height="10" rx="1" fill="currentColor" opacity="0.6"/><rect x="9" y="0" width="3" height="12" rx="1" fill="currentColor" opacity="0.8"/><rect x="13.5" y="0" width="2.5" height="12" rx="1" fill="currentColor"/></svg>
+      <svg width="16" height="12" fill="none" viewBox="0 0 24 24"><path d="M1.5 8.5C5.08 4.93 9.79 3 15 3s9.92 1.93 13.5 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/><path d="M5 13c2.76-2.76 6.52-4.5 10-4.5s7.24 1.74 10 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.7"/><path d="M8.5 17.5C10.33 15.67 12.08 15 15 15s4.67.67 6.5 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="15" cy="21" r="1.5" fill="currentColor"/></svg>
+      <svg width="25" height="12" fill="none" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" stroke-opacity="0.35"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2 2 0 000-4z" fill="currentColor" opacity="0.4"/></svg>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="back">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="hdr-text">
+      <h1>Checkout</h1>
+      <p>2 items · est. 5 min</p>
+    </div>
+  </div>
+
+  <div class="screen">
+    <div class="content">
+
+      <!-- Order Summary -->
+      <div class="card">
+        <div class="card-hdr" onclick="toggleSummary()" style="cursor:pointer">
+          <div class="card-label">Order Summary</div>
+          <div class="toggle-btn">
+            <span id="tog-txt">Hide</span>
+            <svg id="tog-chevron" width="16" height="16" fill="none" viewBox="0 0 24 24" style="transition:transform 0.25s">
+              <path d="M18 15l-6-6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="card-body" id="summary-body">
+          <div class="order-item">
+            <div class="oi-qty">1</div>
+            <div class="oi-info">
+              <div class="oi-name">Oat Milk Latte</div>
+              <div class="oi-mods">Large · Hot · Vanilla syrup · Extra shot</div>
+            </div>
+            <div class="oi-price">$7.25</div>
+          </div>
+          <div class="order-item">
+            <div class="oi-qty">1</div>
+            <div class="oi-info">
+              <div class="oi-name">Matcha Latte</div>
+              <div class="oi-mods">Medium · Iced · Oat milk · Honey</div>
+            </div>
+            <div class="oi-price">$6.50</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Name for Order -->
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-label">Name for Order</div>
+        </div>
+        <div class="card-body">
+          <input class="field" type="text" placeholder="Your name (for pickup call)" value="Alex">
+          <p class="field-hint">We'll call your name when your order is ready.</p>
+        </div>
+      </div>
+
+      <!-- Payment -->
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-label">Payment</div>
+          <div class="sq-badge">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+            Secured by Square
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="sq-wrapper">
+            <!-- Square Web Payments SDK would inject its iframe here -->
+            <div class="sq-iframe-mock" id="sq-mock">
+              <div class="sq-corner-label">Square iframe</div>
+              <div class="sq-row">
+                <div class="sq-field" style="gap:10px">
+                  <svg width="22" height="16" viewBox="0 0 22 16" fill="none"><rect width="22" height="16" rx="3" fill="#E9ECEF"/><rect y="4" width="22" height="5" fill="#ADB5BD"/><rect x="2" y="11" width="6" height="2" rx="1" fill="#CED4DA"/></svg>
+                  <span>•••• •••• •••• 4242</span>
+                </div>
+              </div>
+              <div class="sq-row">
+                <div class="sq-field" style="flex:0 0 80px">12 / 28</div>
+                <div class="sq-field sq-field-sm" style="flex:0 0 60px">•••</div>
+                <div class="sq-field">10001</div>
+              </div>
+            </div>
+            <div class="sq-security">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" stroke="var(--theme-textSecondary)" stroke-width="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="var(--theme-textSecondary)" stroke-width="2" stroke-linecap="round"/></svg>
+              <span>256-bit SSL · PCI DSS Level 1</span>
+            </div>
+          </div>
+
+          <!-- Processing state -->
+          <div class="proc-panel" id="proc-panel">
+            <div class="proc-inner">
+              <div class="spin spin-theme"></div>
+              <span>Processing payment…</span>
+            </div>
+            <p class="proc-hint">Please don't close this screen</p>
+          </div>
+
+          <!-- Error state -->
+          <div class="err-banner" id="err-banner">
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px">
+              <circle cx="12" cy="12" r="10" stroke="#C0392B" stroke-width="2"/>
+              <path d="M12 8v4M12 16h.01" stroke="#C0392B" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <p class="err-title">Card declined</p>
+              <p>Please check your card details or try a different card.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Totals -->
+      <div class="card">
+        <div class="card-body" style="padding-top:16px">
+          <div class="tot-row">
+            <span class="tot-label">Subtotal</span>
+            <span class="tot-val">$13.75</span>
+          </div>
+          <div class="tot-row">
+            <span class="tot-label">Tax (8.5%)</span>
+            <span class="tot-val">$1.17</span>
+          </div>
+          <div class="tot-row tot-grand">
+            <span class="tot-label">Total</span>
+            <span class="tot-val">$14.92</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /screen -->
+
+  <!-- Sticky Pay Footer -->
+  <div class="footer">
+    <button class="pay-btn" id="pay-btn" onclick="handlePay()">
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2.5" stroke="white" stroke-width="2"/><path d="M1 10h22" stroke="white" stroke-width="2"/><rect x="4" y="13" width="4" height="2" rx="1" fill="white" opacity="0.8"/></svg>
+      <span id="pay-label">Pay $14.92</span>
+    </button>
+  </div>
+</div><!-- /phone -->
+
+<script>
+  let summaryOpen = true;
+  let uiState = 'idle';
+
+  function setTheme(t, el) {
+    document.getElementById('phone').setAttribute('data-theme', t);
+    document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function setState(s) {
+    uiState = s;
+    const payBtn = document.getElementById('pay-btn');
+    const payLabel = document.getElementById('pay-label');
+    const procPanel = document.getElementById('proc-panel');
+    const errBanner = document.getElementById('err-banner');
+    const sqMock = document.getElementById('sq-mock');
+
+    // Reset
+    payBtn.classList.remove('dim');
+    procPanel.classList.remove('show');
+    errBanner.classList.remove('show');
+    sqMock.style.opacity = '1';
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + s).classList.add('active');
+
+    if (s === 'processing') {
+      payBtn.classList.add('dim');
+      payBtn.innerHTML = '<div class="spin"></div><span>Processing…</span>';
+      procPanel.classList.add('show');
+      sqMock.style.opacity = '0.35';
+    } else if (s === 'error') {
+      payLabel.textContent = 'Try Again';
+      payBtn.innerHTML = '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2.5" stroke="white" stroke-width="2"/><path d="M1 10h22" stroke="white" stroke-width="2"/></svg><span id="pay-label">Try Again</span>';
+      errBanner.classList.add('show');
+    } else {
+      payBtn.innerHTML = '<svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2.5" stroke="white" stroke-width="2"/><path d="M1 10h22" stroke="white" stroke-width="2"/><rect x="4" y="13" width="4" height="2" rx="1" fill="white" opacity="0.8"/></svg><span id="pay-label">Pay $14.92</span>';
+    }
+  }
+
+  function handlePay() {
+    if (uiState === 'idle') setState('processing');
+  }
+
+  function toggleSummary() {
+    summaryOpen = !summaryOpen;
+    document.getElementById('summary-body').style.display = summaryOpen ? '' : 'none';
+    document.getElementById('tog-txt').textContent = summaryOpen ? 'Hide' : 'Show';
+    document.getElementById('tog-chevron').style.transform = summaryOpen ? '' : 'rotate(180deg)';
+  }
+</script>
+</body>
+</html>

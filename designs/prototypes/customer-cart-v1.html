@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Cart – Drink-UX Prototype v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --theme-primary:#6B4226; --theme-primaryDark:#4A2C1A; --theme-secondary:#8B5A3C;
+      --theme-background:#FAF8F5; --theme-surface:#FFFFFF; --theme-text:#1A1A1A;
+      --theme-textSecondary:#6B6B6B; --theme-accent:#D4A574; --theme-border:#E8E0D8;
+      --theme-shadow:rgba(107,66,38,0.12);
+      --theme-gradient-primary:linear-gradient(135deg,#6B4226 0%,#4A2C1A 100%);
+      --theme-gradient-secondary:linear-gradient(135deg,#8B5A3C 0%,#6B4226 100%);
+      --theme-primary-light:rgba(107,66,38,0.08); --theme-primary-border:rgba(107,66,38,0.25);
+    }
+    [data-theme="ocean"] {
+      --theme-primary:#0077BE; --theme-primaryDark:#005A8E; --theme-secondary:#00A8CC;
+      --theme-background:#F0F7FF; --theme-surface:#FFFFFF; --theme-text:#0A1628;
+      --theme-textSecondary:#4A6080; --theme-accent:#00D4FF; --theme-border:#C8DCF0;
+      --theme-shadow:rgba(0,119,190,0.12);
+      --theme-gradient-primary:linear-gradient(135deg,#0077BE 0%,#005A8E 100%);
+      --theme-gradient-secondary:linear-gradient(135deg,#00A8CC 0%,#0077BE 100%);
+      --theme-primary-light:rgba(0,119,190,0.08); --theme-primary-border:rgba(0,119,190,0.25);
+    }
+    [data-theme="bloom"] {
+      --theme-primary:#C0392B; --theme-primaryDark:#922B21; --theme-secondary:#E74C3C;
+      --theme-background:#FFF5F5; --theme-surface:#FFFFFF; --theme-text:#1A0A0A;
+      --theme-textSecondary:#6B3A3A; --theme-accent:#FF8A80; --theme-border:#F5C6C6;
+      --theme-shadow:rgba(192,57,43,0.12);
+      --theme-gradient-primary:linear-gradient(135deg,#C0392B 0%,#922B21 100%);
+      --theme-gradient-secondary:linear-gradient(135deg,#E74C3C 0%,#C0392B 100%);
+      --theme-primary-light:rgba(192,57,43,0.08); --theme-primary-border:rgba(192,57,43,0.25);
+    }
+    [data-theme="forest"] {
+      --theme-primary:#1B6840; --theme-primaryDark:#134D2E; --theme-secondary:#27AE60;
+      --theme-background:#F0FAF4; --theme-surface:#FFFFFF; --theme-text:#0A1F14;
+      --theme-textSecondary:#3A6050; --theme-accent:#5CDB95; --theme-border:#C0E0CC;
+      --theme-shadow:rgba(27,104,64,0.12);
+      --theme-gradient-primary:linear-gradient(135deg,#1B6840 0%,#134D2E 100%);
+      --theme-gradient-secondary:linear-gradient(135deg,#27AE60 0%,#1B6840 100%);
+      --theme-primary-light:rgba(27,104,64,0.08); --theme-primary-border:rgba(27,104,64,0.25);
+    }
+
+    * { font-family:'Outfit',sans-serif; box-sizing:border-box; margin:0; padding:0; }
+    body { background:#1A1A2E; display:flex; flex-direction:column; align-items:center; padding:24px 16px; gap:16px; min-height:100vh; }
+
+    .controls { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+    .controls-label { color:rgba(255,255,255,0.5); font-size:12px; }
+    .theme-dot { width:28px; height:28px; border-radius:50%; cursor:pointer; border:3px solid transparent; transition:all 0.2s; }
+    .theme-dot:hover, .theme-dot.active { border-color:white; transform:scale(1.15); }
+    .view-btn { background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:4px 12px; font-size:11px; font-family:'Outfit',sans-serif; cursor:pointer; transition:all 0.15s; }
+    .view-btn:hover { background:rgba(255,255,255,0.2); }
+    .view-btn.active { background:rgba(255,255,255,0.3); border-color:white; }
+
+    .phone { width:390px; height:844px; background:var(--theme-background); border-radius:48px;
+      box-shadow:0 40px 100px rgba(0,0,0,0.7), 0 0 0 12px #16162A, 0 0 0 14px #2D2D44;
+      overflow:hidden; position:relative; display:flex; flex-direction:column; transition:background 0.3s; }
+    .notch { height:44px; background:var(--theme-background); display:flex; align-items:center; justify-content:space-between; padding:0 28px; transition:background 0.3s; }
+    .notch-time { font-size:12px; font-weight:700; color:var(--theme-text); }
+    .notch-icons { display:flex; gap:6px; align-items:center; color:var(--theme-text); }
+
+    .hdr { background:var(--theme-gradient-primary); padding:14px 20px 18px; display:flex; align-items:center; justify-content:space-between; }
+    .hdr-left { display:flex; align-items:center; gap:12px; }
+    .back { width:36px; height:36px; background:rgba(255,255,255,0.18); border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .hdr h1 { font-size:18px; font-weight:700; color:white; }
+    .hdr-count { background:rgba(255,255,255,0.25); color:white; font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; }
+
+    .screen { flex:1; overflow-y:auto; padding-bottom:130px; }
+    .screen::-webkit-scrollbar { display:none; }
+    .content { padding:14px; display:flex; flex-direction:column; gap:10px; }
+
+    /* ── Cart item card ── */
+    .item-card { background:var(--theme-surface); border-radius:20px; border:1px solid var(--theme-border);
+      box-shadow:0 2px 10px var(--theme-shadow); padding:14px; display:flex; gap:12px;
+      align-items:flex-start; transition:all 0.2s; position:relative; overflow:hidden; }
+    .item-card:active { transform:scale(0.99); }
+    .item-cup { width:52px; flex-shrink:0; }
+    .item-body { flex:1; min-width:0; }
+    .item-name { font-size:15px; font-weight:700; color:var(--theme-text); }
+    .item-tags { display:flex; flex-wrap:wrap; gap:4px; margin:5px 0; }
+    .tag { display:inline-flex; align-items:center; gap:3px; background:var(--theme-primary-light);
+      color:var(--theme-primary); font-size:10px; font-weight:600; padding:3px 7px; border-radius:10px; }
+    .item-mods { font-size:11px; color:var(--theme-textSecondary); line-height:1.5; }
+    .item-footer { display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+    .item-price { font-size:16px; font-weight:800; color:var(--theme-primary); }
+    .qty-ctrl { display:flex; align-items:center; gap:8px; }
+    .qty-btn { width:30px; height:30px; background:var(--theme-primary-light); border:1.5px solid var(--theme-primary-border);
+      border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+      color:var(--theme-primary); font-size:16px; font-weight:700; transition:all 0.15s; user-select:none; }
+    .qty-btn:hover { background:var(--theme-primary); color:white; }
+    .qty-num { font-size:15px; font-weight:700; color:var(--theme-text); min-width:18px; text-align:center; }
+
+    /* Edit hint */
+    .edit-hint { font-size:10px; color:var(--theme-textSecondary); display:flex; align-items:center; gap:3px; margin-top:6px; cursor:pointer; }
+    .edit-hint:hover { color:var(--theme-primary); }
+
+    /* Remove btn (slide-in on swipe, shown as button here) */
+    .remove-btn { position:absolute; top:10px; right:12px; background:rgba(220,53,69,0.1);
+      color:#DC3545; border:none; border-radius:8px; padding:4px 8px; font-size:11px;
+      font-family:'Outfit',sans-serif; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:4px; }
+
+    /* ── Section label ── */
+    .section-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--theme-textSecondary); padding:0 4px; }
+
+    /* ── Order notes ── */
+    .notes-card { background:var(--theme-surface); border-radius:20px; border:1px solid var(--theme-border); box-shadow:0 2px 10px var(--theme-shadow); overflow:hidden; }
+    .notes-hdr { padding:14px 16px 10px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--theme-textSecondary); display:flex; align-items:center; gap:6px; }
+    .notes-area { width:100%; background:transparent; border:none; padding:0 16px 14px; font-size:14px; font-family:'Outfit',sans-serif; color:var(--theme-text); resize:none; outline:none; min-height:56px; }
+    .notes-area::placeholder { color:var(--theme-textSecondary); }
+
+    /* ── Totals ── */
+    .totals-card { background:var(--theme-surface); border-radius:20px; border:1px solid var(--theme-border); box-shadow:0 2px 10px var(--theme-shadow); padding:16px; }
+    .tot-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; }
+    .tot-label { font-size:14px; color:var(--theme-textSecondary); }
+    .tot-val { font-size:14px; font-weight:600; color:var(--theme-text); }
+    .tot-divider { height:1px; background:var(--theme-border); margin:8px 0; }
+    .tot-grand .tot-label { font-size:16px; font-weight:700; color:var(--theme-text); }
+    .tot-grand .tot-val { font-size:18px; font-weight:800; color:var(--theme-primary); }
+
+    /* ── Empty state ── */
+    .empty-state { display:none; flex-direction:column; align-items:center; justify-content:center; flex:1; padding:40px 24px; text-align:center; gap:16px; }
+    .empty-state.show { display:flex; }
+    .empty-icon { width:96px; height:96px; background:var(--theme-primary-light); border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    .empty-title { font-size:20px; font-weight:700; color:var(--theme-text); }
+    .empty-sub { font-size:14px; color:var(--theme-textSecondary); line-height:1.5; }
+    .empty-cta { background:var(--theme-gradient-primary); color:white; border:none; border-radius:14px; padding:14px 28px; font-size:15px; font-weight:700; font-family:'Outfit',sans-serif; cursor:pointer; }
+
+    /* ── Footer ── */
+    .footer { position:absolute; bottom:0; left:0; right:0; background:var(--theme-surface); border-top:1px solid var(--theme-border); padding:12px 16px 28px; z-index:20; transition:background 0.3s; }
+    .checkout-btn { width:100%; background:var(--theme-gradient-primary); color:white; border:none; border-radius:16px; padding:17px; font-size:17px; font-weight:700; font-family:'Outfit',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding-left:24px; padding-right:24px; box-shadow:0 6px 24px var(--theme-shadow); transition:transform 0.1s; }
+    .checkout-btn:active { transform:scale(0.98); }
+    .checkout-btn-total { font-size:16px; font-weight:800; opacity:0.9; }
+
+    /* SVG cups */
+    svg.cup-svg { width:100%; height:auto; }
+  </style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="controls">
+  <span class="controls-label">Theme:</span>
+  <div class="theme-dot active" style="background:linear-gradient(135deg,#6B4226,#4A2C1A)" onclick="setTheme('',this)"></div>
+  <div class="theme-dot" style="background:linear-gradient(135deg,#0077BE,#005A8E)" onclick="setTheme('ocean',this)"></div>
+  <div class="theme-dot" style="background:linear-gradient(135deg,#C0392B,#922B21)" onclick="setTheme('bloom',this)"></div>
+  <div class="theme-dot" style="background:linear-gradient(135deg,#1B6840,#134D2E)" onclick="setTheme('forest',this)"></div>
+  <span class="controls-label" style="margin-left:8px">View:</span>
+  <button class="view-btn active" id="btn-filled" onclick="setView('filled')">Filled</button>
+  <button class="view-btn" id="btn-empty" onclick="setView('empty')">Empty</button>
+</div>
+
+<div class="phone" id="phone">
+  <div class="notch">
+    <span class="notch-time">9:41</span>
+    <div class="notch-icons">
+      <svg width="16" height="12" fill="none" viewBox="0 0 16 12"><rect x="0" y="3" width="3" height="9" rx="1" fill="currentColor" opacity="0.4"/><rect x="4.5" y="2" width="3" height="10" rx="1" fill="currentColor" opacity="0.6"/><rect x="9" y="0" width="3" height="12" rx="1" fill="currentColor" opacity="0.8"/><rect x="13.5" y="0" width="2.5" height="12" rx="1" fill="currentColor"/></svg>
+      <svg width="25" height="12" fill="none" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" stroke-opacity="0.35"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2 2 0 000-4z" fill="currentColor" opacity="0.4"/></svg>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="back">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1>Your Cart</h1>
+    </div>
+    <div class="hdr-count" id="item-count">3 items</div>
+  </div>
+
+  <!-- Filled cart -->
+  <div class="screen" id="cart-filled">
+    <div class="content">
+
+      <div class="section-label">Your Drinks</div>
+
+      <!-- Item 1: Hot latte -->
+      <div class="item-card">
+        <div class="item-cup">
+          <svg class="cup-svg" viewBox="0 0 52 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <clipPath id="cup1-clip">
+                <path d="M8 16 L6 72 Q6 76 10 76 L42 76 Q46 76 46 72 L44 16 Z"/>
+              </clipPath>
+            </defs>
+            <!-- Cup fill: espresso base -->
+            <rect x="0" y="40" width="52" height="40" fill="var(--theme-secondary)" clip-path="url(#cup1-clip)" opacity="0.7"/>
+            <!-- Milk layer -->
+            <rect x="0" y="24" width="52" height="18" fill="var(--theme-accent)" clip-path="url(#cup1-clip)" opacity="0.6"/>
+            <!-- Foam top -->
+            <rect x="0" y="16" width="52" height="10" fill="#F5F0EB" clip-path="url(#cup1-clip)" opacity="0.9"/>
+            <!-- Cup outline -->
+            <path d="M8 16 L6 72 Q6 76 10 76 L42 76 Q46 76 46 72 L44 16 Z" stroke="var(--theme-border)" stroke-width="2" fill="none"/>
+            <!-- Lid -->
+            <rect x="6" y="10" width="40" height="8" rx="3" fill="var(--theme-primary-light)" stroke="var(--theme-border)" stroke-width="1.5"/>
+            <!-- Sleeve -->
+            <rect x="10" y="38" width="32" height="22" rx="3" fill="var(--theme-primary)" opacity="0.15"/>
+            <!-- Hot steam wisps -->
+            <path d="M18 6 C18 3 20 3 20 6 C20 9 22 9 22 6" stroke="var(--theme-textSecondary)" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+            <path d="M26 4 C26 1 28 1 28 4 C28 7 30 7 30 4" stroke="var(--theme-textSecondary)" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="item-body">
+          <div class="item-name">Oat Milk Latte</div>
+          <div class="item-tags">
+            <span class="tag">🔥 Hot</span>
+            <span class="tag">L</span>
+          </div>
+          <div class="item-mods">Oat milk · Vanilla syrup · Extra shot</div>
+          <div class="item-footer">
+            <div class="item-price" id="price-1">$7.25</div>
+            <div class="qty-ctrl">
+              <div class="qty-btn" onclick="changeQty(1,-1)">−</div>
+              <div class="qty-num" id="qty-1">1</div>
+              <div class="qty-btn" onclick="changeQty(1,1)">+</div>
+            </div>
+          </div>
+          <div class="edit-hint" onclick="alert('Opens drink customizer for editing')">
+            <svg width="11" height="11" fill="none" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Tap to edit customizations
+          </div>
+        </div>
+        <button class="remove-btn" onclick="removeItem(1)">
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Item 2: Iced matcha -->
+      <div class="item-card" id="item-2">
+        <div class="item-cup">
+          <svg class="cup-svg" viewBox="0 0 52 80" fill="none">
+            <defs>
+              <clipPath id="cup2-clip">
+                <path d="M8 12 L6 74 Q6 78 10 78 L42 78 Q46 78 46 74 L44 12 Z"/>
+              </clipPath>
+            </defs>
+            <!-- Ice cubes -->
+            <rect x="12" y="38" width="10" height="10" rx="2" fill="rgba(200,230,255,0.7)" clip-path="url(#cup2-clip)"/>
+            <rect x="26" y="44" width="10" height="10" rx="2" fill="rgba(200,230,255,0.7)" clip-path="url(#cup2-clip)"/>
+            <rect x="18" y="50" width="8" height="8" rx="2" fill="rgba(200,230,255,0.5)" clip-path="url(#cup2-clip)"/>
+            <!-- Matcha fill -->
+            <rect x="0" y="25" width="52" height="55" fill="#7CB87A" clip-path="url(#cup2-clip)" opacity="0.55"/>
+            <!-- Oat milk layer -->
+            <rect x="0" y="12" width="52" height="15" fill="#F5E6CC" clip-path="url(#cup2-clip)" opacity="0.7"/>
+            <!-- Cup outline (clear cup) -->
+            <path d="M8 12 L6 74 Q6 78 10 78 L42 78 Q46 78 46 74 L44 12 Z" stroke="var(--theme-border)" stroke-width="1.5" fill="rgba(255,255,255,0.2)"/>
+            <!-- Flat lid -->
+            <rect x="6" y="6" width="40" height="7" rx="3" fill="var(--theme-primary-light)" stroke="var(--theme-border)" stroke-width="1.5"/>
+            <!-- Straw -->
+            <rect x="28" y="0" width="4" height="50" rx="2" fill="var(--theme-primary)" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="item-body">
+          <div class="item-name">Matcha Latte</div>
+          <div class="item-tags">
+            <span class="tag">❄️ Iced</span>
+            <span class="tag">M</span>
+          </div>
+          <div class="item-mods">Oat milk · Honey syrup</div>
+          <div class="item-footer">
+            <div class="item-price" id="price-2">$6.50</div>
+            <div class="qty-ctrl">
+              <div class="qty-btn" onclick="changeQty(2,-1)">−</div>
+              <div class="qty-num" id="qty-2">2</div>
+              <div class="qty-btn" onclick="changeQty(2,1)">+</div>
+            </div>
+          </div>
+          <div class="edit-hint" onclick="alert('Opens drink customizer for editing')">
+            <svg width="11" height="11" fill="none" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Tap to edit customizations
+          </div>
+        </div>
+        <button class="remove-btn" onclick="removeItem(2)">
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Order Notes -->
+      <div class="section-label" style="margin-top:4px">Order Notes</div>
+      <div class="notes-card">
+        <div class="notes-hdr">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Special Requests
+        </div>
+        <textarea class="notes-area" placeholder="Any special requests or allergies? (optional)">Light ice on the matcha please</textarea>
+      </div>
+
+      <!-- Totals -->
+      <div class="totals-card">
+        <div class="tot-row">
+          <span class="tot-label">Subtotal</span>
+          <span class="tot-val" id="subtotal">$20.25</span>
+        </div>
+        <div class="tot-row">
+          <span class="tot-label">Tax (8.5%)</span>
+          <span class="tot-val" id="tax">$1.72</span>
+        </div>
+        <div class="tot-divider"></div>
+        <div class="tot-row tot-grand">
+          <span class="tot-label">Total</span>
+          <span class="tot-val" id="total">$21.97</span>
+        </div>
+      </div>
+
+      <!-- Promo row -->
+      <div style="display:flex;align-items:center;gap:8px;background:var(--theme-surface);border-radius:14px;border:1px solid var(--theme-border);padding:12px 14px;cursor:pointer">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M7 7h.01M17 17h.01M3 3l18 18M9 3h6l3 3v2.5M3 9v6l3 3h2.5" stroke="var(--theme-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span style="font-size:13px;color:var(--theme-textSecondary);flex:1">Add promo code</span>
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke="var(--theme-textSecondary)" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Empty cart state -->
+  <div class="empty-state" id="cart-empty">
+    <div class="empty-icon">
+      <svg width="48" height="48" fill="none" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" stroke="var(--theme-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <div class="empty-title">Your cart is empty</div>
+      <div class="empty-sub" style="margin-top:6px">Build a custom drink to get started</div>
+    </div>
+    <button class="empty-cta">Build a Drink</button>
+  </div>
+
+  <!-- Footer CTA -->
+  <div class="footer" id="cart-footer">
+    <button class="checkout-btn">
+      <span>Proceed to Checkout</span>
+      <span class="checkout-btn-total" id="footer-total">$21.97</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  const ITEM_PRICES = { 1: 7.25, 2: 6.50 };
+  const qtys = { 1: 1, 2: 2 };
+  const TAX_RATE = 0.085;
+
+  function setTheme(t, el) {
+    document.getElementById('phone').setAttribute('data-theme', t);
+    document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function setView(v) {
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + v).classList.add('active');
+    if (v === 'empty') {
+      document.getElementById('cart-filled').style.display = 'none';
+      document.getElementById('cart-empty').classList.add('show');
+      document.getElementById('cart-footer').style.display = 'none';
+      document.getElementById('item-count').textContent = '0 items';
+    } else {
+      document.getElementById('cart-filled').style.display = '';
+      document.getElementById('cart-empty').classList.remove('show');
+      document.getElementById('cart-footer').style.display = '';
+      updateCount();
+    }
+  }
+
+  function changeQty(id, delta) {
+    qtys[id] = Math.max(1, qtys[id] + delta);
+    document.getElementById('qty-' + id).textContent = qtys[id];
+    updateTotals();
+  }
+
+  function removeItem(id) {
+    // Simple demo: just visually hide
+    const card = document.querySelector(`[onclick*="changeQty(${id},"]`);
+    if (card) card.closest('.item-card').style.display = 'none';
+    qtys[id] = 0;
+    updateTotals();
+    updateCount();
+  }
+
+  function updateTotals() {
+    const subtotal = Object.keys(qtys).reduce((sum, id) => sum + (qtys[id] * (ITEM_PRICES[id] || 0)), 0);
+    const tax = subtotal * TAX_RATE;
+    const total = subtotal + tax;
+    document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+    document.getElementById('tax').textContent = '$' + tax.toFixed(2);
+    document.getElementById('total').textContent = '$' + total.toFixed(2);
+    document.getElementById('footer-total').textContent = '$' + total.toFixed(2);
+    // Update individual price displays
+    Object.keys(qtys).forEach(id => {
+      const el = document.getElementById('price-' + id);
+      if (el) el.textContent = '$' + (qtys[id] * (ITEM_PRICES[id] || 0)).toFixed(2);
+    });
+  }
+
+  function updateCount() {
+    const total = Object.values(qtys).reduce((a, b) => a + b, 0);
+    document.getElementById('item-count').textContent = total + ' item' + (total !== 1 ? 's' : '');
+  }
+</script>
+</body>
+</html>

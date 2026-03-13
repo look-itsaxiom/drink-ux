@@ -43,6 +43,7 @@ import { posRouter } from "./routes/pos";
 import { createMappingsRouter } from "./routes/mappings";
 import { createMappedCatalogRouter } from "./routes/catalog-mapped";
 import { createPaymentRouter } from "./routes/payments";
+import { createOrderWebhooksRouter } from "./routes/orderWebhooks";
 
 // Middleware
 import { errorHandler } from "./middleware/errorHandler";
@@ -175,6 +176,9 @@ app.use("/api/subscription", createSubscriptionRouter(prisma));
 
 // Subscription webhooks (from Square)
 app.use("/api/webhooks/subscription", createSubscriptionWebhooksRouter(webhookService));
+
+// Order webhooks (from Square - order status sync)
+app.use("/api/webhooks", createOrderWebhooksRouter(webhookService));
 
 // Catalog sync routes
 app.use("/api/catalog-sync", catalogSyncRouter);
