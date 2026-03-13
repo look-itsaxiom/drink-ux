@@ -129,6 +129,34 @@ describe('SubscriptionExpiryService', () => {
       expect(result.errors).toHaveLength(0);
     });
 
+    it('does not expire businesses with future trial/grace period dates', async () => {
+      const prisma = createMockPrisma();
+      // findMany returns nothing because Prisma filters by lt: now
+      const service = new SubscriptionExpiryService(prisma);
+
+      const result = await service.runExpirySweep();
+
+      expect(result.expiredTrials).toHaveLength(0);
+      expect(result.expiredGracePeriods).toHaveLength(0);
+      // Verify the query used lt (less than) for date filtering
+      expect(prisma.business.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            accountState: AccountState.TRIAL,
+            trialEndsAt: { lt: expect.any(Date) },
+          }),
+        })
+      );
+      expect(prisma.business.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            accountState: AccountState.GRACE_PERIOD,
+            gracePeriodEndsAt: { lt: expect.any(Date) },
+          }),
+        })
+      );
+    });
+
     it('records errors for individual failures without stopping the sweep', async () => {
       const prisma = createMockPrisma({
         expiredTrials: [
@@ -200,6 +228,25 @@ describe('SubscriptionExpiryService', () => {
 
       service.stop();
       jest.useRealTimers();
+    });
+  });
+
+  describe('dependency injection', () => {
+    it('accepts an injected AccountStateService', async () => {
+      const prisma = createMockPrisma({
+        expiredTrials: [makeBusiness('biz-di', 'DI Shop')],
+      });
+
+      const mockAccountStateService = {
+        expireTrial: jest.fn().mockResolvedValue(undefined),
+        expireGracePeriod: jest.fn().mockResolvedValue(undefined),
+      } as any;
+
+      const service = new SubscriptionExpiryService(prisma, mockAccountStateService);
+      const result = await service.runExpirySweep();
+
+      expect(result.expiredTrials).toEqual(['biz-di']);
+      expect(mockAccountStateService.expireTrial).toHaveBeenCalledWith('biz-di');
     });
   });
 });

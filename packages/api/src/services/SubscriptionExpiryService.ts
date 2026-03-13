@@ -15,8 +15,11 @@ export class SubscriptionExpiryService {
   private readonly accountStateService: AccountStateService;
   private intervalHandle: ReturnType<typeof setInterval> | null = null;
 
-  constructor(private readonly prisma: PrismaClient) {
-    this.accountStateService = new AccountStateService(prisma);
+  constructor(
+    private readonly prisma: PrismaClient,
+    accountStateService?: AccountStateService,
+  ) {
+    this.accountStateService = accountStateService ?? new AccountStateService(prisma);
   }
 
   /**
