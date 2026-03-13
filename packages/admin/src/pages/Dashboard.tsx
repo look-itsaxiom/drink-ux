@@ -16,6 +16,7 @@ interface POSStatus {
 }
 
 
+
 const Dashboard: React.FC = () => {
   const { user, business } = useAuth();
   const businessId = user?.businessId;
