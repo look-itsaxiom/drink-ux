@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { POSProvider } from './types';
+
+enum POSProvider {
+  SQUARE = 'square',
+  TOAST = 'toast',
+  CLOVER = 'clover',
+}
 
 const POSIntegration: React.FC = () => {
   const [provider, setProvider] = useState<POSProvider>(POSProvider.SQUARE);
