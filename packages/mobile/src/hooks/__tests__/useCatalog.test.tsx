@@ -3,15 +3,16 @@
  * Tests for the mapped catalog hook
  */
 
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useCatalog } from '../useCatalog';
 import { getMappedCatalog, MappedCatalog } from '../../services/catalogService';
 
 // Mock the catalog service
-jest.mock('../../services/catalogService', () => ({
-  getMappedCatalog: jest.fn(),
-  groupBasesByCategory: jest.fn((bases) => {
-    const categoryMap = new Map<string, any[]>();
+vi.mock('../../services/catalogService', () => ({
+  getMappedCatalog: vi.fn(),
+  groupBasesByCategory: vi.fn((bases: Array<{ category?: string; [key: string]: unknown }>) => {
+    const categoryMap = new Map<string, unknown[]>();
     for (const base of bases) {
       const category = base.category || 'Other';
       if (!categoryMap.has(category)) {
@@ -27,7 +28,7 @@ jest.mock('../../services/catalogService', () => ({
   }),
 }));
 
-const mockGetMappedCatalog = getMappedCatalog as jest.MockedFunction<typeof getMappedCatalog>;
+const mockGetMappedCatalog = getMappedCatalog as ReturnType<typeof vi.fn>;
 
 // Sample mapped catalog data
 const mockMappedCatalog: MappedCatalog = {
@@ -62,7 +63,7 @@ const mockMappedCatalog: MappedCatalog = {
 
 describe('useCatalog', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockGetMappedCatalog.mockResolvedValue(mockMappedCatalog);
   });
 

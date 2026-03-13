@@ -3,6 +3,7 @@
  * Tests for the mapped catalog service
  */
 
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import {
   getMappedCatalog,
   groupBasesByCategory,
@@ -15,17 +16,17 @@ import {
 import { apiClient } from '../api';
 
 // Mock the API client
-jest.mock('../api', () => ({
+vi.mock('../api', () => ({
   apiClient: {
-    get: jest.fn(),
+    get: vi.fn(),
   },
 }));
 
-const mockGet = apiClient.get as jest.MockedFunction<typeof apiClient.get>;
+const mockGet = apiClient.get as ReturnType<typeof vi.fn>;
 
 describe('Catalog Service', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('getMappedCatalog', () => {
@@ -54,10 +55,10 @@ describe('Catalog Service', () => {
       const categories = groupBasesByCategory(bases);
 
       expect(categories).toHaveLength(2);
-      
+
       const coffee = categories.find(c => c.name === 'Coffee');
       expect(coffee?.items).toHaveLength(2);
-      
+
       const tea = categories.find(c => c.name === 'Tea');
       expect(tea?.items).toHaveLength(1);
     });
