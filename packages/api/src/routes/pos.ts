@@ -15,6 +15,34 @@ const ADMIN_FRONTEND_URL = process.env.ADMIN_FRONTEND_URL || 'http://localhost:3
 
 export const posRouter = Router();
 
+const importCatalogForBusiness = async (businessId: string) => {
+  const business = await prisma.business.findUnique({
+    where: { id: businessId },
+  });
+
+  if (!business) {
+    throw new Error(`BUSINESS_NOT_FOUND:${businessId}`);
+  }
+
+  if (!business.posAccessToken || !business.posMerchantId) {
+    throw new Error('POS_NOT_CONNECTED');
+  }
+
+  const squareAdapter = new SquareAdapter();
+  const { decryptToken } = await import('../utils/encryption');
+  const encryptionKey = process.env.POS_TOKEN_ENCRYPTION_KEY || 'test-key-must-be-32-chars-long!!';
+
+  squareAdapter.setCredentials({
+    accessToken: decryptToken(business.posAccessToken, encryptionKey),
+    refreshToken: business.posRefreshToken ? decryptToken(business.posRefreshToken, encryptionKey) : '',
+    merchantId: business.posMerchantId,
+    locationId: business.posLocationId || undefined,
+    expiresAt: new Date(Date.now() + 3600000),
+  });
+
+  return squareAdapter.importCatalog();
+};
+
 /**
  * GET /api/pos/providers
  * Returns list of supported POS providers
@@ -138,6 +166,87 @@ posRouter.get('/oauth/status', (_req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/pos/catalog
+ * Read-only catalog fetch for admin reference views
+ * Query: businessId
+ */
+posRouter.get('/catalog', async (req: Request, res: Response) => {
+  const { businessId } = req.query;
+
+  if (!businessId || typeof businessId !== 'string') {
+    const response: ApiResponse<never> = {
+      success: false,
+      error: {
+        code: 'MISSING_BUSINESS_ID',
+        message: 'businessId query parameter is required',
+      },
+    };
+    res.status(400).json(response);
+    return;
+  }
+
+  try {
+    const rawCatalog = await importCatalogForBusiness(businessId);
+    const response: ApiResponse<{
+      rawCatalog: typeof rawCatalog;
+      summary: {
+        categories: number;
+        items: number;
+        modifiers: number;
+      };
+    }> = {
+      success: true,
+      data: {
+        rawCatalog,
+        summary: {
+          categories: rawCatalog.categories.length,
+          items: rawCatalog.items.length,
+          modifiers: rawCatalog.modifiers.length,
+        },
+      },
+    };
+    res.json(response);
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+
+    if (errorMessage.startsWith('BUSINESS_NOT_FOUND:')) {
+      const missingBusinessId = errorMessage.split(':')[1] || businessId;
+      const response: ApiResponse<never> = {
+        success: false,
+        error: {
+          code: 'BUSINESS_NOT_FOUND',
+          message: `Business ${missingBusinessId} not found`,
+        },
+      };
+      res.status(404).json(response);
+      return;
+    }
+
+    if (errorMessage === 'POS_NOT_CONNECTED') {
+      const response: ApiResponse<never> = {
+        success: false,
+        error: {
+          code: 'POS_NOT_CONNECTED',
+          message: 'Business has no POS connection. Please connect Square first.',
+        },
+      };
+      res.status(400).json(response);
+      return;
+    }
+
+    console.error('Catalog fetch failed:', errorMessage);
+    const response: ApiResponse<never> = {
+      success: false,
+      error: {
+        code: 'IMPORT_FAILED',
+        message: errorMessage,
+      },
+    };
+    res.status(500).json(response);
+  }
+});
+
+/**
  * POST /api/pos/import-catalog
  * Import catalog from POS system
  * Body: { businessId: string }
@@ -158,52 +267,7 @@ posRouter.post('/import-catalog', async (req: Request, res: Response) => {
   }
 
   try {
-    // Get business to check POS connection
-    const business = await prisma.business.findUnique({
-      where: { id: businessId },
-    });
-
-    if (!business) {
-      const response: ApiResponse<never> = {
-        success: false,
-        error: {
-          code: 'BUSINESS_NOT_FOUND',
-          message: `Business ${businessId} not found`,
-        },
-      };
-      res.status(404).json(response);
-      return;
-    }
-
-    if (!business.posAccessToken || !business.posMerchantId) {
-      const response: ApiResponse<never> = {
-        success: false,
-        error: {
-          code: 'POS_NOT_CONNECTED',
-          message: 'Business has no POS connection. Please connect Square first.',
-        },
-      };
-      res.status(400).json(response);
-      return;
-    }
-
-    // Use SquareAdapter to import catalog
-    const squareAdapter = new SquareAdapter();
-
-    // Decrypt and set credentials
-    const { decryptToken } = await import('../utils/encryption');
-    const ENCRYPTION_KEY = process.env.POS_TOKEN_ENCRYPTION_KEY || 'test-key-must-be-32-chars-long!!';
-
-    squareAdapter.setCredentials({
-      accessToken: decryptToken(business.posAccessToken, ENCRYPTION_KEY),
-      refreshToken: business.posRefreshToken ? decryptToken(business.posRefreshToken, ENCRYPTION_KEY) : '',
-      merchantId: business.posMerchantId,
-      locationId: business.posLocationId || undefined,
-      expiresAt: new Date(Date.now() + 3600000),
-    });
-
-    // Import raw catalog from Square
-    const rawCatalog = await squareAdapter.importCatalog();
+    const rawCatalog = await importCatalogForBusiness(businessId);
 
     // Return the raw catalog data for transformation
     const response: ApiResponse<{
@@ -227,6 +291,32 @@ posRouter.post('/import-catalog', async (req: Request, res: Response) => {
     res.json(response);
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+
+    if (errorMessage.startsWith('BUSINESS_NOT_FOUND:')) {
+      const missingBusinessId = errorMessage.split(':')[1] || businessId;
+      const response: ApiResponse<never> = {
+        success: false,
+        error: {
+          code: 'BUSINESS_NOT_FOUND',
+          message: `Business ${missingBusinessId} not found`,
+        },
+      };
+      res.status(404).json(response);
+      return;
+    }
+
+    if (errorMessage === 'POS_NOT_CONNECTED') {
+      const response: ApiResponse<never> = {
+        success: false,
+        error: {
+          code: 'POS_NOT_CONNECTED',
+          message: 'Business has no POS connection. Please connect Square first.',
+        },
+      };
+      res.status(400).json(response);
+      return;
+    }
+
     console.error('Catalog import failed:', errorMessage);
     const response: ApiResponse<never> = {
       success: false,

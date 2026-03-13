@@ -57,6 +57,7 @@ export interface CreateBaseInput {
   name: string;
   basePrice: number;
   temperatureConstraint?: TemperatureConstraint;
+  available?: boolean;
   visualColor?: string;
   visualOpacity?: number;
 }
@@ -91,6 +92,7 @@ export interface CreateModifierInput {
   name: string;
   type: ModifierType;
   price: number;
+  available?: boolean;
   visualColor?: string;
   visualLayerOrder?: number;
   visualAnimationType?: string;
@@ -367,6 +369,7 @@ export class CatalogService {
       name,
       basePrice,
       temperatureConstraint = 'BOTH',
+      available,
       visualColor,
       visualOpacity = 1.0,
     } = input;
@@ -422,6 +425,7 @@ export class CatalogService {
         name: trimmedName,
         basePrice,
         temperatureConstraint: temperatureConstraint as TemperatureConstraint,
+        ...(available !== undefined && { available }),
         visualColor,
         visualOpacity,
       },
@@ -544,6 +548,7 @@ export class CatalogService {
       name,
       type,
       price,
+      available,
       visualColor,
       visualLayerOrder = 0,
       visualAnimationType,
@@ -589,6 +594,7 @@ export class CatalogService {
         name: trimmedName,
         type: type as ModifierType,
         price,
+        ...(available !== undefined && { available }),
         visualColor,
         visualLayerOrder,
         visualAnimationType,

@@ -43,7 +43,8 @@ interface SquareCatalog {
 }
 
 type TabType = 'categories' | 'bases' | 'modifiers' | 'square';
-type ModalType = 'category' | 'base' | 'modifier' | null;
+type EntityType = 'category' | 'base' | 'modifier';
+type ModalType = EntityType | null;
 
 const MenuManagement: React.FC = () => {
   const { user } = useAuth();
@@ -63,7 +64,7 @@ const MenuManagement: React.FC = () => {
   // Modal state
   const [modalType, setModalType] = useState<ModalType>(null);
   const [editingItem, setEditingItem] = useState<Category | Base | Modifier | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ type: ModalType; id: string; name: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: EntityType; id: string; name: string } | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<Record<string, string | number | boolean>>({});
@@ -91,6 +92,10 @@ const MenuManagement: React.FC = () => {
         }),
       ]);
 
+      if (!categoriesRes.ok || !basesRes.ok || !modifiersRes.ok) {
+        throw new Error('Failed to load catalog data');
+      }
+
       const categoriesData = await categoriesRes.json();
       const basesData = await basesRes.json();
       const modifiersData = await modifiersRes.json();
@@ -116,15 +121,12 @@ const MenuManagement: React.FC = () => {
 
     setSquareLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/pos/import-catalog`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(`${API_BASE_URL}/api/pos/catalog?businessId=${businessId}`, {
         credentials: 'include',
-        body: JSON.stringify({ businessId }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => null);
         throw new Error(errorData.error?.message || 'Failed to fetch Square catalog');
       }
 
@@ -182,13 +184,13 @@ const MenuManagement: React.FC = () => {
   };
 
   // Modal handlers
-  const openAddModal = (type: ModalType) => {
+  const openAddModal = (type: EntityType) => {
     setModalType(type);
     setEditingItem(null);
     setFormData(getDefaultFormData(type));
   };
 
-  const openEditModal = (type: ModalType, item: Category | Base | Modifier) => {
+  const openEditModal = (type: EntityType, item: Category | Base | Modifier) => {
     setModalType(type);
     setEditingItem(item);
     setFormData({ ...item });
@@ -200,7 +202,7 @@ const MenuManagement: React.FC = () => {
     setFormData({});
   };
 
-  const getDefaultFormData = (type: ModalType): Record<string, string | number | boolean> => {
+  const getDefaultFormData = (type: EntityType): Record<string, string | number | boolean> => {
     switch (type) {
       case 'category':
         return { name: '', displayOrder: categories.length + 1, color: '', icon: '' };
@@ -284,9 +286,19 @@ const MenuManagement: React.FC = () => {
     }
   };
 
-  const getEndpoint = (type: ModalType, id: string | null): string => {
+  const getEndpoint = (type: EntityType, id: string | null): string => {
     const base = `/api/catalog/${type === 'category' ? 'categories' : type === 'base' ? 'bases' : 'modifiers'}`;
     return id ? `${base}/${id}` : base;
+  };
+
+  const parseNumberInput = (value: string): number => {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const parseIntegerInput = (value: string, fallback = 1): number => {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : fallback;
   };
 
   const renderTabs = () => (
@@ -341,7 +353,7 @@ const MenuManagement: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {categories.sort((a, b) => a.displayOrder - b.displayOrder).map((category) => (
+            {[...categories].sort((a, b) => a.displayOrder - b.displayOrder).map((category) => (
               <tr key={category.id} style={{ borderBottom: '1px solid #ecf0f1' }}>
                 <td style={{ padding: '10px' }}>{category.displayOrder}</td>
                 <td style={{ padding: '10px', fontWeight: 500 }}>{category.name}</td>
@@ -720,7 +732,7 @@ const MenuManagement: React.FC = () => {
         <input
           type="number"
           value={formData.displayOrder as number || 1}
-          onChange={(e) => handleFormChange('displayOrder', parseInt(e.target.value))}
+          onChange={(e) => handleFormChange('displayOrder', parseIntegerInput(e.target.value))}
           style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
         />
       </div>
@@ -775,7 +787,7 @@ const MenuManagement: React.FC = () => {
           step="0.01"
           min="0"
           value={formData.basePrice as number || 0}
-          onChange={(e) => handleFormChange('basePrice', parseFloat(e.target.value))}
+          onChange={(e) => handleFormChange('basePrice', parseNumberInput(e.target.value))}
           required
           style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
         />
@@ -843,7 +855,7 @@ const MenuManagement: React.FC = () => {
           step="0.01"
           min="0"
           value={formData.price as number || 0}
-          onChange={(e) => handleFormChange('price', parseFloat(e.target.value))}
+          onChange={(e) => handleFormChange('price', parseNumberInput(e.target.value))}
           style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
         />
         <small style={{ color: '#7f8c8d' }}>Set to 0 for included modifiers</small>

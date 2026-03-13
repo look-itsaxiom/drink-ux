@@ -210,4 +210,15 @@ describe('POS Routes', () => {
       expect(response.body.data.providers).toContain('SQUARE');
     });
   });
+
+  describe('GET /api/pos/catalog', () => {
+    it('returns error when businessId is missing', async () => {
+      const response = await request(app)
+        .get('/api/pos/catalog');
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('MISSING_BUSINESS_ID');
+    });
+  });
 });
