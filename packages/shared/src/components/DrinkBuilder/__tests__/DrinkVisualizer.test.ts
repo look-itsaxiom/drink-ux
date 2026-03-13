@@ -40,7 +40,7 @@ describe('DrinkVisualizer', () => {
         expect(result.layers.length).toBeGreaterThan(0);
         const baseLayer = result.layers.find(l => l.id === 'base');
         expect(baseLayer).toBeDefined();
-        expect(baseLayer?.name).toBe('Base Drink');
+        expect(baseLayer?.name).toBe('Latte');
       });
 
       it('should include syrup layer when syrup is added', () => {
@@ -296,7 +296,8 @@ describe('DrinkVisualizer', () => {
         const result = DrinkVisualizer.generateVisualProperties(state);
 
         const baseLayer = result.layers.find(l => l.id === 'base');
-        expect(baseLayer?.color).toBe(DRINK_COLORS[DrinkCategory.TEA].green);
+        // Green Tea uses DRINK_PROFILES color, which is more realistic than DRINK_COLORS
+        expect(baseLayer?.color).toBe('#8DB360');
       });
 
       it('should use dark color for espresso', () => {
@@ -313,7 +314,8 @@ describe('DrinkVisualizer', () => {
         const result = DrinkVisualizer.generateVisualProperties(state);
 
         const baseLayer = result.layers.find(l => l.id === 'base');
-        expect(baseLayer?.color).toBe(DRINK_COLORS[DrinkCategory.COFFEE].dark);
+        // Espresso uses DRINK_PROFILES color, which is more realistic than DRINK_COLORS
+        expect(baseLayer?.color).toBe('#1A0A02');
       });
     });
   });

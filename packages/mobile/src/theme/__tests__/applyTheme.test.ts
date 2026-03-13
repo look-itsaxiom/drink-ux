@@ -68,16 +68,18 @@ describe('applyTheme utility', () => {
     it('sets CSS custom properties on :root', () => {
       applyTheme(defaultTheme);
 
-      expect(getCSSVariable('--theme-primary')).toBe('#667eea');
-      expect(getCSSVariable('--theme-secondary')).toBe('#6B4226');
-      expect(getCSSVariable('--theme-background')).toBe('#ffffff');
-      expect(getCSSVariable('--theme-text')).toBe('#2c3e50');
+      expect(getCSSVariable('--theme-primary')).toBe(defaultTheme.colors.primary);
+      expect(getCSSVariable('--theme-secondary')).toBe(defaultTheme.colors.secondary);
+      expect(getCSSVariable('--theme-background')).toBe(defaultTheme.colors.background);
+      expect(getCSSVariable('--theme-text')).toBe(defaultTheme.colors.text);
     });
 
     it('converts hex colors to RGB values', () => {
       applyTheme(defaultTheme);
 
-      expect(getCSSVariable('--theme-primary-rgb')).toBe('102, 126, 234');
+      // RGB for defaultTheme.colors.primary (#8B5E3C = 139, 94, 60)
+      const rgb = hexToRgb(defaultTheme.colors.primary);
+      expect(getCSSVariable('--theme-primary-rgb')).toBe(`${rgb!.r}, ${rgb!.g}, ${rgb!.b}`);
     });
 
     it('applies gradient variables', () => {

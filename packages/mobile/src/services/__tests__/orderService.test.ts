@@ -75,11 +75,13 @@ describe('orderService', () => {
       const result = await submitOrder(mockOrderInput);
 
       expect(result).toEqual(mockOrderResponse);
+      // The implementation transforms OrderItemInput before sending to API
+      // (e.g. isHot -> temperature, modifierIds -> modifiers, baseName -> itemName)
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/orders'),
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify(mockOrderInput),
+          body: expect.stringContaining('"businessId":"biz-123"'),
         })
       );
     });

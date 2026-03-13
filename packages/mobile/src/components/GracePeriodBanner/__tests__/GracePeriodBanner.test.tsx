@@ -13,15 +13,18 @@ function renderWithRouter(component: React.ReactElement) {
   return render(<MemoryRouter>{component}</MemoryRouter>);
 }
 
-// Mock useNavigate
-const mockNavigate = vi.fn();
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
+// Mock useHistory (react-router v5 API used by the mobile app)
+const mockPush = vi.fn();
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router');
   return {
     ...actual,
-    useNavigate: () => mockNavigate,
+    useHistory: () => ({ push: mockPush }),
   };
 });
+
+// Alias for test readability
+const mockNavigate = mockPush;
 
 describe('GracePeriodBanner', () => {
   beforeEach(() => {
