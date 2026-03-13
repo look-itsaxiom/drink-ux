@@ -42,6 +42,7 @@ jobs:
         run: npm run build --workspace=@drink-ux/mobile
         env:
           GITHUB_PAGES: true
+          VITE_DEMO_MODE: true
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
