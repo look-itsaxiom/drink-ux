@@ -43,6 +43,8 @@ jobs:
         env:
           GITHUB_PAGES: true
           VITE_DEMO_MODE: true
+          VITE_SQUARE_APP_ID: ${{ secrets.VITE_SQUARE_APP_ID }}
+          VITE_SQUARE_LOCATION_ID: ${{ secrets.VITE_SQUARE_LOCATION_ID }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
