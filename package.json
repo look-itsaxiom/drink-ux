@@ -8,6 +8,8 @@
   ],
   "scripts": {
     "build": "npm run build --workspace=@drink-ux/shared && npm run build --workspaces",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint packages/shared/src packages/api/src packages/admin/src packages/mobile/src",
     "test": "npm run test --workspaces",
     "dev": "npm run dev --workspaces --if-present"
   },
@@ -22,6 +24,9 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.3.0"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.3",
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.57.0"
   }
 }

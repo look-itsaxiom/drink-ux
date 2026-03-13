@@ -231,7 +231,7 @@ export class DrinkVisualizer {
         color: '#FFFEF7',
         opacity: 0.95,
         height: whippedHeight,
-        order: order++,
+        order: order,
         animated: true,
         animationType: 'fill',
       });
