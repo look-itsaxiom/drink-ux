@@ -6,18 +6,21 @@ import React, {
   useCallback,
   ReactNode,
 } from 'react';
-import { Theme, defaultTheme } from './theme';
+import { Theme, defaultTheme, themePresets } from './theme';
 import { applyTheme, mapApiThemeToFullTheme } from './applyTheme';
-import { fetchBusinessTheme, BusinessTheme } from '../services/themeService';
+import { fetchBusinessTheme } from '../services/themeService';
 
-/**
- * Theme context type with extended functionality
- */
+const THEME_STORAGE_KEY = 'drink-ux-theme';
+
 interface ThemeContextType {
   /** Current theme object */
   theme: Theme;
   /** Function to manually load a theme */
   loadTheme: (theme: Theme) => void;
+  /** Switch to a preset theme by name */
+  setThemeByName: (name: string) => void;
+  /** Available theme presets */
+  themePresets: Theme[];
   /** Whether theme is currently being loaded */
   isLoading: boolean;
   /** Error message if theme loading failed */
@@ -70,12 +73,28 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   /**
-   * Function to manually load a theme
+   * Function to manually load a theme (with persistence and data-theme)
    */
   const loadTheme = useCallback((theme: Theme) => {
     setCurrentTheme(theme);
     applyTheme(theme);
+    document.documentElement.setAttribute('data-theme', theme.name);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme.name);
+    } catch {
+      // localStorage may be unavailable
+    }
   }, []);
+
+  /**
+   * Switch to a preset theme by name
+   */
+  const setThemeByName = useCallback((name: string) => {
+    const found = themePresets.find((t) => t.name === name);
+    if (found) {
+      loadTheme(found);
+    }
+  }, [loadTheme]);
 
   /**
    * Fetch and apply theme from API
@@ -127,9 +146,21 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     fetchAndApplyTheme();
   }, [fetchAndApplyTheme]);
 
-  // Apply default theme immediately on mount (before API response)
+  // Apply saved preset or default theme immediately on mount (before API response)
   useEffect(() => {
-    applyTheme(defaultTheme);
+    let initial = defaultTheme;
+    try {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      if (saved) {
+        const found = themePresets.find((t) => t.name === saved);
+        if (found) initial = found;
+      }
+    } catch {
+      // localStorage may be unavailable
+    }
+    setCurrentTheme(initial);
+    applyTheme(initial);
+    document.documentElement.setAttribute('data-theme', initial.name);
   }, []);
 
   return (
@@ -137,6 +168,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       value={{
         theme: currentTheme,
         loadTheme,
+        setThemeByName,
+        themePresets,
         isLoading,
         error,
         logoUrl,

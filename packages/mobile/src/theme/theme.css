@@ -1,39 +1,51 @@
 /* =============================================================================
-   THEME CSS VARIABLES - Warm coffee-shop palette
+   THEME CSS VARIABLES - Espresso default (overridden by ThemeProvider)
    ============================================================================= */
 
 :root {
-  /* Core Colors - warm, inviting tones */
-  --theme-primary: #8B5E3C;
-  --theme-primaryDark: #5D3A1A;
-  --theme-secondary: #C17F4A;
-  --theme-background: #FAF7F4;
-  --theme-surface: #ffffff;
+  /* Core Colors (espresso default — JS ThemeProvider overrides at runtime) */
+  --theme-primary: #6B4226;
+  --theme-primaryDark: #4a2e1a;
+  --theme-secondary: #D4A574;
+  --theme-background: #FDF8F5;
+  --theme-surface: #FFFFFF;
   --theme-text: #2C1810;
-  --theme-textSecondary: #7A6B5D;
-  --theme-accent: #8B5E3C;
-  --theme-border: #E8DDD4;
-  --theme-shadow: rgba(44, 24, 16, 0.08);
-  --theme-success: #5B8C5A;
-  --theme-warning: #D4903C;
-  --theme-error: #C0392B;
-
-  /* RGB values for alpha */
-  --theme-primary-rgb: 139, 94, 60;
-  --theme-secondary-rgb: 193, 127, 74;
+  --theme-textSecondary: #8B7E74;
+  --theme-accent: #E67E22;
+  --theme-border: rgba(107, 66, 38, 0.12);
+  --theme-shadow: rgba(107, 66, 38, 0.15);
+  --theme-success: #2D9B6F;
+  --theme-warning: #F59E0B;
+  --theme-error: #E53E3E;
 
   /* Gradients */
-  --theme-gradient-primary: linear-gradient(135deg, #8B5E3C 0%, #5D3A1A 100%);
-  --theme-gradient-secondary: linear-gradient(135deg, #C17F4A 0%, #A0623A 100%);
-  --theme-gradient-warm: linear-gradient(135deg, #FAF7F4 0%, #F0E8DF 100%);
+  --theme-gradient-primary: linear-gradient(135deg, #6B4226, #a0622f);
+  --theme-gradient-secondary: linear-gradient(135deg, #D4A574, #e8c18a);
 
   /* Derived */
-  --theme-primary-light: rgba(139, 94, 60, 0.08);
-  --theme-primary-border: rgba(139, 94, 60, 0.2);
-  --theme-primary-shadow: rgba(139, 94, 60, 0.3);
-  --theme-primary-shadow-hover: rgba(139, 94, 60, 0.45);
-  --theme-secondary-shadow: rgba(193, 127, 74, 0.25);
-  --theme-secondary-shadow-hover: rgba(193, 127, 74, 0.4);
+  --theme-primary-light: rgba(107, 66, 38, 0.1);
+  --theme-primary-border: rgba(107, 66, 38, 0.3);
+  --theme-primary-shadow: rgba(107, 66, 38, 0.4);
+  --theme-primary-shadow-hover: rgba(107, 66, 38, 0.6);
+  --theme-secondary-shadow: rgba(212, 165, 116, 0.3);
+  --theme-secondary-shadow-hover: rgba(212, 165, 116, 0.4);
+}
+
+/* =============================================================================
+   GLOBAL TYPOGRAPHY — Outfit font
+   ============================================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+body,
+ion-content,
+ion-item,
+ion-label,
+ion-button,
+ion-title {
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
 }
 
 /* =============================================================================
@@ -290,3 +302,356 @@
 .theme-text-primary { color: var(--theme-primary); }
 .theme-text { color: var(--theme-text); }
 .theme-text-secondary { color: var(--theme-textSecondary); }
+
+/* =============================================================================
+   CATEGORY PILLS (horizontal scroll strip)
+   ============================================================================= */
+
+.category-strip {
+  padding: 16px 0 12px;
+  background: var(--theme-surface);
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.category-scroll {
+  display: flex;
+  gap: 8px;
+  padding: 0 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.category-scroll::-webkit-scrollbar { display: none; }
+
+.cat-pill {
+  flex-shrink: 0;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-family: 'Outfit', sans-serif;
+  border: 1.5px solid transparent;
+  background: none;
+}
+
+.cat-pill.active {
+  background: var(--theme-primary);
+  color: white;
+  border-color: var(--theme-primary);
+}
+
+.cat-pill:not(.active) {
+  background: transparent;
+  color: var(--theme-textSecondary);
+  border-color: var(--theme-border);
+}
+
+.cat-pill:not(.active):hover {
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+}
+
+/* =============================================================================
+   DRINK / PRESET CARDS
+   ============================================================================= */
+
+.drink-card {
+  flex-shrink: 0;
+  border-radius: 20px;
+  background: var(--theme-surface);
+  box-shadow: 0 2px 12px var(--theme-shadow);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--theme-border);
+}
+
+.drink-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--theme-shadow);
+}
+
+.drink-card-visual {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.drink-card-info {
+  padding: 12px 14px;
+}
+
+.drink-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--theme-text);
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+
+.drink-card-detail {
+  font-size: 12px;
+  color: var(--theme-textSecondary);
+  margin-top: 4px;
+}
+
+.drink-card-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--theme-primary);
+  margin-top: 6px;
+}
+
+.drink-card-add-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--theme-primary);
+  border: none;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.drink-card-add-btn:hover {
+  transform: scale(1.1);
+}
+
+/* =============================================================================
+   SEARCH BAR
+   ============================================================================= */
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 10px 14px;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+.search-bar svg {
+  fill: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.search-bar-placeholder {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Surface variant (for use on light backgrounds) */
+.search-bar-surface {
+  background: var(--theme-background);
+  border: 1px solid var(--theme-border);
+  backdrop-filter: none;
+}
+
+.search-bar-surface svg {
+  fill: var(--theme-textSecondary);
+}
+
+.search-bar-surface .search-bar-placeholder {
+  color: var(--theme-textSecondary);
+}
+
+/* =============================================================================
+   MOBILE BOTTOM NAV
+   ============================================================================= */
+
+.mobile-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--theme-surface);
+  border-top: 1px solid var(--theme-border);
+  flex-shrink: 0;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 16px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: color 0.2s;
+}
+
+.mobile-nav-item svg {
+  width: 22px;
+  height: 22px;
+  transition: fill 0.2s;
+}
+
+.mobile-nav-item span {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+}
+
+.mobile-nav-item.active svg {
+  fill: var(--theme-primary);
+}
+
+.mobile-nav-item.active span {
+  color: var(--theme-primary);
+}
+
+.mobile-nav-item:not(.active) svg {
+  fill: var(--theme-textSecondary);
+}
+
+.mobile-nav-item:not(.active) span {
+  color: var(--theme-textSecondary);
+}
+
+/* =============================================================================
+   THEME SWITCHER
+   ============================================================================= */
+
+.theme-switcher {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.theme-switcher-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--theme-textSecondary);
+}
+
+.theme-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.theme-swatch:hover {
+  transform: scale(1.1);
+}
+
+.theme-swatch.active {
+  border-color: var(--theme-text);
+  outline: 2px solid var(--theme-surface);
+  outline-offset: -4px;
+}
+
+/* =============================================================================
+   SECTION HEADERS (prototype pattern)
+   ============================================================================= */
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 20px 14px;
+}
+
+.section-label {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--theme-text);
+  letter-spacing: -0.3px;
+}
+
+.section-sublabel {
+  font-size: 13px;
+  color: var(--theme-textSecondary);
+  margin-top: 2px;
+}
+
+.see-all {
+  font-size: 13px;
+  color: var(--theme-primary);
+  font-weight: 600;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* =============================================================================
+   ICON BUTTON (header actions)
+   ============================================================================= */
+
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  backdrop-filter: blur(4px);
+}
+
+.icon-btn svg {
+  fill: white;
+}
+
+.icon-btn-surface {
+  background: var(--theme-primary-light);
+  border-color: var(--theme-border);
+}
+
+.icon-btn-surface svg {
+  fill: var(--theme-primary);
+}
+
+/* =============================================================================
+   CART BADGE
+   ============================================================================= */
+
+.cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--theme-secondary);
+  color: var(--theme-primaryDark);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--theme-primary);
+}
+
+/* =============================================================================
+   HORIZONTAL SCROLL CONTAINERS
+   ============================================================================= */
+
+.h-scroll {
+  display: flex;
+  gap: 14px;
+  padding: 0 20px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.h-scroll::-webkit-scrollbar { display: none; }

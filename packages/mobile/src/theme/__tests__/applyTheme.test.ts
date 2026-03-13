@@ -100,6 +100,7 @@ describe('applyTheme utility', () => {
     it('handles partial theme with missing properties', () => {
       const partialTheme: Theme = {
         name: 'partial',
+        label: 'Partial',
         colors: {
           primary: '#ff0000',
           primaryDark: '#cc0000',

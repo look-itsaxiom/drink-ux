@@ -1,8 +1,8 @@
 // Theme Provider and Hook
 export { ThemeProvider, useTheme } from './ThemeProvider';
 
-// Theme Types and Default
-export { defaultTheme } from './theme';
+// Theme Types, Presets, and Default
+export { defaultTheme, themePresets, espressoTheme, oceanTheme, cherryTheme, forestTheme } from './theme';
 export type { Theme } from './theme';
 
 // Theme Utilities

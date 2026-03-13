@@ -208,6 +208,7 @@ export function mapApiThemeToFullTheme(
   // Build full theme by merging with defaults
   const theme: Theme = {
     name: 'business',
+    label: 'Business',
     colors: {
       ...defaultTheme.colors,
       primary: primaryColor,
