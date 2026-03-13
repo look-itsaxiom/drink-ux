@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Order Management – Drink-UX Prototype v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* ── Admin chrome uses fixed palette (not brand) ── */
+    :root {
+      --admin-bg: #0F172A;
+      --admin-surface: #1E293B;
+      --admin-surface2: #273344;
+      --admin-border: #334155;
+      --admin-text: #F1F5F9;
+      --admin-text-secondary: #94A3B8;
+      --admin-text-muted: #64748B;
+      /* Status colors — accessible, high contrast */
+      --col-pending: #F59E0B;
+      --col-pending-bg: rgba(245,158,11,0.12);
+      --col-preparing: #3B82F6;
+      --col-preparing-bg: rgba(59,130,246,0.12);
+      --col-ready: #10B981;
+      --col-ready-bg: rgba(16,185,129,0.12);
+    }
+
+    * { font-family:'Outfit',sans-serif; box-sizing:border-box; margin:0; padding:0; }
+    body { background:#0A0F1E; display:flex; flex-direction:column; align-items:center; padding:20px; gap:14px; min-height:100vh; }
+
+    /* ── Controls ── */
+    .controls { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+    .controls-label { color:rgba(255,255,255,0.45); font-size:12px; }
+    .ctrl-btn { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:5px 12px; font-size:11px; font-family:'Outfit',sans-serif; cursor:pointer; transition:all 0.15s; }
+    .ctrl-btn:hover { background:rgba(255,255,255,0.15); }
+    .ctrl-btn.active { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.35); color:white; }
+
+    /* ── Tablet frame (landscape iPad-ish) ── */
+    .tablet { width:1100px; height:740px; background:var(--admin-bg); border-radius:24px;
+      box-shadow:0 40px 100px rgba(0,0,0,0.8), 0 0 0 10px #1a1a2e, 0 0 0 12px #333;
+      overflow:hidden; display:flex; flex-direction:column; }
+
+    /* ── Top nav bar ── */
+    .topbar { height:56px; background:var(--admin-surface); border-bottom:1px solid var(--admin-border);
+      display:flex; align-items:center; padding:0 20px; gap:16px; flex-shrink:0; }
+    .topbar-brand { display:flex; align-items:center; gap:10px; }
+    .topbar-logo { width:32px; height:32px; background:linear-gradient(135deg,#3B82F6,#6366F1); border-radius:8px; display:flex; align-items:center; justify-content:center; }
+    .topbar-name { font-size:15px; font-weight:700; color:var(--admin-text); }
+    .topbar-shop { font-size:13px; color:var(--admin-text-secondary); }
+    .topbar-sep { flex:1; }
+    .live-badge { display:flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); border-radius:20px; padding:5px 12px; }
+    .live-dot { width:8px; height:8px; border-radius:50%; background:#10B981; animation:livepulse 2s ease-in-out infinite; }
+    @keyframes livepulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(16,185,129,0.4)} 50%{opacity:0.8;box-shadow:0 0 0 4px rgba(16,185,129,0)} }
+    .live-text { font-size:12px; font-weight:600; color:#10B981; }
+    .topbar-time { font-size:13px; font-weight:600; color:var(--admin-text-secondary); }
+    .sound-btn { width:34px; height:34px; background:var(--admin-surface2); border-radius:8px; border:1px solid var(--admin-border); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
+    /* ── Kanban board ── */
+    .board { flex:1; display:grid; grid-template-columns: repeat(3, 1fr); gap:0; overflow:hidden; }
+    .column { display:flex; flex-direction:column; border-right:1px solid var(--admin-border); overflow:hidden; }
+    .column:last-child { border-right:none; }
+
+    .col-hdr { padding:14px 16px 12px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--admin-border); flex-shrink:0; }
+    .col-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .col-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; flex:1; }
+    .col-count { font-size:12px; font-weight:700; padding:2px 8px; border-radius:12px; }
+
+    /* Column accent colors */
+    .col-pending .col-hdr { background:rgba(245,158,11,0.06); }
+    .col-pending .col-dot { background:var(--col-pending); box-shadow:0 0 6px var(--col-pending); }
+    .col-pending .col-title { color:var(--col-pending); }
+    .col-pending .col-count { background:var(--col-pending-bg); color:var(--col-pending); }
+
+    .col-preparing .col-hdr { background:rgba(59,130,246,0.06); }
+    .col-preparing .col-dot { background:var(--col-preparing); box-shadow:0 0 6px var(--col-preparing); }
+    .col-preparing .col-title { color:var(--col-preparing); }
+    .col-preparing .col-count { background:var(--col-preparing-bg); color:var(--col-preparing); }
+
+    .col-ready .col-hdr { background:rgba(16,185,129,0.06); }
+    .col-ready .col-dot { background:var(--col-ready); box-shadow:0 0 6px var(--col-ready); }
+    .col-ready .col-title { color:var(--col-ready); }
+    .col-ready .col-count { background:var(--col-ready-bg); color:var(--col-ready); }
+
+    /* Scrollable card list */
+    .col-cards { flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; }
+    .col-cards::-webkit-scrollbar { width:4px; }
+    .col-cards::-webkit-scrollbar-track { background:transparent; }
+    .col-cards::-webkit-scrollbar-thumb { background:var(--admin-border); border-radius:2px; }
+
+    /* ── Order card ── */
+    .order-card { background:var(--admin-surface); border-radius:14px; border:1px solid var(--admin-border);
+      padding:13px; cursor:pointer; transition:all 0.18s; position:relative; overflow:hidden; }
+    .order-card:hover { border-color:var(--admin-text-muted); transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,0,0,0.3); }
+    .order-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:3px 0 0 3px; }
+    .col-pending .order-card::before { background:var(--col-pending); }
+    .col-preparing .order-card::before { background:var(--col-preparing); }
+    .col-ready .order-card::before { background:var(--col-ready); }
+
+    .card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:8px; }
+    .card-code { font-size:22px; font-weight:900; letter-spacing:2px; }
+    .col-pending .card-code { color:var(--col-pending); }
+    .col-preparing .card-code { color:var(--col-preparing); }
+    .col-ready .card-code { color:var(--col-ready); }
+    .card-meta { text-align:right; }
+    .card-name { font-size:13px; font-weight:700; color:var(--admin-text); }
+    .card-time { font-size:11px; color:var(--admin-text-muted); margin-top:2px; }
+    .card-timer { font-size:12px; font-weight:700; padding:3px 8px; border-radius:8px; margin-top:3px; display:inline-block; }
+    .timer-ok { background:rgba(16,185,129,0.15); color:#10B981; }
+    .timer-warn { background:rgba(245,158,11,0.15); color:#F59E0B; }
+    .timer-late { background:rgba(239,68,68,0.15); color:#EF4444; animation:blink 1.2s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    /* Items list */
+    .card-items { display:flex; flex-direction:column; gap:4px; margin:8px 0; }
+    .card-item { display:flex; align-items:flex-start; gap:6px; }
+    .card-item-qty { font-size:12px; font-weight:700; color:var(--admin-text-muted); min-width:16px; }
+    .card-item-info { font-size:13px; color:var(--admin-text); line-height:1.3; }
+    .card-item-mods { font-size:11px; color:var(--admin-text-secondary); display:block; }
+
+    /* Tags */
+    .card-tags { display:flex; flex-wrap:wrap; gap:4px; margin:6px 0; }
+    .tag { font-size:10px; font-weight:600; padding:2px 7px; border-radius:8px; }
+    .tag-hot { background:rgba(239,68,68,0.15); color:#EF4444; }
+    .tag-cold { background:rgba(59,130,246,0.15); color:#60A5FA; }
+    .tag-note { background:rgba(168,85,247,0.15); color:#C084FC; }
+
+    /* Action button — BIG touch target */
+    .card-action { width:100%; margin-top:10px; border:none; border-radius:11px; padding:13px;
+      font-size:14px; font-weight:700; font-family:'Outfit',sans-serif; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.15s; }
+    .card-action:active { transform:scale(0.97); }
+    .action-confirm { background:rgba(245,158,11,0.2); color:var(--col-pending); border:1px solid rgba(245,158,11,0.3); }
+    .action-confirm:hover { background:rgba(245,158,11,0.35); }
+    .action-start { background:rgba(59,130,246,0.2); color:var(--col-preparing); border:1px solid rgba(59,130,246,0.3); }
+    .action-start:hover { background:rgba(59,130,246,0.35); }
+    .action-ready { background:rgba(16,185,129,0.2); color:var(--col-ready); border:1px solid rgba(16,185,129,0.3); }
+    .action-ready:hover { background:rgba(16,185,129,0.35); }
+
+    /* Cancel row */
+    .card-cancel { display:flex; justify-content:flex-end; margin-top:5px; }
+    .cancel-link { font-size:11px; color:var(--admin-text-muted); cursor:pointer; text-decoration:underline; }
+    .cancel-link:hover { color:#EF4444; }
+
+    /* New order flash animation */
+    .order-card.new-flash { animation:newflash 1s ease-out; }
+    @keyframes newflash { 0%{background:rgba(245,158,11,0.2)} 100%{background:var(--admin-surface)} }
+
+    /* Empty col state */
+    .col-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px; opacity:0.4; }
+    .col-empty p { font-size:13px; color:var(--admin-text-secondary); }
+
+    /* ── New order toast ── */
+    .toast { position:fixed; bottom:24px; right:24px; background:#1E293B; border:1px solid rgba(245,158,11,0.4); border-radius:16px; padding:14px 18px; display:flex; align-items:center; gap:12px; box-shadow:0 8px 32px rgba(0,0,0,0.5); transform:translateY(100px); opacity:0; transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1); z-index:100; }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .toast-icon { width:36px; height:36px; background:rgba(245,158,11,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .toast-text { font-size:13px; font-weight:600; color:var(--admin-text); }
+    .toast-sub { font-size:11px; color:var(--admin-text-secondary); margin-top:1px; }
+  </style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="controls">
+  <span class="controls-label">Simulate:</span>
+  <button class="ctrl-btn" onclick="addNewOrder()">+ New Order Arrives</button>
+  <button class="ctrl-btn" onclick="advanceOrder()">→ Advance First Pending</button>
+  <button class="ctrl-btn" onclick="clearReady()">✓ Clear Ready Column</button>
+  <span class="controls-label" style="margin-left:8px">Demo:</span>
+  <button class="ctrl-btn" onclick="loadDemo('quiet')">Quiet shift</button>
+  <button class="ctrl-btn active" onclick="loadDemo('busy')">Busy shift</button>
+  <button class="ctrl-btn" onclick="loadDemo('rush')">Rush hour</button>
+</div>
+
+<!-- Tablet frame -->
+<div class="tablet">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 010 8h-1M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 2v3M10 2v3M14 2v3" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="topbar-name">Order Station</div>
+        <div class="topbar-shop">Brew & Blossom Coffee</div>
+      </div>
+    </div>
+    <div class="topbar-sep"></div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      <div class="live-text">Live</div>
+    </div>
+    <div style="width:1px;height:24px;background:var(--admin-border);margin:0 12px"></div>
+    <div class="topbar-time" id="clock">9:41 AM</div>
+    <div class="sound-btn" title="Toggle sound alerts">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z" stroke="var(--admin-text-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.54 8.46a5 5 0 010 7.07" stroke="var(--admin-text-secondary)" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+
+  <!-- Kanban board -->
+  <div class="board">
+
+    <!-- PENDING column -->
+    <div class="column col-pending">
+      <div class="col-hdr">
+        <div class="col-dot"></div>
+        <div class="col-title">Incoming</div>
+        <div class="col-count" id="count-pending">3</div>
+      </div>
+      <div class="col-cards" id="col-pending">
+        <!-- Cards injected by JS -->
+      </div>
+    </div>
+
+    <!-- PREPARING column -->
+    <div class="column col-preparing">
+      <div class="col-hdr">
+        <div class="col-dot"></div>
+        <div class="col-title">Preparing</div>
+        <div class="col-count" id="count-preparing">2</div>
+      </div>
+      <div class="col-cards" id="col-preparing">
+      </div>
+    </div>
+
+    <!-- READY column -->
+    <div class="column col-ready">
+      <div class="col-hdr">
+        <div class="col-dot"></div>
+        <div class="col-title">Ready</div>
+        <div class="col-count" id="count-ready">1</div>
+      </div>
+      <div class="col-cards" id="col-ready">
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- New order toast -->
+<div class="toast" id="toast">
+  <div class="toast-icon">
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/><path d="M3 6h18M16 10a4 4 0 01-8 0" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/></svg>
+  </div>
+  <div>
+    <div class="toast-text" id="toast-text">New order received!</div>
+    <div class="toast-sub" id="toast-sub">Code R9X2 · Sarah · 2 items</div>
+  </div>
+</div>
+
+<script>
+let orderCounter = 100;
+const NAMES = ['Alex','Jordan','Sam','Casey','Morgan','Taylor','Riley','Quinn','Avery','Blake'];
+const DRINKS = [
+  { name: 'Oat Milk Latte', mods: 'Vanilla syrup · Extra shot', temp: 'hot' },
+  { name: 'Matcha Latte', mods: 'Oat milk · Honey', temp: 'cold' },
+  { name: 'Cold Brew', mods: 'Oat milk · Light ice', temp: 'cold' },
+  { name: 'Flat White', mods: 'Whole milk · Double shot', temp: 'hot' },
+  { name: 'Chai Latte', mods: 'Oat milk · Extra chai', temp: 'hot' },
+  { name: 'Iced Americano', mods: 'Light ice', temp: 'cold' },
+  { name: 'Cappuccino', mods: 'Whole milk', temp: 'hot' },
+  { name: 'Matcha Frappé', mods: 'Oat milk · Whip · Caramel', temp: 'cold' },
+];
+
+const ORDERS = {
+  pending: [
+    { id:'P1', code:'A3F8', name:'Alex', items:[{qty:1,name:'Oat Milk Latte',mods:'Vanilla syrup · Extra shot',temp:'hot'},{qty:1,name:'Cold Brew',mods:'Oat milk · Light ice',temp:'cold'}], minutes:1, note:null },
+    { id:'P2', code:'B7K2', name:'Jordan', items:[{qty:2,name:'Matcha Latte',mods:'Oat milk · Honey',temp:'cold'}], minutes:2, note:'Light ice on one please' },
+    { id:'P3', code:'C9W1', name:'Sam', items:[{qty:1,name:'Flat White',mods:'Whole milk · Double shot',temp:'hot'}], minutes:3, note:null },
+  ],
+  preparing: [
+    { id:'PR1', code:'D4J5', name:'Casey', items:[{qty:1,name:'Cappuccino',mods:'Whole milk',temp:'hot'},{qty:1,name:'Iced Americano',mods:'Light ice',temp:'cold'}], minutes:4, note:null },
+    { id:'PR2', code:'E8N3', name:'Morgan', items:[{qty:1,name:'Chai Latte',mods:'Oat milk · Extra chai',temp:'hot'}], minutes:6, note:'Very hot please' },
+  ],
+  ready: [
+    { id:'R1', code:'F2Q7', name:'Taylor', items:[{qty:2,name:'Matcha Frappé',mods:'Oat milk · Whip · Caramel',temp:'cold'}], minutes:8, note:null },
+  ],
+};
+
+function formatMins(m) {
+  if (m < 3) return { text: m + 'm', cls: 'timer-ok' };
+  if (m < 6) return { text: m + 'm', cls: 'timer-warn' };
+  return { text: m + 'm ⚠', cls: 'timer-late' };
+}
+
+function renderCard(order, colType) {
+  const timer = formatMins(order.minutes);
+  const actionMap = {
+    pending: `<button class="card-action action-confirm" onclick="moveCard('${order.id}','pending','preparing')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Confirm & Start Preparing
+    </button>`,
+    preparing: `<button class="card-action action-ready" onclick="moveCard('${order.id}','preparing','ready')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Mark Ready for Pickup
+    </button>`,
+    ready: `<div style="text-align:center;padding:8px 0;font-size:12px;color:var(--col-ready);font-weight:700">
+      ✓ Customer notified
+    </div>`,
+  };
+
+  const itemsHtml = order.items.map(i => `
+    <div class="card-item">
+      <div class="card-item-qty">${i.qty}×</div>
+      <div class="card-item-info">
+        ${i.name}
+        <span class="card-item-mods">${i.mods}</span>
+      </div>
+    </div>`).join('');
+
+  const hasHot = order.items.some(i => i.temp === 'hot');
+  const hasCold = order.items.some(i => i.temp === 'cold');
+
+  return `
+    <div class="order-card" id="card-${order.id}" data-id="${order.id}" data-col="${colType}">
+      <div class="card-top">
+        <div class="card-code">${order.code}</div>
+        <div class="card-meta">
+          <div class="card-name">${order.name}</div>
+          <div class="card-time">${order.minutes} min ago</div>
+          <div class="card-timer ${timer.cls}">${timer.text}</div>
+        </div>
+      </div>
+      <div class="card-tags">
+        ${hasHot ? '<span class="tag tag-hot">🔥 Hot</span>' : ''}
+        ${hasCold ? '<span class="tag tag-cold">❄️ Cold</span>' : ''}
+        ${order.note ? `<span class="tag tag-note">📝 Note</span>` : ''}
+      </div>
+      <div class="card-items">${itemsHtml}</div>
+      ${order.note ? `<div style="background:rgba(168,85,247,0.1);border-radius:8px;padding:6px 8px;font-size:11px;color:#C084FC;margin:4px 0;">"${order.note}"</div>` : ''}
+      ${actionMap[colType]}
+      ${colType !== 'ready' ? `<div class="card-cancel"><span class="cancel-link" onclick="cancelOrder('${order.id}','${colType}')">Cancel order</span></div>` : ''}
+    </div>`;
+}
+
+function renderAll() {
+  ['pending','preparing','ready'].forEach(col => {
+    const el = document.getElementById('col-' + col);
+    const orders = ORDERS[col];
+    if (orders.length === 0) {
+      el.innerHTML = `<div class="col-empty"><svg width="32" height="32" fill="none" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4" stroke="var(--admin-text-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke="var(--admin-text-secondary)" stroke-width="2"/></svg><p>${col === 'ready' ? 'All picked up' : 'No orders yet'}</p></div>`;
+    } else {
+      el.innerHTML = orders.map(o => renderCard(o, col)).join('');
+    }
+    document.getElementById('count-' + col).textContent = orders.length;
+  });
+}
+
+function moveCard(id, fromCol, toCol) {
+  const idx = ORDERS[fromCol].findIndex(o => o.id === id);
+  if (idx < 0) return;
+  const order = ORDERS[fromCol].splice(idx, 1)[0];
+  ORDERS[toCol].push(order);
+  renderAll();
+  if (toCol === 'ready') {
+    showToast(`${order.code} is ready!`, `${order.name}'s order — calling them now`, '#10B981', '#10B981');
+  }
+}
+
+function cancelOrder(id, col) {
+  const idx = ORDERS[col].findIndex(o => o.id === id);
+  if (idx >= 0) { ORDERS[col].splice(idx, 1); renderAll(); }
+}
+
+let newOrderIdx = 0;
+const NEW_ORDER_CODES = ['G5R3','H8T1','J2M9','K4B6','L7W0','M1X5'];
+function addNewOrder() {
+  const code = NEW_ORDER_CODES[newOrderIdx % NEW_ORDER_CODES.length];
+  const name = NAMES[newOrderIdx % NAMES.length];
+  const d1 = DRINKS[newOrderIdx % DRINKS.length];
+  const d2 = DRINKS[(newOrderIdx + 2) % DRINKS.length];
+  const order = {
+    id: 'NEW' + (++orderCounter),
+    code, name,
+    items: [{ qty:1, name:d1.name, mods:d1.mods, temp:d1.temp }],
+    minutes: 0,
+    note: newOrderIdx % 3 === 0 ? 'Oat milk on the side' : null,
+  };
+  ORDERS.pending.unshift(order);
+  newOrderIdx++;
+  renderAll();
+  // Flash the new card
+  setTimeout(() => {
+    const card = document.getElementById('card-' + order.id);
+    if (card) card.classList.add('new-flash');
+  }, 50);
+  showToast('New order!', `Code ${code} · ${name} · 1 item`, '#F59E0B', 'var(--col-pending)');
+}
+
+function advanceOrder() {
+  if (ORDERS.pending.length > 0) moveCard(ORDERS.pending[0].id, 'pending', 'preparing');
+  else if (ORDERS.preparing.length > 0) moveCard(ORDERS.preparing[0].id, 'preparing', 'ready');
+}
+
+function clearReady() {
+  ORDERS.ready = [];
+  renderAll();
+}
+
+function showToast(title, sub, dotColor, borderColor) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = title;
+  document.getElementById('toast-sub').textContent = sub;
+  t.style.borderColor = borderColor ? borderColor.replace(')',',0.4)').replace('rgba','rgba') : 'rgba(245,158,11,0.4)';
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function loadDemo(mode) {
+  document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  if (mode === 'quiet') {
+    ORDERS.pending = [
+      { id:'QP1', code:'A1B2', name:'Alex', items:[{qty:1,name:'Espresso',mods:'Double shot',temp:'hot'}], minutes:1, note:null },
+    ];
+    ORDERS.preparing = [];
+    ORDERS.ready = [];
+  } else if (mode === 'busy') {
+    // Reset to default busy state
+    ORDERS.pending = [
+      { id:'P1', code:'A3F8', name:'Alex', items:[{qty:1,name:'Oat Milk Latte',mods:'Vanilla syrup · Extra shot',temp:'hot'},{qty:1,name:'Cold Brew',mods:'Oat milk · Light ice',temp:'cold'}], minutes:1, note:null },
+      { id:'P2', code:'B7K2', name:'Jordan', items:[{qty:2,name:'Matcha Latte',mods:'Oat milk · Honey',temp:'cold'}], minutes:2, note:'Light ice on one please' },
+      { id:'P3', code:'C9W1', name:'Sam', items:[{qty:1,name:'Flat White',mods:'Whole milk · Double shot',temp:'hot'}], minutes:3, note:null },
+    ];
+    ORDERS.preparing = [
+      { id:'PR1', code:'D4J5', name:'Casey', items:[{qty:1,name:'Cappuccino',mods:'Whole milk',temp:'hot'},{qty:1,name:'Iced Americano',mods:'Light ice',temp:'cold'}], minutes:4, note:null },
+      { id:'PR2', code:'E8N3', name:'Morgan', items:[{qty:1,name:'Chai Latte',mods:'Oat milk · Extra chai',temp:'hot'}], minutes:6, note:'Very hot please' },
+    ];
+    ORDERS.ready = [
+      { id:'R1', code:'F2Q7', name:'Taylor', items:[{qty:2,name:'Matcha Frappé',mods:'Oat milk · Whip · Caramel',temp:'cold'}], minutes:8, note:null },
+    ];
+  } else if (mode === 'rush') {
+    ORDERS.pending = [
+      { id:'RP1',code:'X1A2',name:'Riley',items:[{qty:2,name:'Iced Latte',mods:'Oat milk',temp:'cold'}],minutes:0,note:null},
+      { id:'RP2',code:'X3C4',name:'Quinn',items:[{qty:1,name:'Cappuccino',mods:'Whole milk',temp:'hot'},{qty:1,name:'Cold Brew',mods:'Black',temp:'cold'}],minutes:1,note:null},
+      { id:'RP3',code:'X5E6',name:'Avery',items:[{qty:3,name:'Matcha Latte',mods:'Oat milk · Honey',temp:'cold'}],minutes:1,note:'One extra honey'},
+      { id:'RP4',code:'X7G8',name:'Blake',items:[{qty:1,name:'Flat White',mods:'Extra hot · Double',temp:'hot'}],minutes:2,note:null},
+      { id:'RP5',code:'X9I0',name:'Jordan',items:[{qty:1,name:'Oat Milk Latte',mods:'Vanilla',temp:'hot'}],minutes:3,note:null},
+    ];
+    ORDERS.preparing = [
+      { id:'RPR1',code:'Y2B3',name:'Alex',items:[{qty:2,name:'Chai Latte',mods:'Oat milk',temp:'hot'}],minutes:5,note:'One decaf'},
+      { id:'RPR2',code:'Y4D5',name:'Sam',items:[{qty:1,name:'Matcha Frappé',mods:'Whip · Caramel',temp:'cold'}],minutes:7,note:null},
+      { id:'RPR3',code:'Y6F7',name:'Casey',items:[{qty:1,name:'Flat White',mods:'Almond milk',temp:'hot'}],minutes:8,note:null},
+    ];
+    ORDERS.ready = [
+      { id:'RR1',code:'Z1H2',name:'Morgan',items:[{qty:1,name:'Cold Brew',mods:'Oat milk',temp:'cold'}],minutes:10,note:null},
+      { id:'RR2',code:'Z3J4',name:'Taylor',items:[{qty:2,name:'Espresso',mods:'Double',temp:'hot'}],minutes:12,note:null},
+    ];
+  }
+  renderAll();
+}
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+// Initial render
+renderAll();
+</script>
+</body>
+</html>
