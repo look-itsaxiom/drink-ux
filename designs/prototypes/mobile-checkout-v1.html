@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390px, initial-scale=1.0">
+  <title>Drink-UX — Mobile Checkout v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Theme tokens ── */
+    :root, [data-theme="espresso"] {
+      --theme-primary:   #6B4226;
+      --theme-primary-d: #4A2D17;
+      --theme-primary-l: rgba(107,66,38,0.08);
+      --theme-accent:    #a0622f;
+      --theme-text:      #1C1008;
+      --theme-muted:     #6B7280;
+      --theme-border:    #E5E7EB;
+      --theme-surface:   #FFFFFF;
+      --theme-bg:        #F5F0EB;
+    }
+    [data-theme="ocean"] {
+      --theme-primary:   #1A6B8A;
+      --theme-primary-d: #0F4A62;
+      --theme-primary-l: rgba(26,107,138,0.08);
+      --theme-accent:    #2A9BC4;
+      --theme-text:      #0A2533;
+      --theme-muted:     #4B7080;
+      --theme-border:    #D1E8F0;
+      --theme-surface:   #FFFFFF;
+      --theme-bg:        #EBF5FA;
+    }
+    [data-theme="cherry"] {
+      --theme-primary:   #9B1D42;
+      --theme-primary-d: #6B1230;
+      --theme-primary-l: rgba(155,29,66,0.08);
+      --theme-accent:    #D4365F;
+      --theme-text:      #1A0009;
+      --theme-muted:     #7B4057;
+      --theme-border:    #F0D1DB;
+      --theme-surface:   #FFFFFF;
+      --theme-bg:        #FAF0F3;
+    }
+    [data-theme="forest"] {
+      --theme-primary:   #2D6A4F;
+      --theme-primary-d: #1B4332;
+      --theme-primary-l: rgba(45,106,79,0.08);
+      --theme-accent:    #52B788;
+      --theme-text:      #081C15;
+      --theme-muted:     #4B7060;
+      --theme-border:    #D0E8DC;
+      --theme-surface:   #FFFFFF;
+      --theme-bg:        #F0F7F3;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #EAECF0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      gap: 16px;
+    }
+
+    /* Theme switcher */
+    .theme-bar { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+    .theme-btn {
+      border: none; border-radius: 20px; padding: 5px 14px;
+      font-size: 11px; font-weight: 700; cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      background: white; color: #555;
+      transition: all 0.15s;
+    }
+    .theme-btn.active { background: #111827; color: white; }
+
+    /* Phone shell */
+    .phone {
+      width: 390px;
+      min-height: 844px;
+      background: var(--theme-bg);
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Status bar */
+    .status-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 28px 6px;
+      background: var(--theme-primary);
+    }
+    .status-time { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.95); }
+    .status-icons { display: flex; gap: 5px; align-items: center; font-size: 12px; color: rgba(255,255,255,0.8); }
+
+    /* Top nav */
+    .top-nav {
+      background: var(--theme-primary);
+      padding: 10px 20px 16px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .back-btn {
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: white; cursor: pointer; flex-shrink: 0;
+    }
+    .nav-title { font-size: 18px; font-weight: 800; color: white; letter-spacing: -0.4px; }
+    .nav-sub { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 1px; }
+
+    /* Scrollable content */
+    .scroll-body {
+      flex: 1; overflow-y: auto; padding: 0 0 120px;
+      display: flex; flex-direction: column;
+    }
+    .scroll-body::-webkit-scrollbar { display: none; }
+
+    /* Section header */
+    .section-head {
+      padding: 16px 20px 8px;
+      font-size: 11px; font-weight: 700;
+      color: var(--theme-muted);
+      text-transform: uppercase; letter-spacing: 0.8px;
+    }
+
+    /* Order summary card */
+    .summary-card {
+      margin: 0 16px;
+      background: var(--theme-surface);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--theme-border);
+    }
+
+    .order-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--theme-border);
+    }
+    .order-item:last-child { border-bottom: none; }
+
+    /* Tiny SVG cup */
+    .cup-thumb { width: 36px; height: 44px; flex-shrink: 0; }
+
+    .item-info { flex: 1; min-width: 0; }
+    .item-name { font-size: 14px; font-weight: 700; color: var(--theme-text); }
+    .item-mods {
+      display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;
+    }
+    .mod-tag {
+      font-size: 10px; font-weight: 500;
+      padding: 2px 7px; border-radius: 10px;
+      background: var(--theme-primary-l);
+      color: var(--theme-primary);
+    }
+    .item-qty-price {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+    }
+    .item-price { font-size: 14px; font-weight: 700; color: var(--theme-text); }
+    .item-qty {
+      font-size: 11px; color: var(--theme-muted);
+      background: var(--theme-border); border-radius: 10px;
+      padding: 1px 7px;
+    }
+
+    /* Promo code row */
+    .promo-row {
+      margin: 0 16px;
+      background: var(--theme-surface);
+      border-radius: 12px;
+      border: 1px solid var(--theme-border);
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+    }
+    .promo-icon { font-size: 16px; }
+    .promo-input {
+      flex: 1; border: none; outline: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px; font-weight: 500;
+      color: var(--theme-text); background: transparent;
+    }
+    .promo-input::placeholder { color: var(--theme-muted); }
+    .promo-apply {
+      font-size: 12px; font-weight: 700;
+      color: var(--theme-primary); cursor: pointer; padding: 4px 0;
+    }
+
+    /* Totals breakdown */
+    .totals-card {
+      margin: 0 16px;
+      background: var(--theme-surface);
+      border-radius: 16px;
+      border: 1px solid var(--theme-border);
+      padding: 14px;
+    }
+    .total-row {
+      display: flex; justify-content: space-between;
+      font-size: 13px; color: var(--theme-muted);
+      padding: 4px 0;
+    }
+    .total-row.bold { color: var(--theme-text); font-weight: 700; font-size: 15px; }
+    .total-divider { height: 1px; background: var(--theme-border); margin: 8px 0; }
+
+    /* Form fields */
+    .form-section {
+      margin: 0 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .field-label {
+      font-size: 11px; font-weight: 700;
+      color: var(--theme-muted); text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 4px;
+    }
+    .field-input {
+      width: 100%; height: 44px;
+      border: 1.5px solid var(--theme-border);
+      border-radius: 12px; padding: 0 14px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px; font-weight: 500;
+      color: var(--theme-text); background: var(--theme-surface);
+      outline: none; transition: border-color 0.2s;
+    }
+    .field-input:focus { border-color: var(--theme-primary); }
+    .field-input.filled { border-color: var(--theme-border); }
+    .field-input::placeholder { color: var(--theme-muted); font-weight: 400; }
+
+    /* Payment card */
+    .payment-card {
+      margin: 0 16px;
+      background: var(--theme-surface);
+      border-radius: 16px;
+      border: 1.5px solid var(--theme-border);
+      overflow: hidden;
+    }
+    .payment-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid var(--theme-border);
+    }
+    .payment-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 700; color: var(--theme-text);
+    }
+    .payment-badges { display: flex; gap: 5px; }
+    .pay-badge {
+      height: 20px; border-radius: 4px; padding: 0 6px;
+      background: #F3F4F6; font-size: 9px; font-weight: 700;
+      color: #374151; display: flex; align-items: center;
+      letter-spacing: 0.3px;
+    }
+
+    /* Square Web Payments mock frame */
+    .square-frame {
+      padding: 14px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .sq-field-label { font-size: 11px; font-weight: 700; color: var(--theme-muted); margin-bottom: 4px; }
+    .sq-field {
+      height: 44px; border: 1.5px solid var(--theme-border);
+      border-radius: 12px; padding: 0 14px;
+      display: flex; align-items: center;
+      background: var(--theme-surface);
+    }
+    .sq-field-text { font-size: 13px; color: var(--theme-muted); font-weight: 400; }
+    .sq-field-value { font-size: 14px; font-weight: 500; color: var(--theme-text); }
+    .sq-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .sq-powered {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 10px; color: #9CA3AF; font-weight: 500; margin-top: 2px;
+    }
+
+    /* Trust badges */
+    .trust-row {
+      display: flex; align-items: center; justify-content: center; gap: 16px;
+      padding: 10px 20px;
+    }
+    .trust-item {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 10px; color: var(--theme-muted); font-weight: 500;
+    }
+
+    /* Fixed bottom bar */
+    .bottom-bar {
+      position: sticky; bottom: 0;
+      background: var(--theme-surface);
+      border-top: 1px solid var(--theme-border);
+      padding: 14px 20px 30px;
+    }
+    .place-btn {
+      width: 100%; height: 52px;
+      background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
+      border: none; border-radius: 16px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px; font-weight: 800;
+      color: white; cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .place-btn:active { transform: scale(0.98); box-shadow: 0 3px 10px rgba(0,0,0,0.15); }
+    .btn-total { font-size: 13px; font-weight: 500; opacity: 0.8; }
+
+    /* Success state overlay */
+    .success-overlay {
+      display: none; position: absolute; inset: 0;
+      background: var(--theme-bg);
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 32px; text-align: center; gap: 0; z-index: 100;
+      border-radius: 40px;
+    }
+    .success-overlay.show { display: flex; }
+    .success-ring {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; margin-bottom: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes pop-in {
+      from { transform: scale(0.4); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .success-pickup {
+      font-size: 64px; font-weight: 800; color: var(--theme-primary);
+      letter-spacing: -2px; line-height: 1;
+      margin-bottom: 8px;
+      animation: slide-up 0.4s 0.15s both ease-out;
+    }
+    .success-label {
+      font-size: 12px; font-weight: 700; color: var(--theme-muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 24px;
+      animation: slide-up 0.4s 0.2s both ease-out;
+    }
+    .success-title {
+      font-size: 24px; font-weight: 800; color: var(--theme-text);
+      letter-spacing: -0.5px; margin-bottom: 8px;
+      animation: slide-up 0.4s 0.25s both ease-out;
+    }
+    .success-sub {
+      font-size: 14px; color: var(--theme-muted); line-height: 1.5;
+      margin-bottom: 36px;
+      animation: slide-up 0.4s 0.3s both ease-out;
+    }
+    @keyframes slide-up {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .success-btn {
+      width: 100%; height: 50px;
+      background: linear-gradient(135deg, var(--theme-primary), var(--theme-accent));
+      border: none; border-radius: 14px;
+      font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700;
+      color: white; cursor: pointer;
+      animation: slide-up 0.4s 0.35s both ease-out;
+    }
+    .success-order-num {
+      font-size: 12px; color: var(--theme-muted); margin-top: 12px;
+      animation: slide-up 0.4s 0.4s both ease-out;
+    }
+
+    /* Small cup SVG helper */
+    .cup-mini { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+
+  <div class="theme-bar">
+    <button class="theme-btn active" onclick="setTheme('espresso',this)">☕ Espresso</button>
+    <button class="theme-btn" onclick="setTheme('ocean',this)">🌊 Ocean</button>
+    <button class="theme-btn" onclick="setTheme('cherry',this)">🍒 Cherry</button>
+    <button class="theme-btn" onclick="setTheme('forest',this)">🌿 Forest</button>
+  </div>
+
+  <div class="phone" id="phone" data-theme="espresso">
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <div class="status-icons">
+        <span>●●●</span><span>WiFi</span><span>🔋</span>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="top-nav">
+      <div class="back-btn">←</div>
+      <div>
+        <div class="nav-title">Checkout</div>
+        <div class="nav-sub">Brew &amp; Co — 3 items</div>
+      </div>
+    </div>
+
+    <!-- Scrollable body -->
+    <div class="scroll-body">
+
+      <div class="section-head">Your Order</div>
+
+      <!-- Order items -->
+      <div class="summary-card">
+
+        <!-- Item 1: Iced Latte -->
+        <div class="order-item">
+          <svg class="cup-thumb" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 8 L31 8 L28 40 Q28 42 26 42 L10 42 Q8 42 8 40 Z" fill="#F3F4F6" stroke="#E5E7EB" stroke-width="1"/>
+            <!-- ice cubes -->
+            <rect x="11" y="12" width="6" height="5" rx="1.5" fill="rgba(219,234,254,0.8)" stroke="rgba(147,197,253,0.5)" stroke-width="0.5"/>
+            <rect x="19" y="14" width="6" height="5" rx="1.5" fill="rgba(219,234,254,0.8)" stroke="rgba(147,197,253,0.5)" stroke-width="0.5"/>
+            <rect x="13" y="20" width="5" height="4" rx="1.5" fill="rgba(219,234,254,0.7)" stroke="rgba(147,197,253,0.5)" stroke-width="0.5"/>
+            <!-- coffee -->
+            <path d="M8.5 26 L27.5 26 L25 40 Q25 41 23.5 41 L12.5 41 Q11 41 11 40 Z" fill="#C8A07A" opacity="0.7"/>
+            <!-- oat milk layer -->
+            <path d="M8.5 26 L27.5 26 L27 28 L9 28 Z" fill="#E8C89A" opacity="0.6"/>
+            <!-- straw -->
+            <rect x="22" y="8" width="2.5" height="24" rx="1.2" fill="#F9A825" opacity="0.9"/>
+          </svg>
+          <div class="item-info">
+            <div class="item-name">Iced Latte</div>
+            <div class="item-mods">
+              <span class="mod-tag">Large</span>
+              <span class="mod-tag">Oat Milk</span>
+              <span class="mod-tag">Vanilla +$0.75</span>
+            </div>
+          </div>
+          <div class="item-qty-price">
+            <div class="item-price">$6.75</div>
+            <div class="item-qty">×1</div>
+          </div>
+        </div>
+
+        <!-- Item 2: Cappuccino -->
+        <div class="order-item">
+          <svg class="cup-thumb" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 8 L31 8 L28 40 Q28 42 26 42 L10 42 Q8 42 8 40 Z" fill="#F9F5F1" stroke="#E5E7EB" stroke-width="1"/>
+            <!-- espresso -->
+            <path d="M8.5 30 L27.5 30 L25 40 Q25 41 23.5 41 L12.5 41 Q11 41 11 40 Z" fill="#6B3A20"/>
+            <!-- milk -->
+            <path d="M8.5 22 L27.5 22 L27.5 30 L8.5 30 Z" fill="#D4A574" opacity="0.6"/>
+            <!-- foam -->
+            <path d="M6 8 Q18 4 30 8 L30 22 Q18 18 6 22 Z" fill="#F5E6D3"/>
+            <!-- foam art dots -->
+            <circle cx="18" cy="14" r="3" fill="#C8905A" opacity="0.5"/>
+            <circle cx="18" cy="14" r="1.5" fill="#A0622F" opacity="0.4"/>
+          </svg>
+          <div class="item-info">
+            <div class="item-name">Cappuccino</div>
+            <div class="item-mods">
+              <span class="mod-tag">Medium</span>
+              <span class="mod-tag">Hot</span>
+              <span class="mod-tag">Whole Milk</span>
+            </div>
+          </div>
+          <div class="item-qty-price">
+            <div class="item-price">$4.25</div>
+            <div class="item-qty">×1</div>
+          </div>
+        </div>
+
+        <!-- Item 3: Matcha Latte ×2 -->
+        <div class="order-item">
+          <svg class="cup-thumb" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 8 L31 8 L28 40 Q28 42 26 42 L10 42 Q8 42 8 40 Z" fill="#F0F7F0" stroke="#E5E7EB" stroke-width="1"/>
+            <!-- oat milk base -->
+            <path d="M8.5 28 L27.5 28 L25 40 Q25 41 23.5 41 L12.5 41 Q11 41 11 40 Z" fill="#D4C5A9"/>
+            <!-- matcha -->
+            <path d="M8.5 16 L27.5 16 L27.5 28 L8.5 28 Z" fill="#5A8A5A" opacity="0.75"/>
+            <!-- foam -->
+            <path d="M6 8 Q18 4 30 8 L30 16 Q18 12 6 16 Z" fill="#E8F5E8"/>
+            <!-- straw -->
+            <rect x="22" y="8" width="2.5" height="24" rx="1.2" fill="#7CB87C" opacity="0.9"/>
+          </svg>
+          <div class="item-info">
+            <div class="item-name">Matcha Latte</div>
+            <div class="item-mods">
+              <span class="mod-tag">Large</span>
+              <span class="mod-tag">Oat Milk</span>
+            </div>
+          </div>
+          <div class="item-qty-price">
+            <div class="item-price">$11.50</div>
+            <div class="item-qty">×2</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Promo code -->
+      <div class="section-head">Promo Code</div>
+      <div class="promo-row">
+        <span class="promo-icon">🏷️</span>
+        <input class="promo-input" type="text" placeholder="Enter promo or gift code">
+        <span class="promo-apply">Apply</span>
+      </div>
+
+      <!-- Totals -->
+      <div class="section-head">Order Total</div>
+      <div class="totals-card">
+        <div class="total-row">
+          <span>Subtotal (3 items)</span>
+          <span>$22.50</span>
+        </div>
+        <div class="total-row">
+          <span>Tax (8.5%)</span>
+          <span>$1.91</span>
+        </div>
+        <div class="total-row">
+          <span>Service fee</span>
+          <span>$0.00</span>
+        </div>
+        <div class="total-divider"></div>
+        <div class="total-row bold">
+          <span>Total</span>
+          <span>$24.41</span>
+        </div>
+      </div>
+
+      <!-- Customer info -->
+      <div class="section-head">Your Details</div>
+      <div class="form-section">
+        <div>
+          <div class="field-label">Name (for pickup)</div>
+          <input class="field-input filled" type="text" value="Alex Chen">
+        </div>
+        <div>
+          <div class="field-label">Email (receipt)</div>
+          <input class="field-input" type="email" placeholder="you@example.com">
+        </div>
+      </div>
+
+      <!-- Payment -->
+      <div class="section-head">Payment</div>
+      <div class="payment-card">
+        <div class="payment-header">
+          <div class="payment-title">
+            <span>🔒</span>
+            <span>Secure Payment</span>
+          </div>
+          <div class="payment-badges">
+            <span class="pay-badge">VISA</span>
+            <span class="pay-badge">MC</span>
+            <span class="pay-badge">AMEX</span>
+          </div>
+        </div>
+
+        <!-- Square Web Payments SDK mock -->
+        <div class="square-frame">
+          <div>
+            <div class="sq-field-label">Card Number</div>
+            <div class="sq-field">
+              <span class="sq-field-value" style="letter-spacing:1px;">•••• •••• •••• 4242</span>
+              <span style="margin-left:auto;font-size:18px;">💳</span>
+            </div>
+          </div>
+          <div class="sq-row">
+            <div>
+              <div class="sq-field-label">Expiry</div>
+              <div class="sq-field">
+                <span class="sq-field-value">12 / 27</span>
+              </div>
+            </div>
+            <div>
+              <div class="sq-field-label">CVV</div>
+              <div class="sq-field">
+                <span class="sq-field-value" style="letter-spacing:2px;">•••</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="sq-field-label">Zip / Postal Code</div>
+            <div class="sq-field">
+              <span class="sq-field-text">Enter zip for verification</span>
+            </div>
+          </div>
+          <div class="sq-powered">
+            <span>🔐</span>
+            <span>Powered by Square · PCI-DSS Level 1 certified</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trust row -->
+      <div class="trust-row">
+        <div class="trust-item"><span>🔒</span><span>256-bit SSL</span></div>
+        <div class="trust-item"><span>✓</span><span>PCI Compliant</span></div>
+        <div class="trust-item"><span>↩</span><span>Easy refunds</span></div>
+      </div>
+
+    </div><!-- /scroll-body -->
+
+    <!-- Fixed bottom bar -->
+    <div class="bottom-bar">
+      <button class="place-btn" onclick="showSuccess()">
+        <span>Place Order</span>
+        <span class="btn-total">· $24.41</span>
+      </button>
+    </div>
+
+    <!-- Success overlay -->
+    <div class="success-overlay" id="successOverlay">
+      <div class="success-ring">✓</div>
+      <div class="success-pickup" id="pickupCode">8K3M</div>
+      <div class="success-label">Your Pickup Code</div>
+      <div class="success-title">Order Placed! 🎉</div>
+      <div class="success-sub">Your drinks are being prepared.<br>Show this code at the counter.</div>
+      <button class="success-btn" onclick="hideSuccess()">Track My Order →</button>
+      <div class="success-order-num">Order #A47 · Brew &amp; Co</div>
+    </div>
+
+  </div><!-- /phone -->
+
+  <script>
+    function setTheme(theme, btn) {
+      document.getElementById('phone').setAttribute('data-theme', theme);
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function showSuccess() {
+      document.getElementById('successOverlay').classList.add('show');
+    }
+
+    function hideSuccess() {
+      document.getElementById('successOverlay').classList.remove('show');
+    }
+  </script>
+</body>
+</html>
