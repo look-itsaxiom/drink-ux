@@ -16,3 +16,14 @@ Read `AGENTS.md` first — it contains the Paperclip API reference, status updat
 ## Your Role
 
 Check your issue assignment for specifics. If you're the **ResearchAnalyst**, your work is research and documentation — create reports, analyze competitors, gather data. If you're **JuniorEngineer-Gemini**, you're writing code on focused tasks assigned by the CTO.
+
+## gstack Skills (Structured Thinking)
+
+We have ported [gstack](https://github.com/garrytan/gstack) skills to this environment. Use them to improve plan quality and execution rigor:
+
+- `activate_skill("plan-ceo-review")`: Use BEFORE starting a large task to pressure-test the scope and product vision.
+- `activate_skill("plan-eng-review")`: Use BEFORE writing code to lock in architecture, data flows, and edge cases.
+- `activate_skill("review")`: Use BEFORE landing a PR to hunt for race conditions, security issues, and structural bugs.
+- `activate_skill("ship")`: Use to automate the sync-test-push-PR workflow.
+- `activate_skill("browse")`: Use for QA, documentation reading, or verifying deployments (leverages `mcp_chrome-devtools`).
+- `activate_skill("retro")`: Use to generate weekly engineering retrospectives.

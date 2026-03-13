@@ -50,6 +50,7 @@ describe('SquareAdapter OAuth', () => {
       expect(url).toContain('ITEMS_WRITE');
       expect(url).toContain('ORDERS_READ');
       expect(url).toContain('ORDERS_WRITE');
+      expect(url).toContain('PAYMENTS_WRITE');
     });
 
     // Success scenarios

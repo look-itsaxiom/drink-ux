@@ -296,6 +296,7 @@ model Order {
   // POS reference (set after submission)
   posOrderId    String?
   posStatus     String?     // Raw status from POS
+  posVersion    Int?        // Square order version for idempotent webhook updates
 
   // Customer info (guest checkout)
   customerName  String

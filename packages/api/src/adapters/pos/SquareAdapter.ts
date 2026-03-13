@@ -141,6 +141,7 @@ export class SquareAdapter implements POSAdapter {
       'ORDERS_READ',
       'ORDERS_WRITE',
       'PAYMENTS_READ',
+      'PAYMENTS_WRITE',
     ];
 
     const params = new URLSearchParams({

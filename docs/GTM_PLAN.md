@@ -33,6 +33,7 @@
 3. Look for shops with a visible drink menu with modifiers (sizes, milk options, syrups)
 4. Cross-reference with Google Maps search: "coffee shop near me" → filter for independents (no chain branding)
 5. Check Yelp for "independent coffee" with Square mentions in reviews
+6. **Online Communities:** Monitor specialized forums, subreddits, and Slack groups for tech-forward owners (See [docs/gtm/online-communities.md](./gtm/online-communities.md)).
 
 ### Qualification checklist
 - [ ] Independent (not Starbucks, Peet's, Dutch Bros, etc.)

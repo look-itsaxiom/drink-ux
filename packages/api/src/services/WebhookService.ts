@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { PrismaClient, AccountState } from '../../generated/prisma';
+import { PrismaClient, AccountState, OrderStatus } from '../../generated/prisma';
 
 /**
  * Square webhook event structure
@@ -43,6 +43,23 @@ export interface SquareInvoice {
   }>;
   automatic_payment_source?: string;
   next_payment_attempt_date?: string | null;
+}
+
+/**
+ * Square order payload from order.updated webhook
+ */
+export interface SquareOrderPayload {
+  id: string;
+  location_id: string;
+  state: string;
+  version?: number;
+  updated_at?: string;
+  fulfillments?: Array<{
+    uid: string;
+    type: string;
+    state: string;
+    pickup_details?: Record<string, unknown>;
+  }>;
 }
 
 /**
@@ -208,6 +225,125 @@ export class WebhookService {
     }
 
     return result;
+  }
+
+  /**
+   * Process an order webhook event (order.updated, order.created)
+   */
+  async processOrderEvent(event: SquareWebhookEvent): Promise<WebhookProcessResult> {
+    // Check for duplicate events
+    if (processedEventIds.has(event.event_id)) {
+      return {
+        success: true,
+        processed: false,
+        duplicate: true,
+        message: 'Event already processed',
+      };
+    }
+
+    if (event.type !== 'order.updated' && event.type !== 'order.created') {
+      return {
+        success: true,
+        handled: false,
+        message: `Event type '${event.type}' is not an order event`,
+      };
+    }
+
+    const orderData = (event.data.object as { order?: SquareOrderPayload })?.order;
+    if (!orderData) {
+      return {
+        success: true,
+        processed: true,
+        warning: 'Order data missing from event payload',
+      };
+    }
+
+    // Find the internal order by Square order ID
+    const order = await this.prisma.order.findFirst({
+      where: { posOrderId: orderData.id },
+    });
+
+    if (!order) {
+      return {
+        success: true,
+        processed: true,
+        warning: `No internal order found for Square order ID '${orderData.id}'`,
+      };
+    }
+
+    // Version check: ignore stale updates
+    const currentVersion = order.posVersion ?? 0;
+    if (orderData.version !== undefined && orderData.version <= currentVersion) {
+      processedEventIds.add(event.event_id);
+      return {
+        success: true,
+        processed: false,
+        message: `Stale event (version ${orderData.version} <= stored ${currentVersion})`,
+      };
+    }
+
+    // Map Square state + fulfillment state to internal status
+    const newStatus = this.mapSquareOrderStatus(orderData);
+
+    // Only update if status actually changed
+    if (newStatus !== order.status) {
+      await this.prisma.order.update({
+        where: { id: order.id },
+        data: {
+          status: newStatus,
+          posStatus: `${orderData.state}${orderData.fulfillments?.[0]?.state ? '/' + orderData.fulfillments[0].state : ''}`,
+          posVersion: orderData.version ?? currentVersion + 1,
+        },
+      });
+    } else {
+      // Still update version even if status unchanged
+      await this.prisma.order.update({
+        where: { id: order.id },
+        data: {
+          posVersion: orderData.version ?? currentVersion + 1,
+        },
+      });
+    }
+
+    processedEventIds.add(event.event_id);
+
+    return {
+      success: true,
+      processed: true,
+      message: `Order ${order.orderNumber} status updated to ${newStatus}`,
+    };
+  }
+
+  /**
+   * Map Square order state + fulfillment state to internal OrderStatus.
+   * Uses the mapping from SQUARE_ORDER_WEBHOOKS_RESEARCH.md.
+   */
+  private mapSquareOrderStatus(order: SquareOrderPayload): OrderStatus {
+    const state = order.state;
+    const fulfillmentState = order.fulfillments?.[0]?.state;
+
+    if (state === 'CANCELED') return 'CANCELLED';
+    if (state === 'COMPLETED') return 'COMPLETED';
+
+    // OPEN state — drill into fulfillment
+    if (state === 'OPEN') {
+      switch (fulfillmentState) {
+        case 'PREPARED':
+          return 'READY';
+        case 'RESERVED':
+          return 'CONFIRMED';
+        case 'COMPLETED':
+          return 'COMPLETED';
+        case 'CANCELED':
+          return 'CANCELLED';
+        case 'PROPOSED':
+        default:
+          return 'PENDING';
+      }
+    }
+
+    // Fallback
+    return 'PENDING';
   }
 
   /**
