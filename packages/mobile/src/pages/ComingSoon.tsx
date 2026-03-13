@@ -20,11 +20,13 @@ export interface ComingSoonProps {
 
 export const ComingSoon: React.FC<ComingSoonProps> = ({
   businessName,
+  logoUrl,
   isSuspended,
 }) => {
   return (
     <IonPage>
       <IonContent className="ion-padding ion-text-center">
+        {logoUrl && <img src={logoUrl} alt="Business logo" style={{ maxWidth: 120, marginBottom: 16 }} />}
         <h1>{isSuspended ? 'Temporarily Unavailable' : 'Coming Soon'}</h1>
         {businessName && <p>{businessName}</p>}
         <p>
