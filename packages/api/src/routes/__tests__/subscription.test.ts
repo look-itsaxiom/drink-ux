@@ -563,6 +563,313 @@ describe('Subscription Routes', () => {
       expect(response.status).toBe(200);
     });
   });
+
+  describe('POST /api/subscription/upgrade', () => {
+    beforeEach(async () => {
+      await prisma.business.update({
+        where: { id: testBusinessId },
+        data: {
+          accountState: 'ACTIVE',
+          subscriptionStatus: JSON.stringify({
+            status: 'active',
+            planId: 'pro-monthly',
+            subscriptionId: 'sub_test123',
+          }),
+        },
+      });
+    });
+
+    describe('Happy Path', () => {
+      it('switches from monthly to annual plan', async () => {
+        const response = await request(app)
+          .post('/api/subscription/upgrade')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ businessId: testBusinessId, planId: 'pro-annual' });
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.previousPlanId).toBe('pro-monthly');
+        expect(response.body.data.newPlanId).toBe('pro-annual');
+        expect(response.body.data.newPrice).toBe(470);
+        expect(response.body.data.newInterval).toBe('annual');
+        expect(response.body.data.upgradedAt).toBeDefined();
+      });
+
+      it('switches from annual to monthly plan', async () => {
+        await prisma.business.update({
+          where: { id: testBusinessId },
+          data: {
+            subscriptionStatus: JSON.stringify({
+              status: 'active',
+              planId: 'pro-annual',
+            }),
+          },
+        });
+
+        const response = await request(app)
+          .post('/api/subscription/upgrade')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ businessId: testBusinessId, planId: 'pro-monthly' });
+
+        expect(response.status).toBe(200);
+        expect(response.body.data.previousPlanId).toBe('pro-annual');
+        expect(response.body.data.newPlanId).toBe('pro-monthly');
+      });
+
+      it('updates subscription status in database', async () => {
+        await request(app)
+          .post('/api/subscription/upgrade')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ businessId: testBusinessId, planId: 'pro-annual' });
+
+        const business = await prisma.business.findUnique({ where: { id: testBusinessId } });
+        const status = JSON.parse(business!.subscriptionStatus!);
+        expect(status.planId).toBe('pro-annual');
+        expect(status.status).toBe('active');
+      });
+    });
+
+    describe('Failure Scenarios', () => {
+      it('returns 400 when no active subscription', async () => {
+        await prisma.business.update({
+          where: { id: testBusinessId },
+          data: { subscriptionStatus: null, accountState: 'SETUP_COMPLETE' },
+        });
+
+        const response = await request(app)
+          .post('/api/subscription/upgrade')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ businessId: testBusinessId, planId: 'pro-annual' });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('NO_ACTIVE_SUBSCRIPTION');
+      });
+
+      it('returns 400 when switching to same plan', async () => {
+        const response = await request(app)
+          .post('/api/subscription/upgrade')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ businessId: testBusinessId, planId: 'pro-monthly' });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('SAME_PLAN');
+      });
+
+      it('returns 400 for invalid plan', async () => {
+        const response = await request(app)
+          .post('/api/subscription/upgrade')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ businessId: testBusinessId, planId: 'nonexistent' });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('INVALID_PLAN');
+      });
+
+      it('returns 401 when not authenticated', async () => {
+        const response = await request(app)
+          .post('/api/subscription/upgrade')
+          .send({ businessId: testBusinessId, planId: 'pro-annual' });
+
+        expect(response.status).toBe(401);
+      });
+
+      it('returns 400 when businessId is missing', async () => {
+        const response = await request(app)
+          .post('/api/subscription/upgrade')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ planId: 'pro-annual' });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('BUSINESS_ID_REQUIRED');
+      });
+    });
+  });
+
+  describe('GET /api/subscription/billing-history', () => {
+    describe('Happy Path', () => {
+      it('returns billing history for business with state changes', async () => {
+        await prisma.accountStateHistory.create({
+          data: {
+            businessId: testBusinessId,
+            fromState: 'SETUP_COMPLETE',
+            toState: 'TRIAL',
+            reason: 'Free trial started (14 days)',
+          },
+        });
+
+        const response = await request(app)
+          .get('/api/subscription/billing-history')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .query({ businessId: testBusinessId });
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBeGreaterThan(0);
+        expect(response.body.data[0]).toHaveProperty('id');
+        expect(response.body.data[0]).toHaveProperty('date');
+        expect(response.body.data[0]).toHaveProperty('type');
+        expect(response.body.data[0]).toHaveProperty('description');
+      });
+
+      it('returns empty array for business with no state changes', async () => {
+        await prisma.accountStateHistory.deleteMany({ where: { businessId: testBusinessId } });
+
+        const response = await request(app)
+          .get('/api/subscription/billing-history')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .query({ businessId: testBusinessId });
+
+        expect(response.status).toBe(200);
+        expect(response.body.data).toEqual([]);
+      });
+    });
+
+    describe('Failure Scenarios', () => {
+      it('returns 400 when businessId is missing', async () => {
+        const response = await request(app)
+          .get('/api/subscription/billing-history')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`);
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('BUSINESS_ID_REQUIRED');
+      });
+
+      it('returns 401 when not authenticated', async () => {
+        const response = await request(app)
+          .get('/api/subscription/billing-history')
+          .query({ businessId: testBusinessId });
+
+        expect(response.status).toBe(401);
+      });
+
+      it('returns 403 when user does not own business', async () => {
+        const otherUser = await prisma.user.create({
+          data: { email: 'billing-other@example.com', hashedPassword: 'not-used' },
+        });
+        const otherBusiness = await prisma.business.create({
+          data: { name: 'Other Billing Coffee', slug: 'other-billing-coffee', ownerId: otherUser.id, accountState: 'ACTIVE' },
+        });
+
+        const response = await request(app)
+          .get('/api/subscription/billing-history')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .query({ businessId: otherBusiness.id });
+
+        expect(response.status).toBe(403);
+
+        await prisma.business.delete({ where: { id: otherBusiness.id } });
+        await prisma.user.delete({ where: { id: otherUser.id } });
+      });
+    });
+  });
+
+  describe('POST /api/subscription/update-payment', () => {
+    describe('Happy Path', () => {
+      it('updates payment method for active subscription', async () => {
+        await prisma.business.update({
+          where: { id: testBusinessId },
+          data: {
+            accountState: 'ACTIVE',
+            subscriptionStatus: JSON.stringify({
+              status: 'active',
+              planId: 'pro-monthly',
+            }),
+          },
+        });
+
+        const response = await request(app)
+          .post('/api/subscription/update-payment')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ businessId: testBusinessId, paymentToken: 'cnon:card-nonce-ok' });
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.updatedAt).toBeDefined();
+        expect(response.body.data.reactivated).toBe(false);
+      });
+
+      it('reactivates suspended subscription when payment updated', async () => {
+        await prisma.business.update({
+          where: { id: testBusinessId },
+          data: {
+            accountState: 'SUSPENDED',
+            subscriptionStatus: JSON.stringify({
+              status: 'suspended',
+              planId: 'pro-monthly',
+              suspendedAt: new Date().toISOString(),
+              reason: 'payment_failed',
+            }),
+          },
+        });
+
+        const response = await request(app)
+          .post('/api/subscription/update-payment')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ businessId: testBusinessId, paymentToken: 'cnon:card-nonce-ok' });
+
+        expect(response.status).toBe(200);
+        expect(response.body.data.reactivated).toBe(true);
+
+        const business = await prisma.business.findUnique({ where: { id: testBusinessId } });
+        expect(business!.accountState).toBe('ACTIVE');
+        const status = JSON.parse(business!.subscriptionStatus!);
+        expect(status.status).toBe('active');
+      });
+    });
+
+    describe('Failure Scenarios', () => {
+      it('returns 400 when paymentToken is missing', async () => {
+        await prisma.business.update({
+          where: { id: testBusinessId },
+          data: {
+            subscriptionStatus: JSON.stringify({ status: 'active', planId: 'pro-monthly' }),
+          },
+        });
+
+        const response = await request(app)
+          .post('/api/subscription/update-payment')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ businessId: testBusinessId });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('PAYMENT_TOKEN_REQUIRED');
+      });
+
+      it('returns 400 when no subscription exists', async () => {
+        await prisma.business.update({
+          where: { id: testBusinessId },
+          data: { subscriptionStatus: null, accountState: 'SETUP_COMPLETE' },
+        });
+
+        const response = await request(app)
+          .post('/api/subscription/update-payment')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ businessId: testBusinessId, paymentToken: 'cnon:card-nonce-ok' });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('NO_SUBSCRIPTION');
+      });
+
+      it('returns 401 when not authenticated', async () => {
+        const response = await request(app)
+          .post('/api/subscription/update-payment')
+          .send({ businessId: testBusinessId, paymentToken: 'cnon:card-nonce-ok' });
+
+        expect(response.status).toBe(401);
+      });
+
+      it('returns 400 when businessId is missing', async () => {
+        const response = await request(app)
+          .post('/api/subscription/update-payment')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ paymentToken: 'cnon:card-nonce-ok' });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('BUSINESS_ID_REQUIRED');
+      });
+    });
+  });
 });
 
 describe('Subscription Route Edge Cases', () => {
