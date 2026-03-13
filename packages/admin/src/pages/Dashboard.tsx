@@ -15,6 +15,13 @@ interface POSStatus {
   environment: string;
 }
 
+const ACT_ICONS = {
+  check: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,7 5.5,10.5 12,4"/></svg>,
+  dollar: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M7 1v12M4.5 3.5h4a2 2 0 0 1 0 4h-3a2 2 0 0 0 0 4H9"/></svg>,
+  sync: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 7A5 5 0 1 1 7 2"/><path d="M7 2l2.5-1.3M7 2l1.3 2.5"/></svg>,
+  warn: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 1L1 12h12L7 1z"/><path d="M7 5.5v3M7 10.5v.5"/></svg>
+};
+
 const Dashboard: React.FC = () => {
   const { user, business } = useAuth();
   const businessId = user?.businessId;
