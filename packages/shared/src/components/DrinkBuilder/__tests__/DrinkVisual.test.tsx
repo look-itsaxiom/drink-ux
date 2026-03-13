@@ -199,7 +199,7 @@ describe('DrinkVisual', () => {
       render(<DrinkVisual state={state} />);
 
       const svg = document.querySelector('svg');
-      expect(svg?.getAttribute('viewBox')).toContain('240'); // 200 + 40 = 240
+      expect(svg?.getAttribute('viewBox')).toContain('290'); // 200 + STEAM_HEADROOM(60) + 30 = 290
     });
 
     it('should adjust viewBox for large cup', () => {
@@ -217,7 +217,7 @@ describe('DrinkVisual', () => {
       render(<DrinkVisual state={state} />);
 
       const svg = document.querySelector('svg');
-      expect(svg?.getAttribute('viewBox')).toContain('280'); // 240 + 40 = 280
+      expect(svg?.getAttribute('viewBox')).toContain('330'); // 240 + STEAM_HEADROOM(60) + 30 = 330
     });
   });
 
@@ -241,8 +241,8 @@ describe('DrinkVisual', () => {
       const svg = document.querySelector('svg');
       expect(svg).toBeInTheDocument();
 
-      // Default cupHeight is 200, so viewBox should be 200 + 40 = 240
-      expect(svg?.getAttribute('viewBox')).toContain('240');
+      // Default cupHeight is 200, so viewBox should be 200 + STEAM_HEADROOM(60) + 30 = 290
+      expect(svg?.getAttribute('viewBox')).toContain('290');
     });
 
     it('should handle empty syrups array', () => {

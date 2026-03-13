@@ -352,6 +352,7 @@ const DRINK_PROFILES: Record<string, DrinkProfile> = {
 
 /** Look up a profile by drink name (case-insensitive, partial match) */
 function getDrinkProfile(drinkName: string): DrinkProfile | undefined {
+  if (!drinkName) return undefined;
   const lower = drinkName.toLowerCase();
   // Exact match first
   if (DRINK_PROFILES[lower]) return DRINK_PROFILES[lower];
@@ -484,6 +485,10 @@ export class DrinkVisualizer {
    * Foam and whipped cream sit on top as distinct visual layers.
    */
   static generateVisualProperties(state: DrinkBuilderState): DrinkVisualProperties {
+    if (!state.drinkType || !state.category) {
+      return { layers: [], hasTopping: false, hasFoam: false, temperature: state.isHot === false ? 'cold' : 'hot' };
+    }
+
     const layers: DrinkLayer[] = [];
 
     // ── Gather ingredients ──────────────────────────────────

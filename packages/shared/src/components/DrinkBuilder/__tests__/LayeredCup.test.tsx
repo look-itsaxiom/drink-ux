@@ -91,7 +91,8 @@ describe('LayeredCup', () => {
         />
       );
 
-      const drinkLayers = document.querySelectorAll('.drink-layer');
+      // Exclude shine overlay paths (.layer-shine) which are rendered alongside each layer
+      const drinkLayers = document.querySelectorAll('.drink-layer:not(.layer-shine)');
       expect(drinkLayers).toHaveLength(1);
     });
 
@@ -111,7 +112,7 @@ describe('LayeredCup', () => {
         />
       );
 
-      const drinkLayers = document.querySelectorAll('.drink-layer');
+      const drinkLayers = document.querySelectorAll('.drink-layer:not(.layer-shine)');
       expect(drinkLayers).toHaveLength(3);
     });
 
@@ -174,9 +175,10 @@ describe('LayeredCup', () => {
         />
       );
 
-      const drinkLayer = document.querySelector('.drink-layer');
+      const drinkLayer = document.querySelector('.drink-layer:not(.layer-shine)');
       expect(drinkLayer).toHaveAttribute('fill', '#FF0000');
-      expect(drinkLayer).toHaveAttribute('opacity', '0.8');
+      // Opacity is now a CSS custom property (--layer-opacity), not an SVG attribute
+      expect(drinkLayer).toHaveStyle({ '--layer-opacity': '0.8' });
     });
 
     it('should apply animation type class to layers', () => {
@@ -194,15 +196,15 @@ describe('LayeredCup', () => {
         />
       );
 
-      const drinkLayer = document.querySelector('.drink-layer');
+      const drinkLayer = document.querySelector('.drink-layer:not(.layer-shine)');
       expect(drinkLayer).toHaveClass('fill-layer');
     });
 
-    it('should add whipped-layer class for whipped cream', () => {
+    it('should add foam-layer class for whipped cream (animationType foam)', () => {
       const layer = createTestLayer({
         id: 'whipped',
         name: 'Whipped Cream',
-        animationType: 'fill',
+        animationType: 'foam', // DrinkVisualizer uses 'foam' animationType for whipped cream
       });
 
       render(
@@ -214,8 +216,8 @@ describe('LayeredCup', () => {
         />
       );
 
-      const drinkLayer = document.querySelector('.drink-layer');
-      expect(drinkLayer).toHaveClass('whipped-layer');
+      const drinkLayer = document.querySelector('.drink-layer:not(.layer-shine)');
+      expect(drinkLayer).toHaveClass('foam-layer');
     });
   });
 
@@ -350,7 +352,7 @@ describe('LayeredCup', () => {
         />
       );
 
-      const drinkLayers = document.querySelectorAll('.drink-layer');
+      const drinkLayers = document.querySelectorAll('.drink-layer:not(.layer-shine)');
       expect(drinkLayers).toHaveLength(2);
     });
 
@@ -366,7 +368,7 @@ describe('LayeredCup', () => {
 
       const svg = document.querySelector('svg');
       expect(svg).toBeInTheDocument();
-      expect(svg).toHaveAttribute('viewBox', '0 0 200 90');
+      expect(svg).toHaveAttribute('viewBox', '0 0 200 140'); // 50 + STEAM_HEADROOM(60) + 30
     });
 
     it('should handle layers with height 0', () => {
@@ -400,7 +402,7 @@ describe('LayeredCup', () => {
       );
 
       const svg = document.querySelector('svg');
-      expect(svg).toHaveAttribute('viewBox', '0 0 200 240'); // cupHeight + 40
+      expect(svg).toHaveAttribute('viewBox', '0 0 200 290'); // 200 + STEAM_HEADROOM(60) + 30
     });
 
     it('should adjust viewBox for small cup', () => {
@@ -414,7 +416,7 @@ describe('LayeredCup', () => {
       );
 
       const svg = document.querySelector('svg');
-      expect(svg).toHaveAttribute('viewBox', '0 0 200 200'); // 160 + 40
+      expect(svg).toHaveAttribute('viewBox', '0 0 200 250'); // 160 + STEAM_HEADROOM(60) + 30
     });
 
     it('should adjust viewBox for large cup', () => {
@@ -428,7 +430,7 @@ describe('LayeredCup', () => {
       );
 
       const svg = document.querySelector('svg');
-      expect(svg).toHaveAttribute('viewBox', '0 0 200 280'); // 240 + 40
+      expect(svg).toHaveAttribute('viewBox', '0 0 200 330'); // 240 + STEAM_HEADROOM(60) + 30
     });
   });
 
@@ -447,7 +449,7 @@ describe('LayeredCup', () => {
       );
 
       const drinkLayer = document.querySelector('.drink-layer');
-      expect(drinkLayer).toHaveStyle({ '--layer-order': '2' });
+      expect(drinkLayer).toHaveStyle({ '--layer-delay': '280ms' }); // 2 * 140ms
     });
 
     it('should set animation delay based on layer order', () => {
@@ -463,7 +465,7 @@ describe('LayeredCup', () => {
       );
 
       const drinkLayer = document.querySelector('.drink-layer');
-      expect(drinkLayer).toHaveStyle({ '--layer-delay': '360ms' }); // 3 * 120ms
+      expect(drinkLayer).toHaveStyle({ '--layer-delay': '420ms' }); // 3 * 140ms
     });
   });
 });
