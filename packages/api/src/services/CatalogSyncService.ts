@@ -348,7 +348,7 @@ export class CatalogSyncService {
     let itemsUpdated = 0;
     let itemsDeactivated = 0;
     let modifiersCreated = 0;
-    let modifiersUpdated = 0;
+    let modifiersUpdated: number;
 
     // Create new items with retry
     for (const item of diff.items.created) {

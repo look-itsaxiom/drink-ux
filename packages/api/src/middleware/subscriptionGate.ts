@@ -277,7 +277,7 @@ export function requireActiveSubscription(prisma: PrismaClient) {
           next();
           return;
 
-        case 'paused':
+        case 'paused': {
           const pausedResponse: ApiResponse<never> = {
             success: false,
             error: {
@@ -291,8 +291,9 @@ export function requireActiveSubscription(prisma: PrismaClient) {
           };
           res.status(402).json(pausedResponse);
           return;
+        }
 
-        case 'grace_period':
+        case 'grace_period': {
           // Allow read but not orders - this middleware blocks
           const graceResponse: ApiResponse<never> = {
             success: false,
@@ -307,8 +308,9 @@ export function requireActiveSubscription(prisma: PrismaClient) {
           };
           res.status(402).json(graceResponse);
           return;
+        }
 
-        case 'suspended':
+        case 'suspended': {
           const suspendedResponse: ApiResponse<never> = {
             success: false,
             error: {
@@ -322,9 +324,10 @@ export function requireActiveSubscription(prisma: PrismaClient) {
           };
           res.status(403).json(suspendedResponse);
           return;
+        }
 
         case 'churned':
-        case 'cancelled':
+        case 'cancelled': {
           const churnedResponse: ApiResponse<never> = {
             success: false,
             error: {
@@ -337,8 +340,9 @@ export function requireActiveSubscription(prisma: PrismaClient) {
           };
           res.status(403).json(churnedResponse);
           return;
+        }
 
-        default:
+        default: {
           // Unknown status - treat as no subscription
           const defaultResponse: ApiResponse<never> = {
             success: false,
@@ -352,6 +356,7 @@ export function requireActiveSubscription(prisma: PrismaClient) {
           };
           res.status(402).json(defaultResponse);
           return;
+        }
       }
     } catch (error) {
       console.error('Subscription gate error:', error);
