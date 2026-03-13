@@ -164,6 +164,7 @@ const Dashboard: React.FC = () => {
             <p style={{ fontSize: '18px', fontWeight: 500, margin: '5px 0', color: subscriptionDisplay.color }}>
               {subscriptionDisplay.text}
             </p>
+            <Link to="/subscription" style={{ fontSize: '12px', color: '#3498db' }}>Manage Subscription &rarr;</Link>
           </div>
           <div>
             <label style={{ fontSize: '12px', color: '#7f8c8d', textTransform: 'uppercase' }}>Member Since</label>

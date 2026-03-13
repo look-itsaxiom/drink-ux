@@ -31,6 +31,7 @@ interface AuthContextType {
   signup: (email: string, password: string, businessName: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  refreshBusiness: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -121,6 +122,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await fetchCurrentUser();
   };
 
+  const refreshBusiness = async (): Promise<void> => {
+    await fetchCurrentUser();
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -132,6 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         signup,
         logout,
         refreshUser,
+        refreshBusiness,
       }}
     >
       {children}
