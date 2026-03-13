@@ -456,6 +456,7 @@ export function createCatalogRouter(
       name,
       basePrice,
       temperatureConstraint,
+      available,
       visualColor,
       visualOpacity,
     } = req.body;
@@ -480,6 +481,7 @@ export function createCatalogRouter(
         name,
         basePrice,
         temperatureConstraint,
+        available,
         visualColor,
         visualOpacity,
       });
@@ -788,6 +790,7 @@ export function createCatalogRouter(
       name,
       type,
       price,
+      available,
       visualColor,
       visualLayerOrder,
       visualAnimationType,
@@ -812,6 +815,7 @@ export function createCatalogRouter(
         name,
         type: type as ModifierType,
         price,
+        available,
         visualColor,
         visualLayerOrder,
         visualAnimationType,

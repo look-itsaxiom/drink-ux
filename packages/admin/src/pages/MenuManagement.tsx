@@ -43,7 +43,8 @@ interface SquareCatalog {
 }
 
 type TabType = 'categories' | 'bases' | 'modifiers' | 'square';
-type ModalType = 'category' | 'base' | 'modifier' | null;
+type EntityType = 'category' | 'base' | 'modifier';
+type ModalType = EntityType | null;
 
 const MenuManagement: React.FC = () => {
   const { user } = useAuth();
@@ -63,7 +64,7 @@ const MenuManagement: React.FC = () => {
   // Modal state
   const [modalType, setModalType] = useState<ModalType>(null);
   const [editingItem, setEditingItem] = useState<Category | Base | Modifier | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ type: ModalType; id: string; name: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: EntityType; id: string; name: string } | null>(null);
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
   const [dropTargetCategoryId, setDropTargetCategoryId] = useState<string | null>(null);
 
@@ -93,6 +94,10 @@ const MenuManagement: React.FC = () => {
         }),
       ]);
 
+      if (!categoriesRes.ok || !basesRes.ok || !modifiersRes.ok) {
+        throw new Error('Failed to load catalog data');
+      }
+
       const categoriesData = await categoriesRes.json();
       const basesData = await basesRes.json();
       const modifiersData = await modifiersRes.json();
@@ -118,16 +123,12 @@ const MenuManagement: React.FC = () => {
 
     setSquareLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/pos/import-catalog`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(`${API_BASE_URL}/api/pos/import-catalog?businessId=${businessId}`, {
         credentials: 'include',
-        body: JSON.stringify({ businessId }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to fetch Square catalog');
+        throw new Error('Failed to fetch Square catalog');
       }
 
       const result = await response.json();
@@ -184,13 +185,13 @@ const MenuManagement: React.FC = () => {
   };
 
   // Modal handlers
-  const openAddModal = (type: ModalType) => {
+  const openAddModal = (type: EntityType) => {
     setModalType(type);
     setEditingItem(null);
     setFormData(getDefaultFormData(type));
   };
 
-  const openEditModal = (type: ModalType, item: Category | Base | Modifier) => {
+  const openEditModal = (type: EntityType, item: Category | Base | Modifier) => {
     setModalType(type);
     setEditingItem(item);
     setFormData({ ...item });
@@ -286,7 +287,7 @@ const MenuManagement: React.FC = () => {
     }
   };
 
-  const getEndpoint = (type: ModalType, id: string | null): string => {
+  const getEndpoint = (type: EntityType, id: string | null): string => {
     const base = `/api/catalog/${type === 'category' ? 'categories' : type === 'base' ? 'bases' : 'modifiers'}`;
     return id ? `${base}/${id}` : base;
   };
@@ -952,7 +953,7 @@ const MenuManagement: React.FC = () => {
           step="0.01"
           min="0"
           value={formData.basePrice as number || 0}
-          onChange={(e) => handleFormChange('basePrice', parseFloat(e.target.value))}
+          onChange={(e) => handleFormChange('basePrice', parseFloat(e.target.value) || 0)}
           required
           style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
         />
@@ -1020,7 +1021,7 @@ const MenuManagement: React.FC = () => {
           step="0.01"
           min="0"
           value={formData.price as number || 0}
-          onChange={(e) => handleFormChange('price', parseFloat(e.target.value))}
+          onChange={(e) => handleFormChange('price', parseFloat(e.target.value) || 0)}
           style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
         />
         <small style={{ color: '#7f8c8d' }}>Set to 0 for included modifiers</small>

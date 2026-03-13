@@ -137,26 +137,7 @@ posRouter.get('/oauth/status', (_req: Request, res: Response) => {
   res.json(response);
 });
 
-/**
- * POST /api/pos/import-catalog
- * Import catalog from POS system
- * Body: { businessId: string }
- */
-posRouter.post('/import-catalog', async (req: Request, res: Response) => {
-  const { businessId } = req.body;
-
-  if (!businessId || typeof businessId !== 'string') {
-    const response: ApiResponse<never> = {
-      success: false,
-      error: {
-        code: 'MISSING_BUSINESS_ID',
-        message: 'businessId is required in request body',
-      },
-    };
-    res.status(400).json(response);
-    return;
-  }
-
+const importCatalogForBusiness = async (businessId: string, res: Response) => {
   try {
     // Get business to check POS connection
     const business = await prisma.business.findUnique({
@@ -237,6 +218,52 @@ posRouter.post('/import-catalog', async (req: Request, res: Response) => {
     };
     res.status(500).json(response);
   }
+};
+
+/**
+ * GET /api/pos/import-catalog
+ * Read-only fetch of catalog from POS system
+ * Query: businessId
+ */
+posRouter.get('/import-catalog', async (req: Request, res: Response) => {
+  const { businessId } = req.query;
+
+  if (!businessId || typeof businessId !== 'string') {
+    const response: ApiResponse<never> = {
+      success: false,
+      error: {
+        code: 'MISSING_BUSINESS_ID',
+        message: 'businessId query parameter is required',
+      },
+    };
+    res.status(400).json(response);
+    return;
+  }
+
+  await importCatalogForBusiness(businessId, res);
+});
+
+/**
+ * POST /api/pos/import-catalog
+ * Import catalog from POS system
+ * Body: { businessId: string }
+ */
+posRouter.post('/import-catalog', async (req: Request, res: Response) => {
+  const { businessId } = req.body;
+
+  if (!businessId || typeof businessId !== 'string') {
+    const response: ApiResponse<never> = {
+      success: false,
+      error: {
+        code: 'MISSING_BUSINESS_ID',
+        message: 'businessId is required in request body',
+      },
+    };
+    res.status(400).json(response);
+    return;
+  }
+
+  await importCatalogForBusiness(businessId, res);
 });
 
 /**
