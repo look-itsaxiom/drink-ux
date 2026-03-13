@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
     "preview": "vite preview",
     "test": "echo \"No tests yet\" && exit 0",
     "ionic:build": "npm run build",
