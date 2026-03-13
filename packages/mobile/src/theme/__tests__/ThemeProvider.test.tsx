@@ -187,10 +187,12 @@ describe('ThemeProvider', () => {
   });
 
   it('exposes loadTheme function for manual theme loading', async () => {
+    vi.mocked(global.fetch).mockRejectedValueOnce(new Error('No API'));
+
     const TestComponent: React.FC = () => {
       const { loadTheme, theme } = useTheme();
 
-      React.useEffect(() => {
+      const handleClick = () => {
         loadTheme({
           ...defaultTheme,
           name: 'custom',
@@ -199,9 +201,14 @@ describe('ThemeProvider', () => {
             primary: '#123456',
           },
         });
-      }, [loadTheme]);
+      };
 
-      return <span data-testid="loaded-primary">{theme.colors.primary}</span>;
+      return (
+        <>
+          <button data-testid="load-btn" onClick={handleClick}>Load</button>
+          <span data-testid="loaded-primary">{theme.colors.primary}</span>
+        </>
+      );
     };
 
     render(
@@ -210,9 +217,16 @@ describe('ThemeProvider', () => {
       </ThemeProvider>
     );
 
+    // Wait for provider to fully initialize before calling loadTheme
     await waitFor(() => {
-      expect(screen.getByTestId('loaded-primary').textContent).toBe('#123456');
+      expect(screen.getByTestId('loaded-primary')).toBeInTheDocument();
     });
+
+    await act(async () => {
+      screen.getByTestId('load-btn').click();
+    });
+
+    expect(screen.getByTestId('loaded-primary').textContent).toBe('#123456');
   });
 
   it('exposes logo URL from API theme', async () => {
