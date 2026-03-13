@@ -1,0 +1,178 @@
+/**
+ * ErrorDisplay Component Styles
+ */
+
+.error-display {
+  text-align: center;
+}
+
+.error-display-icon {
+  margin-bottom: 16px;
+}
+
+.error-display-icon ion-icon {
+  font-size: 48px;
+}
+
+.error-display-title {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ion-text-color);
+}
+
+.error-display-message {
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.error-display-code {
+  margin: 0;
+  font-size: 0.75rem;
+  font-family: monospace;
+  opacity: 0.7;
+}
+
+.error-display-content {
+  margin-bottom: 16px;
+}
+
+.error-display-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.error-display-actions ion-button {
+  min-width: 150px;
+}
+
+/* Inline variant */
+.error-display-inline {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--ion-color-danger-tint);
+  border-radius: 8px;
+  text-align: left;
+}
+
+.error-display-inline .error-display-icon {
+  margin-bottom: 0;
+  margin-right: 12px;
+}
+
+.error-display-inline .error-display-icon ion-icon {
+  font-size: 24px;
+}
+
+.error-display-inline .error-display-content {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.error-display-inline .error-display-title {
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.error-display-inline .error-display-message {
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.error-display-inline .error-display-actions {
+  flex-direction: row;
+  margin-left: 12px;
+}
+
+.error-display-inline .error-display-actions ion-button {
+  min-width: auto;
+}
+
+/* Toast variant */
+.error-display-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  min-width: 300px;
+  max-width: 90%;
+  padding: 16px 20px;
+  background: var(--ion-color-danger);
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.error-display-toast .error-display-icon {
+  display: none;
+}
+
+.error-display-toast .error-display-title {
+  color: white;
+  font-size: 1rem;
+}
+
+.error-display-toast .error-display-message {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.error-display-toast .error-display-content {
+  margin-bottom: 12px;
+}
+
+.error-display-toast .error-display-actions {
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+.error-display-toast .error-display-actions ion-button {
+  --color: white;
+  --background: transparent;
+  --border-color: white;
+}
+
+/* Fullscreen variant */
+.error-display-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ion-background-color);
+  z-index: 9999;
+}
+
+.error-display-fullscreen-content {
+  max-width: 400px;
+  padding: 32px;
+}
+
+.error-display-fullscreen .error-display-icon ion-icon {
+  font-size: 64px;
+}
+
+.error-display-fullscreen .error-display-title {
+  font-size: 1.5rem;
+}
+
+.error-display-fullscreen .error-display-message {
+  font-size: 1rem;
+}
+
+/* Card variant (default) */
+.error-display-card {
+  margin: 16px;
+}
+
+.error-display-card ion-card-content {
+  padding: 24px;
+}

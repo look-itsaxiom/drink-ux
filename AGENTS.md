@@ -119,6 +119,13 @@ Examples:
 - Never merge your own PR without a peer review
 - Never commit secrets or `.env` files
 - Delete your branch after merge
+- Always work on a feature branch, never commit directly to `develop` or `main`
+
+## Branch Strategy
+
+- `main` — production, auto-deploys mobile PWA to GitHub Pages
+- `develop` — integration branch, merge features here
+- Feature branches: `{agent-name}/{issue-id}-short-description` (e.g., `frontend-engineer/SKI-10-marketing-site`)
 
 ## Role-Specific Guidance
 

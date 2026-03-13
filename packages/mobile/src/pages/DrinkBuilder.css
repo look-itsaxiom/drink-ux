@@ -1,10 +1,9 @@
 .drink-builder {
-  --background: var(--theme-surface);
+  --background: var(--theme-background, #FAF7F4);
   max-width: 100vw;
   overflow-x: hidden;
 }
 
-/* Disable scrolling on IonContent for modifications step */
 .drink-builder.modifications-step {
   overflow: hidden;
   --overflow-hidden: hidden;
@@ -32,12 +31,12 @@
 
 .visual-section {
   flex-shrink: 0;
-  padding: 16px 16px 8px 16px;
+  padding: 12px 16px 8px;
   background: var(--theme-surface);
-  border-bottom: 1px solid var(--ion-color-light);
+  border-bottom: 1px solid var(--theme-border);
   position: relative;
-  z-index: 10; /* Higher z-index to appear above the sheet */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  box-shadow: 0 2px 10px rgba(44, 24, 16, 0.06);
 }
 
 .customization-section {
@@ -46,33 +45,31 @@
   overflow-x: hidden;
   background: var(--theme-background);
   position: relative;
-  z-index: 5; /* Lower z-index to appear below the visual section */
-  margin-top: -8px; /* Slight overlap to create the "under" effect */
-  border-radius: 24px 24px 0 0;
-  /* Scroll indicator styles */
+  z-index: 5;
+  margin-top: -6px;
+  border-radius: 20px 20px 0 0;
   scrollbar-width: thin;
-  scrollbar-color: var(--ion-color-medium) transparent;
+  scrollbar-color: var(--theme-border) transparent;
 }
 
-/* Sheet handle for mobile - indicates draggable/scrollable content */
 .customization-sheet-handle {
   position: sticky;
   top: 0;
   z-index: 15;
-  padding: 8px 0 4px 0;
+  padding: 8px 0 4px;
   background: var(--theme-background);
   display: flex;
   flex-direction: column;
   align-items: center;
-  border-radius: 24px 24px 0 0;
+  border-radius: 20px 20px 0 0;
 }
 
 .sheet-handle-bar {
-  width: 40px;
+  width: 36px;
   height: 4px;
-  background: var(--ion-color-medium);
+  background: var(--theme-border);
   border-radius: 2px;
-  opacity: 0.6;
+  opacity: 0.7;
   transition: all 0.3s ease;
 }
 
@@ -82,46 +79,28 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(0, 0, 0, 0.1),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(44, 24, 16, 0.06), transparent);
 }
 
-/* Animation for sheet handle when scrolling */
 .customization-section:hover .sheet-handle-bar {
-  opacity: 0.8;
-  width: 48px;
+  opacity: 0.9;
+  width: 44px;
 }
 
-/* Custom scrollbar for webkit browsers */
-.customization-section::-webkit-scrollbar {
-  width: 6px;
-}
-
-.customization-section::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+.customization-section::-webkit-scrollbar { width: 5px; }
+.customization-section::-webkit-scrollbar-track { background: transparent; }
 .customization-section::-webkit-scrollbar-thumb {
-  background-color: var(--ion-color-medium);
+  background-color: var(--theme-border);
   border-radius: 3px;
 }
 
-.customization-section::-webkit-scrollbar-thumb:hover {
-  background-color: var(--ion-color-medium-shade);
-}
-
-/* Scroll fade indicators - adjusted for sheet design */
 .customization-section::before {
   content: "";
   position: sticky;
-  top: 60px; /* Below the sheet handle */
+  top: 56px;
   left: 0;
   right: 0;
-  height: 16px;
+  height: 12px;
   background: linear-gradient(to bottom, var(--theme-background), transparent);
   z-index: 10;
   pointer-events: none;
@@ -133,13 +112,13 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 20px;
+  height: 16px;
   background: linear-gradient(to top, var(--theme-background), transparent);
   z-index: 10;
   pointer-events: none;
 }
 
-/* Responsive modifications layout */
+/* Responsive - desktop side-by-side */
 @media (min-width: 768px) {
   .builder-container-standard {
     padding: 24px;
@@ -149,49 +128,39 @@
 
   .builder-container-modifications {
     flex-direction: row;
-    padding: 24px;
-    gap: 24px;
-    max-width: 1200px;
+    padding: 20px;
+    gap: 20px;
+    max-width: 1100px;
     margin: 0 auto;
-    height: calc(100vh - 160px); /* Account for header and footer */
+    height: calc(100vh - 140px);
   }
 
   .visual-section {
-    flex: 0 0 350px;
-    padding: 24px;
+    flex: 0 0 340px;
+    padding: 20px;
     border-bottom: none;
-    border-right: 1px solid var(--ion-color-light);
+    border-right: 1px solid var(--theme-border);
     border-radius: 16px;
-    margin-right: 0;
     background: var(--theme-surface);
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     overflow: hidden;
-    z-index: auto; /* Reset z-index for desktop */
-    box-shadow: none; /* Remove mobile shadow */
+    z-index: auto;
+    box-shadow: none;
   }
 
   .customization-section {
     flex: 1;
     border-radius: 16px;
     background: var(--theme-surface);
-    overflow-y: auto;
-    overflow-x: hidden;
-    margin-top: 0; /* Reset mobile overlap */
-    z-index: auto; /* Reset z-index for desktop */
+    margin-top: 0;
+    z-index: auto;
   }
 
-  /* Hide sheet handle on desktop */
-  .customization-sheet-handle {
-    display: none;
-  }
-
-  /* Adjust scroll indicators for horizontal layout */
+  .customization-sheet-handle { display: none; }
   .customization-section::before,
-  .customization-section::after {
-    display: none; /* Remove fade indicators on desktop as there's more visual space */
-  }
+  .customization-section::after { display: none; }
 }
 
 /* Selector Header */
@@ -199,16 +168,16 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .back-icon {
-  font-size: 28px;
+  font-size: 26px;
   cursor: pointer;
   color: var(--theme-accent);
 }
 
-/* Drink Visual */
+/* Drink Visual overrides */
 .drink-visual {
   display: flex;
   flex-direction: column;
@@ -217,8 +186,8 @@
 }
 
 .visual-cup {
-  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.15));
-  max-height: 250px;
+  filter: drop-shadow(0 3px 12px rgba(44, 24, 16, 0.12));
+  max-height: 260px;
 }
 
 .empty-cup-hint {
@@ -227,34 +196,34 @@
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
-  padding: 16px;
+  padding: 14px 20px;
   background: var(--theme-primary-light);
   border-radius: 12px;
-  border: 2px dashed var(--theme-primary-border);
-  max-width: 200px;
+  border: 1.5px dashed var(--theme-primary-border);
+  max-width: 180px;
 }
 
 .empty-cup-hint p {
   margin: 0;
   color: var(--theme-accent);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .cup-info {
   text-align: center;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .cup-info h3 {
-  font-size: 1.3rem;
-  margin: 0 0 4px 0;
+  font-size: 1.15rem;
+  margin: 0 0 4px;
   color: var(--theme-text);
   font-weight: 700;
 }
 
 .drink-name {
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: var(--theme-accent);
   font-weight: 600;
   margin: 0;
@@ -265,16 +234,18 @@ ion-footer ion-button {
   margin: 8px;
   --background: var(--theme-gradient-primary);
   font-weight: 700;
-  font-size: 1.1rem;
-  height: 56px;
-  --box-shadow: 0 4px 16px var(--theme-primary-shadow);
+  font-size: 1.05rem;
+  height: 52px;
+  --border-radius: 14px;
+  --box-shadow: 0 4px 14px var(--theme-primary-shadow);
+  letter-spacing: -0.01em;
 }
 
-/* Progress Bar Styling */
+/* Progress Bar */
 ion-progress-bar {
   --progress-background: rgba(255, 255, 255, 0.9);
   --background: rgba(255, 255, 255, 0.2);
-  height: 4px;
+  height: 3px;
   margin: 0;
   border-radius: 0;
   transition: all 0.3s ease;

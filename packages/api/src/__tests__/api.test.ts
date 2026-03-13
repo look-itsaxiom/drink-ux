@@ -6,17 +6,14 @@ describe("API Health Check", () => {
     const response = await request(app).get("/health");
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty("status", "ok");
-    expect(response.body).toHaveProperty("timestamp");
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toHaveProperty("healthy", true);
   });
 });
 
-describe("Example Routes", () => {
-  it("should return hello message", async () => {
-    const response = await request(app).get("/api/example");
-
-    expect(response.status).toBe(200);
-    expect(response.body.success).toBe(true);
-    expect(response.body.data).toBe("Hello from the API!");
+describe("API Routes", () => {
+  it("should return 404 for non-existent routes", async () => {
+    const response = await request(app).get("/api/nonexistent");
+    expect(response.status).toBe(404);
   });
 });

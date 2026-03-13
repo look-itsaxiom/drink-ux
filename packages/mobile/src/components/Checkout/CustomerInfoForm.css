@@ -1,0 +1,29 @@
+.customer-info-form {
+  padding: 16px;
+}
+
+.customer-info-form ion-item {
+  --background: var(--ion-card-background, #fff);
+  --border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.customer-info-form ion-item.ion-invalid {
+  --border-color: var(--ion-color-danger);
+}
+
+.customer-info-form .error-note {
+  display: block;
+  padding: 4px 16px 12px;
+  font-size: 0.8rem;
+  color: var(--ion-color-danger);
+}
+
+.customer-info-form .form-actions {
+  margin-top: 24px;
+}
+
+.customer-info-form .submit-button {
+  --background: var(--theme-secondary, var(--ion-color-primary));
+  font-weight: 600;
+}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useHistory } from "react-router";
 import {
   IonContent,
@@ -8,10 +8,11 @@ import {
   IonToolbar,
 } from "@ionic/react";
 import {
-  DrinkBuilderState,
   DrinkCategory,
   DrinkType,
   CupSize,
+  ComponentType,
+  ModifierComponent,
 } from "@drink-ux/shared";
 
 import AppHeader from "../components/AppHeader";
@@ -20,20 +21,94 @@ import TypeSelector from "../components/DrinkBuilder/TypeSelector";
 import ModificationPanel from "../components/DrinkBuilder/ModificationPanel";
 import DrinkVisual from "../components/DrinkBuilder/DrinkVisual";
 import ModifierSelector, {
-  milkModifiers,
-  syrupModifiers,
-  toppingModifiers,
+  milkModifiers as fallbackMilkModifiers,
+  syrupModifiers as fallbackSyrupModifiers,
+  toppingModifiers as fallbackToppingModifiers,
 } from "../components/DrinkBuilder/ModifierSelector";
+import { useCart, CartItem } from "../hooks/useCart";
+import { useCatalogContext } from "../context/CatalogContext";
+import { MappedModifier } from "../services/catalogService";
 
 import "./DrinkBuilder.css";
 
+/**
+ * Transform mapped modifier to ModifierComponent for UI
+ */
+function transformModifier(mod: MappedModifier, type: string): ModifierComponent {
+  return {
+    id: mod.squareModifierId, // Use Square modifier ID directly
+    name: mod.name,
+    type: ComponentType.MODIFIER,
+    category: type.toLowerCase(),
+    price: mod.price,
+    canTransformDrink: false,
+    visual: {
+      color: '#f0f0f0',
+      opacity: 0.6,
+      layerOrder: 2,
+    },
+    available: true,
+  };
+}
+
 type BuilderStep = "category" | "type" | "modifications";
+
+// Local state interface (not extending shared DrinkBuilderState to avoid import issues)
+interface DrinkBuilderLocalState {
+  category?: DrinkCategory;
+  categoryId?: string;
+  drinkType?: DrinkType;
+  cupSize?: CupSize;
+  isHot?: boolean;
+  milk?: ModifierComponent;
+  syrups: ModifierComponent[];
+  toppings: ModifierComponent[];
+  totalPrice: number;
+}
 
 const DrinkBuilder: React.FC = () => {
   const history = useHistory();
 
+  // Try to use cart context, handle gracefully if not available
+  let cartAvailable = false;
+  let addToCart: ((item: CartItem) => void) | null = null;
+
+  try {
+    const cart = useCart();
+    addToCart = cart.addItem;
+    cartAvailable = true;
+  } catch {
+    // Cart context not available
+  }
+
+  // Try to use catalog context for modifiers, handle gracefully if not available
+  let catalogModifiers = { milks: [] as MappedModifier[], syrups: [] as MappedModifier[], toppings: [] as MappedModifier[] };
+
+  try {
+    const catalog = useCatalogContext();
+    catalogModifiers = catalog.modifiers || { milks: [], syrups: [], toppings: [] };
+  } catch {
+    // Catalog context not available
+  }
+
+  // Transform API modifiers to ModifierComponent format, or use fallbacks
+  const milkModifiers = useMemo(() => {
+    const apiMilks = catalogModifiers.milks || [];
+    return apiMilks.length > 0 ? apiMilks.map(m => transformModifier(m, 'milk')) : fallbackMilkModifiers;
+  }, [catalogModifiers.milks]);
+
+  const syrupModifiers = useMemo(() => {
+    const apiSyrups = catalogModifiers.syrups || [];
+    return apiSyrups.length > 0 ? apiSyrups.map(m => transformModifier(m, 'syrup')) : fallbackSyrupModifiers;
+  }, [catalogModifiers.syrups]);
+
+  const toppingModifiers = useMemo(() => {
+    const apiToppings = catalogModifiers.toppings || [];
+    return apiToppings.length > 0 ? apiToppings.map(m => transformModifier(m, 'topping')) : fallbackToppingModifiers;
+  }, [catalogModifiers.toppings]);
+
   const [step, setStep] = useState<BuilderStep>("category");
-  const [drinkState, setDrinkState] = useState<DrinkBuilderState>({
+  const [drinkState, setDrinkState] = useState<DrinkBuilderLocalState>({
     syrups: [],
     toppings: [],
     totalPrice: 0,
@@ -44,10 +119,16 @@ const DrinkBuilder: React.FC = () => {
   const [showSyrupSelector, setShowSyrupSelector] = useState(false);
   const [showToppingSelector, setShowToppingSelector] = useState(false);
 
-  const handleCategorySelect = (category: DrinkCategory) => {
-    setDrinkState({ ...drinkState, category });
+  const handleCategorySelect = (category: DrinkCategory, categoryId: string) => {
+    setDrinkState({ ...drinkState, category, categoryId });
     setStep("type");
   };
+
+  // Drink types that traditionally include milk
+  const milkDrinkNames = [
+    'latte', 'cappuccino', 'flat white', 'mocha', 'macchiato',
+    'chai latte', 'matcha latte', 'hot chocolate', 'frappe',
+  ];
 
   const handleTypeSelect = (drinkType: DrinkType) => {
     const newState = { ...drinkState, drinkType };
@@ -57,23 +138,33 @@ const DrinkBuilder: React.FC = () => {
       newState.isHot = drinkType.isHot;
     }
 
+    // Auto-select Whole Milk for drinks that traditionally include milk
+    const nameLower = drinkType.name.toLowerCase();
+    const needsMilk = milkDrinkNames.some(n => nameLower.includes(n));
+    if (needsMilk && !newState.milk) {
+      const wholeMilk = milkModifiers.find(m => m.name.toLowerCase().includes('whole'));
+      if (wholeMilk) {
+        newState.milk = wholeMilk;
+      }
+    }
+
     setDrinkState(newState);
     setStep("modifications");
   };
 
-  const handleStateUpdate = (updates: Partial<DrinkBuilderState>) => {
+  const handleStateUpdate = (updates: Partial<DrinkBuilderLocalState>) => {
     setDrinkState({ ...drinkState, ...updates });
   };
 
-  const handleMilkSelect = (milk: any) => {
+  const handleMilkSelect = (milk: ModifierComponent) => {
     setDrinkState({ ...drinkState, milk });
   };
 
-  const handleSyrupSelect = (syrup: any) => {
+  const handleSyrupSelect = (syrup: ModifierComponent) => {
     setDrinkState({ ...drinkState, syrups: [...drinkState.syrups, syrup] });
   };
 
-  const handleToppingSelect = (topping: any) => {
+  const handleToppingSelect = (topping: ModifierComponent) => {
     setDrinkState({
       ...drinkState,
       toppings: [...drinkState.toppings, topping],
@@ -81,7 +172,7 @@ const DrinkBuilder: React.FC = () => {
   };
 
   const handleBackFromType = () => {
-    setDrinkState({ ...drinkState, category: undefined });
+    setDrinkState({ ...drinkState, category: undefined, categoryId: undefined });
     setStep("category");
   };
 
@@ -114,7 +205,7 @@ const DrinkBuilder: React.FC = () => {
     drinkState.syrups.forEach((s) => (total += s.price));
     drinkState.toppings.forEach((t) => (total += t.price));
 
-    return total.toFixed(2);
+    return total;
   };
 
   const getProgressValue = () => {
@@ -131,7 +222,50 @@ const DrinkBuilder: React.FC = () => {
   };
 
   const handleAddToCart = () => {
-    console.log("Adding to cart:", drinkState);
+    if (!drinkState.drinkType) return;
+
+    const totalPrice = calculateTotalPrice();
+    const modifierIds: string[] = [];
+    const modifierNames: string[] = [];
+
+    // Collect modifier info - IDs are now Square modifier IDs
+    const modifierDetails: Array<{ id: string; name: string; price: number }> = [];
+    if (drinkState.milk) {
+      modifierIds.push(drinkState.milk.id);
+      modifierNames.push(drinkState.milk.name);
+      modifierDetails.push({ id: drinkState.milk.id, name: drinkState.milk.name, price: drinkState.milk.price });
+    }
+    drinkState.syrups.forEach((s) => {
+      modifierIds.push(s.id);
+      modifierNames.push(s.name);
+      modifierDetails.push({ id: s.id, name: s.name, price: s.price });
+    });
+    drinkState.toppings.forEach((t) => {
+      modifierIds.push(t.id);
+      modifierNames.push(t.name);
+      modifierDetails.push({ id: t.id, name: t.name, price: t.price });
+    });
+
+    // Create cart item - baseId is now the Square item ID
+    const cartItem: CartItem = {
+      id: `item-${Date.now()}`,
+      baseId: drinkState.drinkType.id, // This is now squareItemId
+      baseName: drinkState.drinkType.name,
+      size: drinkState.cupSize || CupSize.MEDIUM,
+      isHot: drinkState.isHot ?? true,
+      modifierIds, // These are now squareModifierIds
+      modifierNames,
+      quantity: 1,
+      unitPrice: totalPrice,
+      totalPrice: totalPrice,
+      modifierDetails,
+    };
+
+    if (cartAvailable && addToCart) {
+      addToCart(cartItem);
+    }
+
+    console.log("Adding to cart:", cartItem);
     history.push("/cart");
   };
 
@@ -211,6 +345,7 @@ const DrinkBuilder: React.FC = () => {
             {step === "type" && drinkState.category && (
               <TypeSelector
                 category={drinkState.category}
+                categoryId={drinkState.categoryId}
                 onSelect={handleTypeSelect}
                 onBack={handleBackFromType}
               />
@@ -267,7 +402,7 @@ const DrinkBuilder: React.FC = () => {
               onClick={handleAddToCart}
               disabled={!drinkState.drinkType}
             >
-              Add to Cart - ${calculateTotalPrice()}
+              Add to Cart - ${calculateTotalPrice().toFixed(2)}
             </IonButton>
           </IonToolbar>
         </IonFooter>

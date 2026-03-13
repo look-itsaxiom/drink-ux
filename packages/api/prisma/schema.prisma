@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Prisma schema for Drink-UX
+// Source of truth for coffee shop menu management
 
 generator client {
   provider = "prisma-client-js"
@@ -7,15 +7,495 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// Example model - customize based on your needs
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum AccountState {
+  ONBOARDING       // In wizard, not complete
+  SETUP_COMPLETE   // Finished onboarding, no subscription
+  TRIAL            // In free trial period
+  ACTIVE           // Subscribed, accepting orders
+  GRACE_PERIOD     // Payment failed, limited time to fix
+  PAUSED           // Subscription paused by user
+  SUSPENDED        // Subscription canceled/expired, read-only access
+  CHURNED          // Account closed/deleted
+  EJECTED          // Disconnected, data preserved
+}
+
+enum POSProvider {
+  SQUARE
+  TOAST
+  CLOVER
+}
+
+enum TemperatureConstraint {
+  HOT_ONLY
+  ICED_ONLY
+  BOTH
+}
+
+enum ModifierType {
+  MILK
+  SYRUP
+  TOPPING
+}
+
+enum ItemType {
+  BASE
+  MODIFIER
+  HIDDEN
+  COMBO
+}
+
+enum CupSize {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum OrderStatus {
+  PENDING     // Customer submitted, awaiting POS confirmation
+  CONFIRMED   // POS accepted, payment complete
+  PREPARING   // Business marked as in-progress
+  READY       // Ready for pickup
+  COMPLETED   // Customer picked up, order closed
+  CANCELLED   // Cancelled by customer or business
+  FAILED      // POS rejected or payment failed
+}
+
+enum PaymentStatus {
+  PENDING     // Payment not yet processed
+  PROCESSING  // Payment being processed
+  COMPLETED   // Payment successful
+  FAILED      // Payment failed
+  REFUNDED    // Payment refunded
+}
+
+enum SyncStatus {
+  IDLE        // No sync in progress
+  SYNCING     // Sync is currently running
+  SUCCESS     // Last sync completed successfully
+  ERROR       // Last sync failed
+}
+
+// =============================================================================
+// USER & BUSINESS
+// =============================================================================
+
 model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  hashedPassword String
+  name          String?
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Email verification
+  emailVerificationToken    String?   @unique
+  emailVerificationExpires  DateTime?
+
+  // Password reset
+  passwordResetToken        String?   @unique
+  passwordResetExpires      DateTime?
+
+  // Relations
+  businesses    Business[]
+  sessions      Session[]
+}
+
+model Session {
   id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Business {
+  id                 String       @id @default(cuid())
+  name               String
+  slug               String       @unique
+  ownerId            String
+
+  // Contact info
+  contactEmail       String?
+  contactPhone       String?
+
+  // Account state
+  accountState       AccountState @default(ONBOARDING)
+  subscriptionStatus String?      // Square subscription ID or status
+  gracePeriodEndsAt  DateTime?    // When grace period expires (null if not in grace period)
+  trialEndsAt        DateTime?    // When free trial expires (null if not in trial)
+
+  // Theme (stored as JSON)
+  theme              Json?        // { primaryColor, secondaryColor, backgroundColor, logoUrl }
+
+  // POS Connection
+  posProvider        POSProvider?
+  posAccessToken     String?      // Encrypted OAuth token
+  posRefreshToken    String?      // Encrypted refresh token
+  posMerchantId      String?
+  posLocationId      String?
+  posLastSyncAt      DateTime?
+
+  // Catalog Sync Status
+  syncStatus         SyncStatus   @default(IDLE)
+  lastSyncedAt       DateTime?    // Last successful sync timestamp
+  lastSyncError      String?      // Error message from last failed sync
+
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  // Relations
+  owner              User         @relation(fields: [ownerId], references: [id])
+  categories         Category[]
+  bases              Base[]
+  modifiers          Modifier[]
+  presets            Preset[]
+  orders             Order[]
+  syncHistory        SyncHistory[]
+  stateHistory       AccountStateHistory[]
+  subscription       Subscription?
+  itemMappings       ItemMapping[]
+}
+
+// =============================================================================
+// CATALOG
+// =============================================================================
+
+model Category {
+  id           String   @id @default(cuid())
+  businessId   String
+  name         String
+  displayOrder Int      @default(0)
+  color        String?  // Hex color for UI
+  icon         String?  // Icon identifier
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bases        Base[]
+
+  @@unique([businessId, name])
+}
+
+model Base {
+  id                    String                @id @default(cuid())
+  businessId            String
+  categoryId            String
+  name                  String
+  basePrice             Float
+  temperatureConstraint TemperatureConstraint @default(BOTH)
+  available             Boolean               @default(true)
+
+  // Visual properties for DrinkVisualizer
+  visualColor           String?
+  visualOpacity         Float                 @default(1.0)
+
+  // POS mapping (set after sync)
+  posItemId             String?
+
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  // Relations
+  business              Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category              Category              @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  presets               Preset[]
+
+  @@unique([businessId, name])
+}
+
+model Modifier {
+  id                   String       @id @default(cuid())
+  businessId           String
+  type                 ModifierType
+  name                 String
+  price                Float        @default(0)
+  available            Boolean      @default(true)
+
+  // Visual properties for DrinkVisualizer
+  visualColor          String?
+  visualLayerOrder     Int          @default(0)
+  visualAnimationType  String?      // "foam", "drizzle", "sparkle", etc.
+
+  // POS mapping (set after sync)
+  posModifierId        String?
+
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  // Relations
+  business             Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  presetModifiers      PresetModifier[]
+
+  @@unique([businessId, type, name])
+}
+
+model Preset {
+  id          String    @id @default(cuid())
+  businessId  String
+  name        String
+  baseId      String
+  defaultSize CupSize   @default(MEDIUM)
+  defaultHot  Boolean   @default(true)
+  price       Float
+  available   Boolean   @default(true)
+  imageUrl    String?
+
+  // POS mapping (set after sync)
+  posItemId   String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  base        Base      @relation(fields: [baseId], references: [id], onDelete: Cascade)
+  modifiers   PresetModifier[]
+
+  @@unique([businessId, name])
+}
+
+// Join table for Preset <-> Modifier (many-to-many)
+model PresetModifier {
+  id         String   @id @default(cuid())
+  presetId   String
+  modifierId String
+
+  // Relations
+  preset     Preset   @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  modifier   Modifier @relation(fields: [modifierId], references: [id], onDelete: Cascade)
+
+  @@unique([presetId, modifierId])
+}
+
+// =============================================================================
+// ORDERS
+// =============================================================================
+
+model Order {
+  id            String      @id @default(cuid())
+  businessId    String
+
+  // Order identifiers
+  orderNumber   String      // Human-readable (e.g., "A42")
+  pickupCode    String      // Short code for pickup (e.g., "7X2K")
+
+  // POS reference (set after submission)
+  posOrderId    String?
+  posStatus     String?     // Raw status from POS
+
+  // Customer info (guest checkout)
+  customerName  String
+  customerEmail String?
+  customerPhone String?
+
+  // Order state
+  status        OrderStatus @default(PENDING)
+
+  // Pricing
+  subtotal      Float
+  tax           Float
+  total         Float
+
+  // Payment info
+  paymentId       String?         // Square payment ID
+  paymentStatus   PaymentStatus   @default(PENDING)
+  paymentAmount   Float?          // Amount charged (may differ from total in future)
+  paymentMethod   String?         // "card", "cash", etc.
+  paidAt          DateTime?       // When payment was completed
+
+  // Notes
+  notes         String?
+
+  // Timestamps
+  estimatedReadyAt DateTime?
+  completedAt      DateTime?
+  cancelledAt      DateTime?
+  cancelReason     String?
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  business      Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  items         OrderItem[]
+
+  @@index([businessId, status])
+  @@index([businessId, pickupCode])
+  @@unique([businessId, orderNumber])
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+
+  // Reference to base item
+  baseId      String
+
+  // Snapshot of what was ordered (denormalized for history)
+  name        String  // e.g., "Vanilla Oat Latte"
+  quantity    Int     @default(1)
+  size        String  // SMALL, MEDIUM, LARGE
+  temperature String  // HOT, ICED
+
+  // Pricing
+  unitPrice   Float
+  totalPrice  Float
+
+  // Modifiers as JSON array: [{ id, name, price }]
+  modifiers   Json    @default("[]")
+
+  notes       String?
+
+  createdAt   DateTime @default(now())
+
+  // Relations
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// SYNC HISTORY
+// =============================================================================
+
+model SyncHistory {
+  id                 String      @id @default(cuid())
+  businessId         String
+
+  // Sync details
+  status             SyncStatus
+  startedAt          DateTime    @default(now())
+  completedAt        DateTime?
+
+  // Counts
+  itemsCreated       Int         @default(0)
+  itemsUpdated       Int         @default(0)
+  itemsDeactivated   Int         @default(0)
+  modifiersCreated   Int         @default(0)
+  modifiersUpdated   Int         @default(0)
+
+  // Error info
+  errorMessage       String?
+  errorDetails       Json?       // Detailed error info including failed items
+
+  // Relations
+  business           Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// ACCOUNT STATE HISTORY
+// =============================================================================
+
+model AccountStateHistory {
+  id          String       @id @default(cuid())
+  businessId  String
+  fromState   AccountState
+  toState     AccountState
+  reason      String?      // Optional reason for the transition
+  createdAt   DateTime     @default(now())
+
+  // Relations
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, createdAt])
+}
+
+// =============================================================================
+// SUBSCRIPTIONS
+// =============================================================================
+
+enum SubscriptionStatus {
+  ACTIVE       // Subscription is active and billing
+  PAUSED       // Subscription paused by user/business
+  CANCELED     // Subscription was canceled
+  PENDING      // Subscription pending activation
+  DELINQUENT   // Payment failed, in grace period
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+model SubscriptionPlan {
+  id              String          @id @default(cuid())
+  squarePlanId    String          @unique  // Square catalog subscription plan ID
+  name            String
+  description     String?
+  price           Float           // Price in dollars
+  interval        BillingInterval @default(MONTHLY)
+  features        String[]        @default([])
+  isActive        Boolean         @default(true)
+  displayOrder    Int             @default(0)
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  subscriptions   Subscription[]
+}
+
+model Subscription {
+  id                    String              @id @default(cuid())
+  businessId            String              @unique  // One subscription per business
+  planId                String
+  squareSubscriptionId  String?             @unique  // Square subscription ID
+  squareCustomerId      String?             // Square customer ID for this subscription
+
+  // Status
+  status                SubscriptionStatus  @default(PENDING)
+
+  // Billing period
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+
+  // Lifecycle timestamps
+  startedAt             DateTime?           // When subscription became active
+  canceledAt            DateTime?           // When subscription was canceled
+  cancelReason          String?             // Reason for cancellation
+  pausedAt              DateTime?           // When subscription was paused
+  resumedAt             DateTime?           // Last time subscription was resumed
+
+  // Grace period (for failed payments)
+  gracePeriodEnd        DateTime?           // End of grace period after failed payment
+
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relations
+  business              Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  plan                  SubscriptionPlan    @relation(fields: [planId], references: [id])
+}
+
+// =============================================================================
+// ITEM MAPPING
+// =============================================================================
+
+model ItemMapping {
+  id                 String   @id @default(cuid())
+  businessId         String
+  business           Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  squareItemId       String
+  squareVariationId  String?
+  itemType           ItemType
+  category           String?
+  displayName        String?
+  displayOrder       Int      @default(0)
+  temperatureOptions String[] @default([])
+  sizeOptions        String[] @default([])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([businessId, squareItemId])
 }

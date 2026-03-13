@@ -1,0 +1,351 @@
+.order-confirmation-page {
+  --background: var(--theme-background, #FAF7F4);
+}
+
+.confirmation-container {
+  padding: 16px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.confirmation-container .loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  color: var(--theme-textSecondary);
+}
+
+.confirmation-container .loading-container p {
+  margin-top: 16px;
+  font-size: 0.9rem;
+}
+
+/* Error State */
+.confirmation-container .error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  text-align: center;
+  padding: 32px;
+}
+
+.error-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+}
+
+.confirmation-container .error-container h2 {
+  margin: 0 0 8px;
+  color: var(--theme-error);
+  font-weight: 700;
+}
+
+.confirmation-container .error-container p {
+  color: var(--theme-textSecondary);
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+/* Success Banner */
+.success-banner {
+  text-align: center;
+  padding: 24px 20px;
+  background: var(--theme-gradient-primary);
+  border-radius: 16px;
+  margin-bottom: 14px;
+  color: white;
+  animation: bannerSlideIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes bannerSlideIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.success-icon {
+  font-size: 42px;
+  margin-bottom: 8px;
+}
+
+.success-banner h1 {
+  margin: 0 0 6px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.success-banner p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Pickup Code Card */
+.pickup-card {
+  text-align: center;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px var(--theme-shadow);
+  border: 1px solid var(--theme-border);
+  --background: var(--theme-surface);
+}
+
+.pickup-label {
+  font-size: 0.8rem;
+  color: var(--theme-textSecondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+
+.pickup-code {
+  font-size: 2.8rem;
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: var(--theme-primary);
+  cursor: pointer;
+  user-select: all;
+  padding: 6px;
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.copy-button {
+  font-size: 0.82rem;
+  --color: var(--theme-primary);
+}
+
+/* Status Card */
+.status-card {
+  margin-bottom: 14px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px var(--theme-shadow);
+  border: 1px solid var(--theme-border);
+  --background: var(--theme-surface);
+}
+
+.status-card ion-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--theme-text);
+}
+
+/* Current Status */
+.current-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  background: var(--theme-primary-light);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid var(--theme-primary-border);
+}
+
+.status-icon {
+  font-size: 36px;
+  flex-shrink: 0;
+}
+
+.status-details h3 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--theme-text);
+}
+
+.estimated-time {
+  margin: 0;
+  color: var(--theme-textSecondary);
+  font-size: 0.85rem;
+}
+
+.ready-message {
+  margin: 0;
+  color: var(--theme-success);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Progress Steps */
+.order-confirmation-page .progress-steps {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  padding: 0 8px;
+  gap: 0;
+  border-bottom: none;
+  background: transparent;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+}
+
+.step-indicator {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(139, 94, 60, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  transition: all 0.3s ease;
+  z-index: 1;
+  border: 2px solid var(--theme-border);
+}
+
+.step-indicator ion-icon {
+  font-size: 18px;
+  color: var(--theme-textSecondary);
+  transition: color 0.3s ease;
+}
+
+.progress-step.active .step-indicator {
+  background: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+.progress-step.active .step-indicator ion-icon {
+  color: white;
+}
+
+.progress-step.current .step-indicator {
+  box-shadow: 0 0 0 4px rgba(139, 94, 60, 0.2);
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(139, 94, 60, 0.15); }
+  50% { box-shadow: 0 0 0 6px rgba(139, 94, 60, 0.25); }
+}
+
+.step-label {
+  font-size: 0.72rem;
+  color: var(--theme-textSecondary);
+  text-align: center;
+  font-weight: 500;
+}
+
+.progress-step.active .step-label {
+  color: var(--theme-text);
+  font-weight: 700;
+}
+
+.step-connector {
+  position: absolute;
+  top: 19px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--theme-border);
+  z-index: 0;
+}
+
+.step-connector.active {
+  background: var(--theme-primary);
+}
+
+/* Error Status */
+.error-status {
+  text-align: center;
+  padding: 14px;
+}
+
+/* Details Card */
+.details-card {
+  margin-bottom: 14px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px var(--theme-shadow);
+  border: 1px solid var(--theme-border);
+  --background: var(--theme-surface);
+}
+
+.details-card ion-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--theme-text);
+}
+
+.order-confirmation-page .item-list {
+  padding: 0;
+  margin: 0;
+}
+
+.order-item {
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-end: 0;
+}
+
+.order-item .item-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--theme-text);
+}
+
+.order-item .quantity-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  --background: var(--theme-primary);
+}
+
+.order-item .item-description {
+  font-size: 0.82rem;
+  color: var(--theme-textSecondary);
+  margin: 0;
+}
+
+.order-item .item-price {
+  font-weight: 700;
+  color: var(--theme-primary);
+}
+
+/* Total Section */
+.order-confirmation-page .total-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--theme-border);
+}
+
+.order-confirmation-page .total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-confirmation-page .total-label {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--theme-text);
+}
+
+.order-confirmation-page .total-amount {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--theme-primary);
+}
+
+/* Refresh Section */
+.refresh-section {
+  text-align: center;
+  padding: 14px 0;
+}
+
+.refresh-section ion-button {
+  --color: var(--theme-primary);
+}

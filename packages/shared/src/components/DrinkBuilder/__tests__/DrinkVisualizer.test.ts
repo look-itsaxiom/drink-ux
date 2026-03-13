@@ -1,0 +1,496 @@
+import { describe, it, expect } from 'vitest';
+import { DrinkVisualizer, DRINK_COLORS, SYRUP_COLORS, MILK_COLORS, TOPPING_PROPERTIES } from '../DrinkVisualizer';
+import { DrinkBuilderState, DrinkCategory, CupSize, ComponentType } from '../../../types';
+
+// Helper to create a minimal valid DrinkBuilderState
+const createBaseState = (overrides: Partial<DrinkBuilderState> = {}): DrinkBuilderState => ({
+  syrups: [],
+  toppings: [],
+  totalPrice: 0,
+  ...overrides,
+});
+
+describe('DrinkVisualizer', () => {
+  describe('generateVisualProperties', () => {
+    // Happy path tests
+    describe('happy path', () => {
+      it('should return empty layers for empty state', () => {
+        const state = createBaseState();
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        expect(result.layers).toHaveLength(0);
+        expect(result.hasTopping).toBe(false);
+        expect(result.hasFoam).toBe(false);
+        expect(result.temperature).toBe('hot');
+      });
+
+      it('should generate base layer when drink type is selected', () => {
+        const state = createBaseState({
+          category: DrinkCategory.COFFEE,
+          drinkType: {
+            id: 'latte',
+            name: 'Latte',
+            category: DrinkCategory.COFFEE,
+            basePrice: 4.5,
+          },
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        expect(result.layers.length).toBeGreaterThan(0);
+        const baseLayer = result.layers.find(l => l.id === 'base');
+        expect(baseLayer).toBeDefined();
+        expect(baseLayer?.name).toBe('Latte');
+      });
+
+      it('should include syrup layer when syrup is added', () => {
+        const state = createBaseState({
+          category: DrinkCategory.COFFEE,
+          drinkType: {
+            id: 'latte',
+            name: 'Latte',
+            category: DrinkCategory.COFFEE,
+            basePrice: 4.5,
+          },
+          syrups: [{
+            id: 'vanilla',
+            name: 'Vanilla Syrup',
+            type: ComponentType.MODIFIER,
+            category: 'syrup',
+            price: 0.5,
+            canTransformDrink: false,
+            visual: { color: '#F5DEB3', opacity: 0.4, layerOrder: 1 },
+            available: true,
+          }],
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        const syrupLayer = result.layers.find(l => l.id === 'syrup-0');
+        expect(syrupLayer).toBeDefined();
+        expect(syrupLayer?.name).toBe('Vanilla Syrup');
+      });
+
+      it('should include milk layer when milk is added', () => {
+        const state = createBaseState({
+          category: DrinkCategory.COFFEE,
+          drinkType: {
+            id: 'latte',
+            name: 'Latte',
+            category: DrinkCategory.COFFEE,
+            basePrice: 4.5,
+          },
+          milk: {
+            id: 'oat',
+            name: 'Oat Milk',
+            type: ComponentType.MODIFIER,
+            category: 'milk',
+            price: 0.75,
+            canTransformDrink: false,
+            visual: { color: '#F0E68C', opacity: 0.8, layerOrder: 2 },
+            available: true,
+          },
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        const milkLayer = result.layers.find(l => l.id === 'milk');
+        expect(milkLayer).toBeDefined();
+        expect(milkLayer?.name).toBe('Oat Milk');
+      });
+    });
+
+    // Success scenarios with various configurations
+    describe('success scenarios', () => {
+      it('should set temperature to cold when isHot is false', () => {
+        const state = createBaseState({
+          isHot: false,
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        expect(result.temperature).toBe('cold');
+      });
+
+      it('should add foam layer for hot drinks', () => {
+        const state = createBaseState({
+          category: DrinkCategory.COFFEE,
+          drinkType: {
+            id: 'latte',
+            name: 'Latte',
+            category: DrinkCategory.COFFEE,
+            basePrice: 4.5,
+          },
+          isHot: true,
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        expect(result.hasFoam).toBe(true);
+        const foamLayer = result.layers.find(l => l.id === 'foam');
+        expect(foamLayer).toBeDefined();
+      });
+
+      it('should add whipped cream as a layer not a topping', () => {
+        const state = createBaseState({
+          category: DrinkCategory.COFFEE,
+          drinkType: {
+            id: 'latte',
+            name: 'Latte',
+            category: DrinkCategory.COFFEE,
+            basePrice: 4.5,
+          },
+          toppings: [{
+            id: 'whip',
+            name: 'Whipped Cream',
+            type: ComponentType.MODIFIER,
+            category: 'topping',
+            price: 0.5,
+            canTransformDrink: false,
+            visual: { color: '#FFFAF0', opacity: 0.9, layerOrder: 4 },
+            available: true,
+          }],
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        const whippedLayer = result.layers.find(l => l.id === 'whipped');
+        expect(whippedLayer).toBeDefined();
+        expect(result.hasTopping).toBe(false); // Whipped cream is a layer, not a particle topping
+      });
+
+      it('should show particle toppings for cinnamon', () => {
+        const state = createBaseState({
+          category: DrinkCategory.COFFEE,
+          drinkType: {
+            id: 'latte',
+            name: 'Latte',
+            category: DrinkCategory.COFFEE,
+            basePrice: 4.5,
+          },
+          toppings: [{
+            id: 'cinnamon',
+            name: 'Cinnamon',
+            type: ComponentType.MODIFIER,
+            category: 'topping',
+            price: 0,
+            canTransformDrink: false,
+            visual: { color: '#D2691E', opacity: 0.5, layerOrder: 4 },
+            available: true,
+          }],
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        expect(result.hasTopping).toBe(true);
+        expect(result.toppingType).toBe('Cinnamon');
+      });
+
+      it('should order layers correctly (syrup at bottom, foam at top)', () => {
+        const state = createBaseState({
+          category: DrinkCategory.COFFEE,
+          drinkType: {
+            id: 'latte',
+            name: 'Latte',
+            category: DrinkCategory.COFFEE,
+            basePrice: 4.5,
+          },
+          isHot: true,
+          milk: {
+            id: 'whole',
+            name: 'Whole Milk',
+            type: ComponentType.MODIFIER,
+            category: 'milk',
+            price: 0,
+            canTransformDrink: false,
+            visual: { color: '#FFFEF7', opacity: 0.8, layerOrder: 2 },
+            available: true,
+          },
+          syrups: [{
+            id: 'caramel',
+            name: 'Caramel Syrup',
+            type: ComponentType.MODIFIER,
+            category: 'syrup',
+            price: 0.5,
+            canTransformDrink: false,
+            visual: { color: '#D2691E', opacity: 0.4, layerOrder: 1 },
+            available: true,
+          }],
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+        const sortedLayers = [...result.layers].sort((a, b) => a.order - b.order);
+
+        // Order should be: syrup (0) -> base (1) -> milk (2) -> foam (3)
+        expect(sortedLayers[0].id).toBe('syrup-0');
+        expect(sortedLayers[1].id).toBe('base');
+        expect(sortedLayers[2].id).toBe('milk');
+        expect(sortedLayers[3].id).toBe('foam');
+      });
+    });
+
+    // Edge cases
+    describe('edge cases', () => {
+      it('should handle missing drinkType gracefully', () => {
+        const state = createBaseState({
+          category: DrinkCategory.COFFEE,
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        // Should not throw and should return valid structure
+        expect(result.layers).toBeDefined();
+        expect(Array.isArray(result.layers)).toBe(true);
+      });
+
+      it('should handle empty syrups array', () => {
+        const state = createBaseState({
+          category: DrinkCategory.COFFEE,
+          drinkType: {
+            id: 'latte',
+            name: 'Latte',
+            category: DrinkCategory.COFFEE,
+            basePrice: 4.5,
+          },
+          syrups: [],
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        const syrupLayers = result.layers.filter(l => l.id.startsWith('syrup'));
+        expect(syrupLayers).toHaveLength(0);
+      });
+
+      it('should handle empty toppings array', () => {
+        const state = createBaseState({
+          category: DrinkCategory.COFFEE,
+          drinkType: {
+            id: 'latte',
+            name: 'Latte',
+            category: DrinkCategory.COFFEE,
+            basePrice: 4.5,
+          },
+          toppings: [],
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        expect(result.hasTopping).toBe(false);
+        expect(result.toppingType).toBeUndefined();
+      });
+    });
+
+    // Different drink categories
+    describe('drink categories', () => {
+      it('should use green color for green tea', () => {
+        const state = createBaseState({
+          category: DrinkCategory.TEA,
+          drinkType: {
+            id: 'green-tea',
+            name: 'Green Tea',
+            category: DrinkCategory.TEA,
+            basePrice: 3.0,
+          },
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        const baseLayer = result.layers.find(l => l.id === 'base');
+        // Green Tea uses DRINK_PROFILES color, which is more realistic than DRINK_COLORS
+        expect(baseLayer?.color).toBe('#8DB360');
+      });
+
+      it('should use dark color for espresso', () => {
+        const state = createBaseState({
+          category: DrinkCategory.COFFEE,
+          drinkType: {
+            id: 'espresso',
+            name: 'Espresso',
+            category: DrinkCategory.COFFEE,
+            basePrice: 3.0,
+          },
+        });
+
+        const result = DrinkVisualizer.generateVisualProperties(state);
+
+        const baseLayer = result.layers.find(l => l.id === 'base');
+        // Espresso uses DRINK_PROFILES color, which is more realistic than DRINK_COLORS
+        expect(baseLayer?.color).toBe('#1A0A02');
+      });
+    });
+  });
+
+  describe('getCupHeight', () => {
+    it('should return 160 for small cup', () => {
+      expect(DrinkVisualizer.getCupHeight(CupSize.SMALL)).toBe(160);
+    });
+
+    it('should return 200 for medium cup', () => {
+      expect(DrinkVisualizer.getCupHeight(CupSize.MEDIUM)).toBe(200);
+    });
+
+    it('should return 240 for large cup', () => {
+      expect(DrinkVisualizer.getCupHeight(CupSize.LARGE)).toBe(240);
+    });
+
+    it('should return 200 as default for undefined cup size', () => {
+      expect(DrinkVisualizer.getCupHeight(undefined)).toBe(200);
+    });
+  });
+
+  describe('generateDrinkName', () => {
+    it('should return empty string when no drink type', () => {
+      const state = createBaseState();
+      expect(DrinkVisualizer.generateDrinkName(state)).toBe('');
+    });
+
+    it('should include drink type name', () => {
+      const state = createBaseState({
+        drinkType: {
+          id: 'latte',
+          name: 'Latte',
+          category: DrinkCategory.COFFEE,
+          basePrice: 4.5,
+        },
+      });
+
+      const name = DrinkVisualizer.generateDrinkName(state);
+      expect(name).toContain('Latte');
+    });
+
+    it('should include cup size', () => {
+      const state = createBaseState({
+        cupSize: CupSize.LARGE,
+        drinkType: {
+          id: 'latte',
+          name: 'Latte',
+          category: DrinkCategory.COFFEE,
+          basePrice: 4.5,
+        },
+      });
+
+      const name = DrinkVisualizer.generateDrinkName(state);
+      expect(name).toContain('Large');
+    });
+
+    it('should include Iced for cold drinks', () => {
+      const state = createBaseState({
+        isHot: false,
+        drinkType: {
+          id: 'latte',
+          name: 'Latte',
+          category: DrinkCategory.COFFEE,
+          basePrice: 4.5,
+        },
+      });
+
+      const name = DrinkVisualizer.generateDrinkName(state);
+      expect(name).toContain('Iced');
+    });
+
+    it('should include syrup flavor', () => {
+      const state = createBaseState({
+        drinkType: {
+          id: 'latte',
+          name: 'Latte',
+          category: DrinkCategory.COFFEE,
+          basePrice: 4.5,
+        },
+        syrups: [{
+          id: 'vanilla',
+          name: 'Vanilla Syrup',
+          type: ComponentType.MODIFIER,
+          category: 'syrup',
+          price: 0.5,
+          canTransformDrink: false,
+          visual: { color: '#F5DEB3', opacity: 0.4, layerOrder: 1 },
+          available: true,
+        }],
+      });
+
+      const name = DrinkVisualizer.generateDrinkName(state);
+      expect(name).toContain('Vanilla');
+    });
+
+    it('should include non-standard milk type', () => {
+      const state = createBaseState({
+        drinkType: {
+          id: 'latte',
+          name: 'Latte',
+          category: DrinkCategory.COFFEE,
+          basePrice: 4.5,
+        },
+        milk: {
+          id: 'oat',
+          name: 'Oat Milk',
+          type: ComponentType.MODIFIER,
+          category: 'milk',
+          price: 0.75,
+          canTransformDrink: false,
+          visual: { color: '#F0E68C', opacity: 0.8, layerOrder: 2 },
+          available: true,
+        },
+      });
+
+      const name = DrinkVisualizer.generateDrinkName(state);
+      expect(name).toContain('Oat');
+    });
+
+    it('should not include whole milk in name', () => {
+      const state = createBaseState({
+        drinkType: {
+          id: 'latte',
+          name: 'Latte',
+          category: DrinkCategory.COFFEE,
+          basePrice: 4.5,
+        },
+        milk: {
+          id: 'whole',
+          name: 'Whole Milk',
+          type: ComponentType.MODIFIER,
+          category: 'milk',
+          price: 0,
+          canTransformDrink: false,
+          visual: { color: '#FFFEF7', opacity: 0.8, layerOrder: 2 },
+          available: true,
+        },
+      });
+
+      const name = DrinkVisualizer.generateDrinkName(state);
+      expect(name).not.toContain('Whole');
+    });
+  });
+
+  // Test exported constants
+  describe('exported constants', () => {
+    it('DRINK_COLORS should have all drink categories', () => {
+      expect(DRINK_COLORS[DrinkCategory.COFFEE]).toBeDefined();
+      expect(DRINK_COLORS[DrinkCategory.TEA]).toBeDefined();
+      expect(DRINK_COLORS[DrinkCategory.ITALIAN_SODA]).toBeDefined();
+      expect(DRINK_COLORS[DrinkCategory.JUICE]).toBeDefined();
+      expect(DRINK_COLORS[DrinkCategory.BLENDED]).toBeDefined();
+      expect(DRINK_COLORS[DrinkCategory.SPECIALTY]).toBeDefined();
+    });
+
+    it('SYRUP_COLORS should have common syrup flavors', () => {
+      expect(SYRUP_COLORS.vanilla).toBeDefined();
+      expect(SYRUP_COLORS.caramel).toBeDefined();
+      expect(SYRUP_COLORS.hazelnut).toBeDefined();
+      expect(SYRUP_COLORS.default).toBeDefined();
+    });
+
+    it('MILK_COLORS should have common milk types', () => {
+      expect(MILK_COLORS['Whole Milk']).toBeDefined();
+      expect(MILK_COLORS['Oat Milk']).toBeDefined();
+      expect(MILK_COLORS['Almond Milk']).toBeDefined();
+      expect(MILK_COLORS.default).toBeDefined();
+    });
+
+    it('TOPPING_PROPERTIES should have common toppings', () => {
+      expect(TOPPING_PROPERTIES['Whipped Cream']).toBeDefined();
+      expect(TOPPING_PROPERTIES['Foam']).toBeDefined();
+      expect(TOPPING_PROPERTIES['Cinnamon']).toBeDefined();
+      expect(TOPPING_PROPERTIES.default).toBeDefined();
+    });
+  });
+});
