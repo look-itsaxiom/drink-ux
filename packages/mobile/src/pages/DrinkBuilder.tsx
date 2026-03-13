@@ -68,18 +68,7 @@ interface DrinkBuilderLocalState {
 
 const DrinkBuilder: React.FC = () => {
   const history = useHistory();
-
-  // Try to use cart context, handle gracefully if not available
-  let cartAvailable = false;
-  let addToCart: ((item: CartItem) => void) | null = null;
-
-  try {
-    const cart = useCart();
-    addToCart = cart.addItem;
-    cartAvailable = true;
-  } catch {
-    // Cart context not available
-  }
+  const { addItem: addToCart } = useCart();
 
   // Try to use catalog context for modifiers, handle gracefully if not available
   let catalogModifiers = { milks: [] as MappedModifier[], syrups: [] as MappedModifier[], toppings: [] as MappedModifier[] };
@@ -261,11 +250,7 @@ const DrinkBuilder: React.FC = () => {
       modifierDetails,
     };
 
-    if (cartAvailable && addToCart) {
-      addToCart(cartItem);
-    }
-
-    console.log("Adding to cart:", cartItem);
+    addToCart(cartItem);
     history.push("/cart");
   };
 
