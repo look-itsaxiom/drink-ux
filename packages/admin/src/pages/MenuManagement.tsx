@@ -957,6 +957,9 @@ const MenuManagement: React.FC = () => {
           required
           style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
         />
+        <small style={{ color: '#7f8c8d' }}>
+          Medium price. Small: -$0.50 | Large: +$0.50 applied automatically at checkout.
+        </small>
       </div>
       <div style={{ marginBottom: '15px' }}>
         <label style={{ display: 'block', marginBottom: '5px', fontWeight: 500 }}>Temperature</label>
