@@ -300,6 +300,34 @@ describe('OrderService', () => {
       expect(result.total).toBeGreaterThan(0);
       expect(result.createdAt).toBeDefined();
     });
+
+    it('creates order when business is in trial and trial is not expired', async () => {
+      await prisma.business.update({
+        where: { id: testBusinessId },
+        data: {
+          accountState: 'TRIAL',
+          trialEndsAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+
+      const input: CreateOrderInput = {
+        businessId: testBusinessId,
+        customerName: 'Trial Customer',
+        items: [
+          {
+            baseId: testBaseId,
+            quantity: 1,
+            size: 'SMALL',
+            temperature: 'HOT',
+            modifiers: [],
+          },
+        ],
+      };
+
+      const result = await orderService.createOrder(input);
+      expect(result.id).toBeDefined();
+      expect(result.status).toBe('PENDING');
+    });
   });
 
   // =============================================================================
@@ -418,6 +446,67 @@ describe('OrderService', () => {
 
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
+    });
+
+    it('rejects order when business is not ACTIVE or TRIAL', async () => {
+      await prisma.business.update({
+        where: { id: testBusinessId },
+        data: { accountState: 'SUSPENDED' },
+      });
+
+      const input: CreateOrderInput = {
+        businessId: testBusinessId,
+        customerName: 'Suspended User',
+        items: [
+          {
+            baseId: testBaseId,
+            quantity: 1,
+            size: 'SMALL',
+            temperature: 'HOT',
+            modifiers: [],
+          },
+        ],
+      };
+
+      await expect(orderService.createOrder(input)).rejects.toThrow(OrderError);
+
+      try {
+        await orderService.createOrder(input);
+      } catch (error) {
+        expect((error as OrderError).code).toBe('BUSINESS_NOT_ACCEPTING_ORDERS');
+      }
+    });
+
+    it('rejects order when trial is expired', async () => {
+      await prisma.business.update({
+        where: { id: testBusinessId },
+        data: {
+          accountState: 'TRIAL',
+          trialEndsAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      });
+
+      const input: CreateOrderInput = {
+        businessId: testBusinessId,
+        customerName: 'Expired Trial User',
+        items: [
+          {
+            baseId: testBaseId,
+            quantity: 1,
+            size: 'SMALL',
+            temperature: 'HOT',
+            modifiers: [],
+          },
+        ],
+      };
+
+      await expect(orderService.createOrder(input)).rejects.toThrow(OrderError);
+
+      try {
+        await orderService.createOrder(input);
+      } catch (error) {
+        expect((error as OrderError).code).toBe('TRIAL_EXPIRED');
+      }
     });
   });
 

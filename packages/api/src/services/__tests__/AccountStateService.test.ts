@@ -399,6 +399,85 @@ describe('AccountStateService', () => {
   });
 
   // ===========================================================================
+  // TRIAL MANAGEMENT
+  // ===========================================================================
+  describe('Trial Management', () => {
+    it('startTrial transitions setup_complete to trial and sets trialEndsAt', async () => {
+      await prisma.business.update({
+        where: { id: testBusinessId },
+        data: { accountState: AccountState.SETUP_COMPLETE },
+      });
+
+      const result = await stateService.startTrial(testBusinessId);
+      const history = await prisma.accountStateHistory.findFirst({
+        where: { businessId: testBusinessId },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      expect(result.accountState).toBe(AccountState.TRIAL);
+      expect(result.trialEndsAt).toBeDefined();
+      expect(history?.fromState).toBe(AccountState.SETUP_COMPLETE);
+      expect(history?.toState).toBe(AccountState.TRIAL);
+    });
+
+    it('isTrialExpired returns true when trial end date is in the past', async () => {
+      await prisma.business.update({
+        where: { id: testBusinessId },
+        data: {
+          accountState: AccountState.TRIAL,
+          trialEndsAt: new Date(Date.now() - 60 * 1000),
+        },
+      });
+
+      const expired = await stateService.isTrialExpired(testBusinessId);
+      expect(expired).toBe(true);
+    });
+
+    it('isTrialExpired returns false when trial end date is in the future', async () => {
+      await prisma.business.update({
+        where: { id: testBusinessId },
+        data: {
+          accountState: AccountState.TRIAL,
+          trialEndsAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+
+      const expired = await stateService.isTrialExpired(testBusinessId);
+      expect(expired).toBe(false);
+    });
+
+    it('expireTrial transitions trial to suspended', async () => {
+      await prisma.business.update({
+        where: { id: testBusinessId },
+        data: {
+          accountState: AccountState.TRIAL,
+          trialEndsAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      });
+
+      const result = await stateService.expireTrial(testBusinessId);
+      expect(result.accountState).toBe(AccountState.SUSPENDED);
+    });
+
+    it('expireTrial throws when business is not in trial', async () => {
+      await prisma.business.update({
+        where: { id: testBusinessId },
+        data: { accountState: AccountState.ACTIVE },
+      });
+
+      await expect(
+        stateService.expireTrial(testBusinessId)
+      ).rejects.toThrow(AccountStateError);
+
+      try {
+        await stateService.expireTrial(testBusinessId);
+      } catch (error) {
+        expect((error as AccountStateError).code).toBe('NOT_IN_TRIAL');
+      }
+    });
+  });
+
+  // ===========================================================================
   // CAN TRANSITION CHECK
   // ===========================================================================
   describe('canTransition', () => {
