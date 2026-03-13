@@ -204,6 +204,16 @@
   font-size: 14px;
 }
 
+.auth-success {
+  background-color: #dcfce7;
+  border: 1px solid #22c55e;
+  color: #166534;
+  padding: 12px;
+  border-radius: 5px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
 .auth-button {
   width: 100%;
   padding: 12px;
@@ -224,6 +234,26 @@
 .auth-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.auth-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.auth-link-button {
+  border: none;
+  background: transparent;
+  color: #6B4226;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.auth-link-button:hover {
+  color: #5a3720;
 }
 
 .auth-footer {

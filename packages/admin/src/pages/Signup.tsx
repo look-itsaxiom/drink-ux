@@ -6,6 +6,7 @@ const Signup: React.FC = () => {
   const [businessName, setBusinessName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -15,6 +16,12 @@ const Signup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -80,6 +87,21 @@ const Signup: React.FC = () => {
               disabled={isSubmitting}
             />
             <small className="form-hint">At least 8 characters</small>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              autoComplete="new-password"
+              minLength={8}
+              disabled={isSubmitting}
+            />
           </div>
 
           <button type="submit" className="auth-button" disabled={isSubmitting}>
