@@ -1,11 +1,24 @@
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 
-vi.mock('ionicons/icons', () => ({
-  addCircleOutline: 'mock-icon',
-  cafeOutline: 'mock-icon',
-  iceCreamOutline: 'mock-icon',
-  waterOutline: 'mock-icon',
+vi.mock('../../theme/ThemeProvider', () => ({
+  useTheme: vi.fn(() => ({ logoUrl: null, isLoading: false, theme: {} })),
+}));
+
+vi.mock('../../context/BusinessContext', () => ({
+  useBusinessContext: vi.fn(() => ({
+    business: { name: 'Test Coffee' },
+    loading: false,
+    error: null,
+  })),
+}));
+
+vi.mock('../../components/design-system', () => ({
+  ThemeSwitcher: () => <div data-testid="theme-switcher">ThemeSwitcher</div>,
+  CategoryPills: ({ categories, onSelect }: any) => (
+    <div data-testid="category-pills">
+      {categories?.map((c: string) => <button key={c} onClick={() => onSelect?.(c)}>{c}</button>)}
+    </div>
+  ),
 }));
 
 const mockPush = vi.fn();
@@ -21,47 +34,33 @@ describe('Home', () => {
     vi.clearAllMocks();
   });
 
-  it('renders "Build Your Perfect Drink" heading', () => {
+  it('renders the shop name from business context', () => {
     render(<Home />);
-    expect(screen.getByText('Build Your Perfect Drink')).toBeInTheDocument();
+    expect(screen.getByText('Test Coffee')).toBeInTheDocument();
   });
 
-  it('renders "Create Your Drink" button', () => {
+  it('renders signature drinks section', () => {
     render(<Home />);
-    expect(screen.getByText('Create Your Drink')).toBeInTheDocument();
+    expect(screen.getByText('Vanilla Oat Latte')).toBeInTheDocument();
+    expect(screen.getByText('Caramel Macchiato')).toBeInTheDocument();
+    expect(screen.getByText('Matcha Latte')).toBeInTheDocument();
+    expect(screen.getByText('Nitro Cold Brew')).toBeInTheDocument();
   });
 
-  it('navigates to /drink/new when "Create Your Drink" is clicked', async () => {
-    const user = userEvent.setup();
+  it('renders espresso drinks section', () => {
     render(<Home />);
-
-    const button = screen.getByText('Create Your Drink');
-    await user.click(button);
-
-    expect(mockPush).toHaveBeenCalledWith('/drink/new');
+    expect(screen.getByText('Americano')).toBeInTheDocument();
+    expect(screen.getByText('Flat White')).toBeInTheDocument();
+    expect(screen.getByText('Cappuccino')).toBeInTheDocument();
   });
 
-  it('renders featured drinks cards', () => {
+  it('renders category pills', () => {
     render(<Home />);
-    expect(screen.getByText('Classic Espresso')).toBeInTheDocument();
-    expect(screen.getByText('Iced Delights')).toBeInTheDocument();
-    expect(screen.getByText('Specialty Teas')).toBeInTheDocument();
+    expect(screen.getByTestId('category-pills')).toBeInTheDocument();
   });
 
-  it('renders AppHeader with title "Drink Builder"', () => {
+  it('renders View Cart button', () => {
     render(<Home />);
-    expect(screen.getByText('Drink Builder')).toBeInTheDocument();
-  });
-
-  it('renders the subtitle text', () => {
-    render(<Home />);
-    expect(
-      screen.getByText('Create a custom drink exactly how you like it')
-    ).toBeInTheDocument();
-  });
-
-  it('renders "Featured Drinks" section title', () => {
-    render(<Home />);
-    expect(screen.getByText('Featured Drinks')).toBeInTheDocument();
+    expect(screen.getByText('View Cart')).toBeInTheDocument();
   });
 });

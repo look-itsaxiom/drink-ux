@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DrinkCategory } from '@drink-ux/shared';
 import CategorySelector from '../CategorySelector';
 
 describe('CategorySelector', () => {
@@ -25,36 +24,35 @@ describe('CategorySelector', () => {
     expect(screen.getByText('Specialty')).toBeInTheDocument();
   });
 
-  it('calls onSelect with DrinkCategory.COFFEE when Coffee is clicked', async () => {
+  it('calls onSelect when Coffee is clicked', async () => {
     const user = userEvent.setup();
     render(<CategorySelector onSelect={mockOnSelect} />);
 
-    const coffeeItem = screen.getByText('Coffee').closest('[role="button"]');
-    expect(coffeeItem).not.toBeNull();
-    await user.click(coffeeItem!);
+    const coffeeLabel = screen.getByText('Coffee');
+    await user.click(coffeeLabel);
 
     expect(mockOnSelect).toHaveBeenCalledTimes(1);
-    expect(mockOnSelect).toHaveBeenCalledWith(DrinkCategory.COFFEE);
+    expect(mockOnSelect).toHaveBeenCalledWith('coffee', expect.any(String));
   });
 
-  it('calls onSelect with DrinkCategory.TEA when Tea is clicked', async () => {
+  it('calls onSelect when Tea is clicked', async () => {
     const user = userEvent.setup();
     render(<CategorySelector onSelect={mockOnSelect} />);
 
-    const teaItem = screen.getByText('Tea').closest('[role="button"]');
-    await user.click(teaItem!);
+    const teaLabel = screen.getByText('Tea');
+    await user.click(teaLabel);
 
-    expect(mockOnSelect).toHaveBeenCalledWith(DrinkCategory.TEA);
+    expect(mockOnSelect).toHaveBeenCalledWith('tea', expect.any(String));
   });
 
-  it('each category item has an aria-label', () => {
+  it('each category has a description', () => {
     render(<CategorySelector onSelect={mockOnSelect} />);
 
-    expect(screen.getByLabelText(/Select Coffee/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Select Tea/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Select Italian Soda/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Select Juice/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Select Blended/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Select Specialty/)).toBeInTheDocument();
+    expect(screen.getByText('Hot & iced coffee drinks')).toBeInTheDocument();
+    expect(screen.getByText('Hot & iced teas')).toBeInTheDocument();
+    expect(screen.getByText('Flavored sodas')).toBeInTheDocument();
+    expect(screen.getByText('Fresh juices')).toBeInTheDocument();
+    expect(screen.getByText('Smoothies & frappes')).toBeInTheDocument();
+    expect(screen.getByText('Unique creations')).toBeInTheDocument();
   });
 });
