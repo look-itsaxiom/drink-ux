@@ -54,9 +54,9 @@ const ConfirmationStep: React.FC<Props> = ({ data, onBack, onComplete }) => {
 
   return (
     <div className="step-content">
-      <h2>You're All Set!</h2>
+      <h2>Review & Launch</h2>
       <p className="step-description">
-        Review your setup and complete the onboarding process.
+        Confirm your shop setup details before finishing onboarding.
       </p>
 
       <div className="confirmation-summary">
@@ -93,6 +93,22 @@ const ConfirmationStep: React.FC<Props> = ({ data, onBack, onComplete }) => {
         </div>
 
         <div className="summary-section">
+          <h3>Branding</h3>
+          <div className="summary-item">
+            <span className="label">Brand Name:</span>
+            <span className="value">{data.brandName || data.businessName}</span>
+          </div>
+          <div className="summary-item">
+            <span className="label">Accent Color:</span>
+            <span className="value">{data.accentColor}</span>
+          </div>
+          <div className="summary-item">
+            <span className="label">Voice:</span>
+            <span className="value">{data.voice}</span>
+          </div>
+        </div>
+
+        <div className="summary-section">
           <h3>Menu Catalog</h3>
           {data.catalogSummary ? (
             <>
@@ -120,16 +136,6 @@ const ConfirmationStep: React.FC<Props> = ({ data, onBack, onComplete }) => {
 
       {error && <div className="error-message">{error}</div>}
 
-      <div className="next-steps">
-        <h3>What's Next?</h3>
-        <ul>
-          <li>Fine-tune your menu in the admin dashboard</li>
-          <li>Customize your branding and theme</li>
-          <li>Share your ordering link with customers</li>
-          <li>Monitor orders from your dashboard</li>
-        </ul>
-      </div>
-
       <div className="step-actions">
         <button type="button" className="btn btn-secondary" onClick={onBack}>
           Back
@@ -140,7 +146,7 @@ const ConfirmationStep: React.FC<Props> = ({ data, onBack, onComplete }) => {
           onClick={handleComplete}
           disabled={completing}
         >
-          {completing ? 'Completing...' : 'Complete Setup'}
+          {completing ? 'Completing...' : 'Launch Storefront'}
         </button>
       </div>
     </div>

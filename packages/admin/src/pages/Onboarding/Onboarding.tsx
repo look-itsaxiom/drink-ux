@@ -4,8 +4,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import ConnectPOSStep from './steps/ConnectPOSStep';
 import BusinessProfileStep from './steps/BusinessProfileStep';
 import CatalogTransformStep from './steps/CatalogTransformStep';
+import BrandingStep from './steps/BrandingStep';
 import ConfirmationStep from './steps/ConfirmationStep';
 import './Onboarding.css';
+
+export type BrandVoice = 'warm' | 'bold' | 'minimal';
 
 export interface OnboardingData {
   businessName: string;
@@ -14,6 +17,9 @@ export interface OnboardingData {
   posConnected: boolean;
   posMerchantId?: string;
   catalogTransformed: boolean;
+  brandName: string;
+  accentColor: string;
+  voice: BrandVoice;
   catalogSummary?: {
     categories: number;
     bases: number;
@@ -21,12 +27,12 @@ export interface OnboardingData {
   };
 }
 
-// Reordered: Connect POS first, then profile (pre-filled), then catalog
 const STEPS = [
-  { id: 'pos', label: 'Connect POS' },
-  { id: 'profile', label: 'Business Profile' },
-  { id: 'catalog', label: 'Import Catalog' },
-  { id: 'confirm', label: 'Confirmation' },
+  { id: 'profile', label: 'Shop Details' },
+  { id: 'pos', label: 'Square Connect' },
+  { id: 'catalog', label: 'Menu Setup' },
+  { id: 'branding', label: 'Branding' },
+  { id: 'confirm', label: 'Review' },
 ];
 
 const Onboarding: React.FC = () => {
@@ -41,6 +47,9 @@ const Onboarding: React.FC = () => {
     contactEmail: user?.email || '',
     posConnected: false,
     catalogTransformed: false,
+    brandName: business?.name || '',
+    accentColor: '#6B4226',
+    voice: 'warm',
   });
 
   const updateData = (updates: Partial<OnboardingData>) => {
@@ -67,18 +76,16 @@ const Onboarding: React.FC = () => {
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
-        // Connect POS first - no back button on first step
         return (
-          <ConnectPOSStep
+          <BusinessProfileStep
             data={data}
             onUpdate={updateData}
             onNext={nextStep}
           />
         );
       case 1:
-        // Business profile - pre-filled from signup, can edit if needed
         return (
-          <BusinessProfileStep
+          <ConnectPOSStep
             data={data}
             onUpdate={updateData}
             onNext={nextStep}
@@ -95,6 +102,15 @@ const Onboarding: React.FC = () => {
           />
         );
       case 3:
+        return (
+          <BrandingStep
+            data={data}
+            onUpdate={updateData}
+            onNext={nextStep}
+            onBack={prevStep}
+          />
+        );
+      case 4:
         return (
           <ConfirmationStep
             data={data}
