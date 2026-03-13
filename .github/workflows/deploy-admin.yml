@@ -1,0 +1,45 @@
+name: Deploy Admin Portal
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'packages/admin/**'
+      - 'packages/shared/**'
+      - '.github/workflows/deploy-admin.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: "admin-deploy-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy Admin to Vercel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            vercel --prod --token=${{ secrets.VERCEL_TOKEN_ADMIN }} --yes
+          else
+            vercel --token=${{ secrets.VERCEL_TOKEN_ADMIN }} --yes
+          fi
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID_ADMIN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
