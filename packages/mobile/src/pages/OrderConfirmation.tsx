@@ -1,6 +1,6 @@
 /**
  * OrderConfirmation Page
- * Shows order status and pickup information
+ * Shows order status timeline and pickup information.
  */
 
 import React from 'react';
@@ -20,15 +20,7 @@ import {
   IonButton,
   IonBadge,
 } from '@ionic/react';
-import {
-  checkmarkCircle,
-  hourglass,
-  cafe,
-  checkmarkDone,
-  closeCircle,
-  copyOutline,
-  refreshOutline,
-} from 'ionicons/icons';
+import { closeCircle, copyOutline, refreshOutline } from 'ionicons/icons';
 import { useParams } from 'react-router';
 import { OrderStatus } from '@drink-ux/shared';
 import AppHeader from '../components/AppHeader';
@@ -36,64 +28,88 @@ import { useOrderStatus } from '../hooks/useOrderStatus';
 import { formatOrderStatus, getStatusStep } from '../services/orderService';
 import './OrderConfirmation.css';
 
-/**
- * Status step configuration
- */
-const STATUS_STEPS = [
-  { status: OrderStatus.PENDING, label: 'Received', icon: hourglass },
-  { status: OrderStatus.CONFIRMED, label: 'Confirmed', icon: checkmarkCircle },
-  { status: OrderStatus.PREPARING, label: 'Preparing', icon: cafe },
-  { status: OrderStatus.READY, label: 'Ready', icon: checkmarkDone },
+interface TimelineStep {
+  status: OrderStatus;
+  title: string;
+  description: string;
+}
+
+const TIMELINE_STEPS: TimelineStep[] = [
+  {
+    status: OrderStatus.PENDING,
+    title: 'Received',
+    description: 'We got your order and payment',
+  },
+  {
+    status: OrderStatus.CONFIRMED,
+    title: 'Confirmed',
+    description: 'Barista has accepted your order',
+  },
+  {
+    status: OrderStatus.PREPARING,
+    title: 'Preparing',
+    description: 'Your drinks are being crafted',
+  },
+  {
+    status: OrderStatus.READY,
+    title: 'Ready for Pickup',
+    description: 'Come grab your order at the counter',
+  },
 ];
 
-/**
- * Get icon for status
- */
-function getStatusIcon(status: OrderStatus): string {
+function getHeroMeta(status: OrderStatus, pickupCode: string): { emoji: string; title: string; subtitle: string } {
   switch (status) {
     case OrderStatus.PENDING:
-      return hourglass;
+      return {
+        emoji: '⏳',
+        title: 'Order Sent!',
+        subtitle: 'Waiting for the shop to confirm your order',
+      };
     case OrderStatus.CONFIRMED:
-      return checkmarkCircle;
+      return {
+        emoji: '☕',
+        title: 'Order Confirmed!',
+        subtitle: 'Your order is in queue and will be prepared soon',
+      };
     case OrderStatus.PREPARING:
-      return cafe;
+      return {
+        emoji: '🔥',
+        title: 'Being Crafted!',
+        subtitle: 'Your barista is making your drinks now',
+      };
     case OrderStatus.READY:
+      return {
+        emoji: '🎉',
+        title: 'Ready for Pickup!',
+        subtitle: `Show code ${pickupCode} at pickup`,
+      };
     case OrderStatus.COMPLETED:
-      return checkmarkDone;
+      return {
+        emoji: '✅',
+        title: 'Order Completed!',
+        subtitle: 'Thanks for ordering with Drink-UX',
+      };
     case OrderStatus.CANCELLED:
+      return {
+        emoji: '⚠️',
+        title: 'Order Cancelled',
+        subtitle: 'This order was cancelled by the store',
+      };
     case OrderStatus.FAILED:
-      return closeCircle;
+      return {
+        emoji: '⚠️',
+        title: 'Order Failed',
+        subtitle: 'There was a problem processing this order',
+      };
     default:
-      return hourglass;
+      return {
+        emoji: '☕',
+        title: 'Order Update',
+        subtitle: formatOrderStatus(status),
+      };
   }
 }
 
-/**
- * Get status color
- */
-function getStatusColor(status: OrderStatus): string {
-  switch (status) {
-    case OrderStatus.PENDING:
-      return 'warning';
-    case OrderStatus.CONFIRMED:
-      return 'primary';
-    case OrderStatus.PREPARING:
-      return 'secondary';
-    case OrderStatus.READY:
-      return 'success';
-    case OrderStatus.COMPLETED:
-      return 'success';
-    case OrderStatus.CANCELLED:
-    case OrderStatus.FAILED:
-      return 'danger';
-    default:
-      return 'medium';
-  }
-}
-
-/**
- * Format estimated time
- */
 function formatEstimatedTime(estimatedReadyAt?: string): string {
   if (!estimatedReadyAt) {
     return 'Calculating...';
@@ -105,19 +121,37 @@ function formatEstimatedTime(estimatedReadyAt?: string): string {
   const diffMins = Math.round(diffMs / 60000);
 
   if (diffMins <= 0) {
-    return 'Any moment now';
-  } else if (diffMins === 1) {
-    return '~1 minute';
-  } else if (diffMins < 60) {
-    return `~${diffMins} minutes`;
-  } else {
-    return readyTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return 'Ready now';
   }
+  if (diffMins === 1) {
+    return '~1 minute';
+  }
+  if (diffMins < 60) {
+    return `~${diffMins} minutes`;
+  }
+
+  return readyTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-/**
- * OrderConfirmation page component
- */
+function formatTime(value?: string): string {
+  if (!value) {
+    return '';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function getTimelineStep(status: OrderStatus): number {
+  const rawStep = getStatusStep(status);
+  if (rawStep < 0) {
+    return -1;
+  }
+  return Math.min(rawStep, TIMELINE_STEPS.length - 1);
+}
+
 const OrderConfirmation: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
 
@@ -127,21 +161,16 @@ const OrderConfirmation: React.FC = () => {
     enabled: !!orderId,
   });
 
-  /**
-   * Copy pickup code to clipboard
-   */
   const handleCopyPickupCode = async () => {
     if (order?.pickupCode && navigator.clipboard) {
       try {
         await navigator.clipboard.writeText(order.pickupCode);
-        // Could show a toast here
       } catch (err) {
-        console.error('Failed to copy:', err);
+        console.error('Failed to copy pickup code:', err);
       }
     }
   };
 
-  // Loading state
   if (isLoading && !order) {
     return (
       <IonPage>
@@ -156,7 +185,6 @@ const OrderConfirmation: React.FC = () => {
     );
   }
 
-  // Error state (and no cached order)
   if (error && !order) {
     return (
       <IonPage>
@@ -180,93 +208,94 @@ const OrderConfirmation: React.FC = () => {
     return null;
   }
 
-  const currentStep = getStatusStep(status);
-  const isTerminal = status === OrderStatus.COMPLETED || status === OrderStatus.CANCELLED || status === OrderStatus.FAILED;
+  const currentStep = getTimelineStep(status);
+  const isFailedState = status === OrderStatus.CANCELLED || status === OrderStatus.FAILED;
+  const isReadyOrDone = status === OrderStatus.READY || status === OrderStatus.COMPLETED;
+  const pickupCode = order.pickupCode || 'N/A';
+  const orderNumber = order.orderNumber || order.id.slice(-8).toUpperCase();
+  const heroMeta = getHeroMeta(status, pickupCode);
+  const progressPercent = currentStep < 0 ? 0 : [0, 36, 67, 100][currentStep];
+  const firstStepTime = formatTime(order.createdAt);
+  const currentStepTime = formatTime(order.updatedAt);
 
   return (
     <IonPage>
       <AppHeader title="Order Status" showBackButton={true} backHref="/home" />
-      <IonContent className="order-confirmation-page">
-        <div className="confirmation-container">
-          {/* Success Banner */}
-          <div className="success-banner">
-            <IonIcon icon={checkmarkCircle} className="success-icon" />
-            <h1>Order Placed!</h1>
-            <p>Order #{order.orderNumber || order.id.slice(-8).toUpperCase()}</p>
+      <IonContent className="order-confirmation-page" fullscreen>
+        <div className="order-hero">
+          <div className="hero-circle hero-circle-1" />
+          <div className="hero-circle hero-circle-2" />
+          <span className="hero-emoji" aria-hidden="true">
+            {heroMeta.emoji}
+          </span>
+          <h1>{heroMeta.title}</h1>
+          <p>{heroMeta.subtitle}</p>
+          <div className="pickup-card">
+            <div className="pickup-label">Your Pickup Code</div>
+            <div className="pickup-code" onClick={handleCopyPickupCode} role="button" tabIndex={0}>
+              {pickupCode}
+            </div>
+            <div className="pickup-order-num">Order #{orderNumber}</div>
+            <IonButton fill="clear" size="small" onClick={handleCopyPickupCode} className="copy-button">
+              <IonIcon slot="start" icon={copyOutline} />
+              Copy
+            </IonButton>
           </div>
+        </div>
 
-          {/* Pickup Code Card */}
-          <IonCard className="pickup-card">
-            <IonCardContent>
-              <div className="pickup-label">Your Pickup Code</div>
-              <div className="pickup-code" onClick={handleCopyPickupCode}>
-                {order.pickupCode || 'N/A'}
-              </div>
-              <IonButton
-                fill="clear"
-                size="small"
-                onClick={handleCopyPickupCode}
-                className="copy-button"
-              >
-                <IonIcon slot="start" icon={copyOutline} />
-                Copy
-              </IonButton>
-            </IonCardContent>
-          </IonCard>
-
-          {/* Status Progress */}
-          <IonCard className="status-card">
-            <IonCardHeader>
-              <IonCardTitle>Order Status</IonCardTitle>
-            </IonCardHeader>
-            <IonCardContent>
-              {/* Current Status */}
-              <div className="current-status">
-                <IonIcon
-                  icon={getStatusIcon(status)}
-                  color={getStatusColor(status)}
-                  className="status-icon"
-                />
-                <div className="status-details">
-                  <h3>{formatOrderStatus(status)}</h3>
-                  {!isTerminal && status !== OrderStatus.READY && (
-                    <p className="estimated-time">
-                      Estimated ready: {formatEstimatedTime(order.estimatedReadyAt)}
-                    </p>
-                  )}
-                  {status === OrderStatus.READY && (
-                    <p className="ready-message">Your order is ready for pickup!</p>
-                  )}
-                </div>
+        <div className="confirmation-content">
+          {!isFailedState && (
+            <>
+              <div className="eta-card">
+                <p className="eta-label">Estimated ready</p>
+                <p className="eta-value">
+                  {isReadyOrDone ? 'Ready now' : formatEstimatedTime(order.estimatedReadyAt)}
+                </p>
+                <p className="status-copy">
+                  {status === OrderStatus.READY
+                    ? `Status: ${formatOrderStatus(status)}`
+                    : formatOrderStatus(status)}
+                </p>
               </div>
 
-              {/* Progress Steps */}
-              {!isTerminal && currentStep >= 0 && (
-                <div className="progress-steps">
-                  {STATUS_STEPS.map((step, index) => {
-                    const isActive = index <= currentStep;
-                    const isCurrent = index === currentStep;
-                    return (
-                      <div
-                        key={step.status}
-                        className={`progress-step ${isActive ? 'active' : ''} ${isCurrent ? 'current' : ''}`}
-                      >
-                        <div className="step-indicator">
-                          <IonIcon icon={step.icon} />
-                        </div>
-                        <span className="step-label">{step.label}</span>
-                        {index < STATUS_STEPS.length - 1 && (
-                          <div className={`step-connector ${isActive ? 'active' : ''}`} />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <IonCard className="status-card">
+                <IonCardHeader>
+                  <IonCardTitle>Order Status</IonCardTitle>
+                </IonCardHeader>
+                <IonCardContent>
+                  <div className="timeline">
+                    <div className="timeline-track" />
+                    <div className="timeline-progress" style={{ height: `${progressPercent}%` }} />
+                    {TIMELINE_STEPS.map((step, index) => {
+                      const done = currentStep > index;
+                      const active = currentStep === index;
+                      const titleClass = done ? 'step-title done' : active ? 'step-title active' : 'step-title';
+                      const showTime = done || active;
+                      const timeText = index === 0 ? firstStepTime : active ? currentStepTime : done ? 'Done' : '';
+                      return (
+                        <article className="timeline-item" key={step.status}>
+                          <div className={done ? 'timeline-dot done' : active ? 'timeline-dot active' : 'timeline-dot'}>
+                            {done ? '✓' : null}
+                          </div>
+                          <div className="timeline-content">
+                            <h3 className={titleClass}>{step.title}</h3>
+                            <p className="step-description">{step.description}</p>
+                            <p className="timeline-time">{showTime ? timeText : ''}</p>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </IonCardContent>
+              </IonCard>
+            </>
+          )}
 
-              {/* Cancelled/Failed Message */}
-              {(status === OrderStatus.CANCELLED || status === OrderStatus.FAILED) && (
+          {isFailedState && (
+            <IonCard className="status-card">
+              <IonCardContent>
                 <div className="error-status">
+                  <IonIcon icon={closeCircle} color="danger" className="error-icon" />
                   <IonText color="danger">
                     <p>
                       {status === OrderStatus.CANCELLED
@@ -275,14 +304,13 @@ const OrderConfirmation: React.FC = () => {
                     </p>
                   </IonText>
                 </div>
-              )}
-            </IonCardContent>
-          </IonCard>
+              </IonCardContent>
+            </IonCard>
+          )}
 
-          {/* Order Details */}
           <IonCard className="details-card">
             <IonCardHeader>
-              <IonCardTitle>Order Details</IonCardTitle>
+              <IonCardTitle>Your Order</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               <IonList lines="none" className="item-list">
@@ -297,9 +325,7 @@ const OrderConfirmation: React.FC = () => {
                           </IonBadge>
                         )}
                       </h3>
-                      {item.description && (
-                        <p className="item-description">{item.description}</p>
-                      )}
+                      {item.description && <p className="item-description">{item.description}</p>}
                     </IonLabel>
                     <span slot="end" className="item-price">
                       ${item.totalPrice.toFixed(2)}
@@ -317,11 +343,10 @@ const OrderConfirmation: React.FC = () => {
             </IonCardContent>
           </IonCard>
 
-          {/* Refresh Button */}
           <div className="refresh-section">
-            <IonButton fill="clear" onClick={refetch} disabled={isLoading}>
+            <IonButton fill="clear" onClick={refetch}>
               <IonIcon slot="start" icon={refreshOutline} />
-              Refresh Status
+              Refresh
             </IonButton>
           </div>
         </div>
