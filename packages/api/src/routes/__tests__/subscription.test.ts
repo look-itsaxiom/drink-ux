@@ -290,6 +290,100 @@ describe('Subscription Routes', () => {
     });
   });
 
+  describe('POST /api/subscription/start-trial', () => {
+    describe('Happy Path', () => {
+      it('starts a 14-day trial and sets trial end date', async () => {
+        const response = await request(app)
+          .post('/api/subscription/start-trial')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({
+            businessId: testBusinessId,
+          });
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.status).toBe('trial');
+        expect(response.body.data.trialDays).toBe(14);
+        expect(response.body.data.trialEndsAt).toBeDefined();
+
+        const updatedBusiness = await prisma.business.findUnique({
+          where: { id: testBusinessId },
+        });
+        expect(updatedBusiness?.accountState).toBe('TRIAL');
+        expect(updatedBusiness?.trialEndsAt).toBeDefined();
+      });
+    });
+
+    describe('Failure Scenarios', () => {
+      it('returns 400 when businessId is missing', async () => {
+        const response = await request(app)
+          .post('/api/subscription/start-trial')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({});
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('BUSINESS_ID_REQUIRED');
+      });
+
+      it('returns 400 when business is not in setup_complete state', async () => {
+        await prisma.business.update({
+          where: { id: testBusinessId },
+          data: { accountState: 'ACTIVE' },
+        });
+
+        const response = await request(app)
+          .post('/api/subscription/start-trial')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({
+            businessId: testBusinessId,
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('INVALID_STATE');
+      });
+
+      it('returns 403 when user does not own business', async () => {
+        const otherUser = await prisma.user.create({
+          data: {
+            email: 'other-owner-start-trial@example.com',
+            hashedPassword: 'not-used',
+          },
+        });
+        const otherBusiness = await prisma.business.create({
+          data: {
+            name: 'Other Start Trial Coffee',
+            slug: 'other-start-trial-coffee',
+            ownerId: otherUser.id,
+            accountState: 'SETUP_COMPLETE',
+          },
+        });
+
+        const response = await request(app)
+          .post('/api/subscription/start-trial')
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({
+            businessId: otherBusiness.id,
+          });
+
+        expect(response.status).toBe(403);
+        expect(response.body.error.code).toBe('AUTHORIZATION_ERROR');
+
+        await prisma.business.delete({ where: { id: otherBusiness.id } });
+        await prisma.user.delete({ where: { id: otherUser.id } });
+      });
+
+      it('returns 401 when not authenticated', async () => {
+        const response = await request(app)
+          .post('/api/subscription/start-trial')
+          .send({
+            businessId: testBusinessId,
+          });
+
+        expect(response.status).toBe(401);
+      });
+    });
+  });
+
   describe('POST /api/subscription/cancel', () => {
     beforeEach(async () => {
       // Set up active subscription
