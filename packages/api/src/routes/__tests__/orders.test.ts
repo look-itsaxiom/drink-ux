@@ -3,12 +3,15 @@ import express, { Express } from 'express';
 import cookieParser from 'cookie-parser';
 import { PrismaClient } from '../../../generated/prisma';
 import { createOrderRouter, createBusinessOrdersRouter } from '../orders';
+import { createPaymentRouter } from '../payments';
 import { OrderService } from '../../services/OrderService';
 import { AuthService } from '../../services/AuthService';
 import { MockPOSAdapter } from '../../adapters/pos/MockPOSAdapter';
 import { sessionMiddleware, SESSION_COOKIE_NAME } from '../../middleware/session';
+import { encryptToken } from '../../utils/encryption';
 
 const prisma = new PrismaClient();
+const TEST_ENCRYPTION_KEY = 'test-key-must-be-32-chars-long!!';
 let orderService: OrderService;
 let authService: AuthService;
 let mockPOSAdapter: MockPOSAdapter;
@@ -133,7 +136,9 @@ describe('Order Routes', () => {
     app.use(cookieParser());
     app.use(sessionMiddleware(authService));
     app.use('/api/orders', createOrderRouter(orderService));
+    app.use('/api/orders', createPaymentRouter(prisma));
     app.use('/api/business', createBusinessOrdersRouter(orderService));
+    global.fetch = jest.fn();
   });
 
   // =============================================================================
@@ -541,6 +546,20 @@ describe('Order Routes', () => {
       expect(response.body.data.order.status).toBe('CONFIRMED');
     });
 
+    it('supports full status progression', async () => {
+      const statuses = ['CONFIRMED', 'PREPARING', 'READY', 'COMPLETED'];
+
+      for (const status of statuses) {
+        const response = await request(app)
+          .put(`/api/orders/${testOrderId}/status`)
+          .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
+          .send({ status });
+
+        expect(response.status).toBe(200);
+        expect(response.body.data.order.status).toBe(status);
+      }
+    });
+
     it('returns 401 when not authenticated', async () => {
       const response = await request(app)
         .put(`/api/orders/${testOrderId}/status`)
@@ -779,6 +798,319 @@ describe('Order Routes', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.error.code).toBe('NO_POS_ORDER');
+    });
+  });
+
+  // =============================================================================
+  // COMPLETE ORDER FLOW INTEGRATION
+  // =============================================================================
+  describe('Complete order flow integration', () => {
+    it('creates an order, calculates totals, processes payment, and allows pickup lookup', async () => {
+      const { business } = await createAuthenticatedUser();
+      const catalog = await setupBusinessWithCatalog(business.id);
+
+      const createResponse = await request(app)
+        .post('/api/orders')
+        .send({
+          businessId: business.id,
+          customerName: 'Flow Customer',
+          customerPhone: '555-1000',
+          items: [
+            {
+              baseId: catalog.baseId,
+              quantity: 1,
+              size: 'MEDIUM',
+              temperature: 'HOT',
+              modifiers: catalog.modifierIds,
+            },
+          ],
+        });
+
+      expect(createResponse.status).toBe(201);
+      const order = createResponse.body.data.order;
+      expect(order.subtotal).toBe(6.24);
+      expect(order.tax).toBe(0.51);
+      expect(order.total).toBe(6.75);
+
+      await prisma.business.update({
+        where: { id: business.id },
+        data: {
+          posProvider: 'SQUARE',
+          posAccessToken: encryptToken('sqpat-sandbox-test-token', TEST_ENCRYPTION_KEY),
+          posLocationId: 'test-location-id',
+        },
+      });
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          payment: {
+            id: 'pay-flow-1',
+            status: 'COMPLETED',
+            amount_money: { amount: 675, currency: 'USD' },
+          },
+        }),
+      });
+
+      const paymentResponse = await request(app)
+        .post(`/api/orders/${order.id}/pay`)
+        .send({
+          sourceId: 'cnon:card-nonce-ok',
+          amount: order.total,
+        });
+
+      expect(paymentResponse.status).toBe(200);
+      expect(paymentResponse.body.success).toBe(true);
+      expect(paymentResponse.body.data.payment.success).toBe(true);
+      expect(paymentResponse.body.data.payment.paymentId).toBe('pay-flow-1');
+
+      const paidOrder = await prisma.order.findUnique({ where: { id: order.id } });
+      expect(paidOrder?.paymentStatus).toBe('COMPLETED');
+      expect(paidOrder?.status).toBe('CONFIRMED');
+
+      const pickupResponse = await request(app)
+        .get(`/api/orders/pickup/${order.pickupCode}`)
+        .query({ businessId: business.id });
+
+      expect(pickupResponse.status).toBe(200);
+      expect(pickupResponse.body.data.order.id).toBe(order.id);
+    });
+
+    it('sequences order numbers for the same business', async () => {
+      const { business } = await createAuthenticatedUser();
+      const catalog = await setupBusinessWithCatalog(business.id);
+
+      const createOrder = () =>
+        request(app)
+          .post('/api/orders')
+          .send({
+            businessId: business.id,
+            customerName: 'Sequence Customer',
+            items: [
+              {
+                baseId: catalog.baseId,
+                quantity: 1,
+                size: 'SMALL',
+                temperature: 'HOT',
+                modifiers: [],
+              },
+            ],
+          });
+
+      const first = await createOrder();
+      const second = await createOrder();
+
+      expect(first.status).toBe(201);
+      expect(second.status).toBe(201);
+
+      const firstNum = Number(first.body.data.order.orderNumber.slice(1));
+      const secondNum = Number(second.body.data.order.orderNumber.slice(1));
+      expect(secondNum).toBe(firstNum + 1);
+    });
+
+    it('returns payment failure from Square errors', async () => {
+      const { business } = await createAuthenticatedUser();
+      const catalog = await setupBusinessWithCatalog(business.id);
+
+      const createResponse = await request(app)
+        .post('/api/orders')
+        .send({
+          businessId: business.id,
+          customerName: 'Declined Customer',
+          items: [
+            {
+              baseId: catalog.baseId,
+              quantity: 1,
+              size: 'SMALL',
+              temperature: 'HOT',
+              modifiers: [],
+            },
+          ],
+        });
+
+      const orderId = createResponse.body.data.order.id;
+
+      await prisma.business.update({
+        where: { id: business.id },
+        data: {
+          posProvider: 'SQUARE',
+          posAccessToken: encryptToken('sqpat-sandbox-test-token', TEST_ENCRYPTION_KEY),
+          posLocationId: 'test-location-id',
+        },
+      });
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        json: () => Promise.resolve({
+          errors: [{ category: 'PAYMENT_METHOD_ERROR', code: 'CARD_DECLINED', detail: 'Declined' }],
+        }),
+      });
+
+      const paymentResponse = await request(app)
+        .post(`/api/orders/${orderId}/pay`)
+        .send({
+          sourceId: 'cnon:card-nonce-declined',
+          amount: createResponse.body.data.order.total,
+        });
+
+      expect(paymentResponse.status).toBe(400);
+      expect(paymentResponse.body.success).toBe(false);
+      expect(paymentResponse.body.error.code).toBe('CARD_DECLINED');
+    });
+
+    it('rejects duplicate payment attempts for an already paid order', async () => {
+      const { business } = await createAuthenticatedUser();
+      const catalog = await setupBusinessWithCatalog(business.id);
+
+      const createResponse = await request(app)
+        .post('/api/orders')
+        .send({
+          businessId: business.id,
+          customerName: 'Idempotent Customer',
+          items: [
+            {
+              baseId: catalog.baseId,
+              quantity: 1,
+              size: 'SMALL',
+              temperature: 'HOT',
+              modifiers: [],
+            },
+          ],
+        });
+
+      const orderId = createResponse.body.data.order.id;
+
+      await prisma.business.update({
+        where: { id: business.id },
+        data: {
+          posProvider: 'SQUARE',
+          posAccessToken: encryptToken('sqpat-sandbox-test-token', TEST_ENCRYPTION_KEY),
+          posLocationId: 'test-location-id',
+        },
+      });
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          payment: {
+            id: 'pay-idempotent-1',
+            status: 'COMPLETED',
+            amount_money: { amount: Math.round(createResponse.body.data.order.total * 100), currency: 'USD' },
+          },
+        }),
+      });
+
+      const firstPay = await request(app)
+        .post(`/api/orders/${orderId}/pay`)
+        .send({
+          sourceId: 'cnon:card-nonce-ok',
+          amount: createResponse.body.data.order.total,
+        });
+
+      expect(firstPay.status).toBe(200);
+
+      const secondPay = await request(app)
+        .post(`/api/orders/${orderId}/pay`)
+        .send({
+          sourceId: 'cnon:card-nonce-ok',
+          amount: createResponse.body.data.order.total,
+        });
+
+      expect(secondPay.status).toBe(400);
+      expect(secondPay.body.error.code).toBe('ORDER_ALREADY_PAID');
+      expect((global.fetch as jest.Mock).mock.calls).toHaveLength(1);
+    });
+
+    it('blocks order creation when trial is expired', async () => {
+      const { business } = await createAuthenticatedUser('expired-trial');
+      const catalog = await setupBusinessWithCatalog(business.id);
+
+      await prisma.business.update({
+        where: { id: business.id },
+        data: {
+          accountState: 'TRIAL',
+          trialEndsAt: new Date(Date.now() - 60_000),
+        },
+      });
+
+      const response = await request(app)
+        .post('/api/orders')
+        .send({
+          businessId: business.id,
+          customerName: 'Blocked Trial Customer',
+          items: [
+            {
+              baseId: catalog.baseId,
+              quantity: 1,
+              size: 'SMALL',
+              temperature: 'HOT',
+              modifiers: [],
+            },
+          ],
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('TRIAL_EXPIRED');
+    });
+
+    it('blocks order creation for suspended businesses', async () => {
+      const { business } = await createAuthenticatedUser('suspended');
+      const catalog = await setupBusinessWithCatalog(business.id);
+
+      await prisma.business.update({
+        where: { id: business.id },
+        data: { accountState: 'SUSPENDED' },
+      });
+
+      const response = await request(app)
+        .post('/api/orders')
+        .send({
+          businessId: business.id,
+          customerName: 'Blocked Suspended Customer',
+          items: [
+            {
+              baseId: catalog.baseId,
+              quantity: 1,
+              size: 'SMALL',
+              temperature: 'HOT',
+              modifiers: [],
+            },
+          ],
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.code).toBe('BUSINESS_NOT_ACCEPTING_ORDERS');
+    });
+
+    it('generates unique pickup codes under concurrent order creation', async () => {
+      const { business } = await createAuthenticatedUser('concurrent');
+      const catalog = await setupBusinessWithCatalog(business.id);
+
+      const requests = Array.from({ length: 10 }, (_, index) =>
+        request(app)
+          .post('/api/orders')
+          .send({
+            businessId: business.id,
+            customerName: `Concurrent ${index + 1}`,
+            items: [
+              {
+                baseId: catalog.baseId,
+                quantity: 1,
+                size: 'SMALL',
+                temperature: 'HOT',
+                modifiers: [],
+              },
+            ],
+          })
+      );
+
+      const responses = await Promise.all(requests);
+      const createdResponses = responses.filter((response) => response.status === 201);
+      expect(createdResponses.length).toBeGreaterThanOrEqual(2);
+
+      const pickupCodes = createdResponses.map((response) => response.body.data.order.pickupCode);
+      const uniquePickupCodes = new Set(pickupCodes);
+      expect(uniquePickupCodes.size).toBe(createdResponses.length);
     });
   });
 });
