@@ -160,6 +160,20 @@
   margin-top: 6px;
 }
 
+.color-row input[type="color"] {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-row input[type="text"] {
+  flex: 1;
+}
+
 .error {
   display: block;
   color: #e74c3c;
@@ -410,6 +424,66 @@
   color: #27ae60;
 }
 
+/* Branding Step */
+.voice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.voice-option {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.voice-option.selected {
+  border-color: #6B4226;
+  box-shadow: 0 0 0 2px rgba(107, 66, 38, 0.15);
+}
+
+.voice-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.voice-description {
+  font-size: 12px;
+  color: #7f8c8d;
+}
+
+.brand-preview {
+  margin-top: 16px;
+  border: 1px solid #ddd;
+  border-left-width: 4px;
+  border-radius: 10px;
+  padding: 14px;
+  background: #f8f9fa;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.brand-preview-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.brand-preview p {
+  margin: 4px 0 0;
+  color: #6c757d;
+  font-size: 13px;
+}
+
 /* Confirmation Summary */
 .confirmation-summary {
   background: #f8f9fa;
@@ -512,5 +586,9 @@
 
   .step-actions .btn {
     width: 100%;
+  }
+
+  .voice-grid {
+    grid-template-columns: 1fr;
   }
 }
