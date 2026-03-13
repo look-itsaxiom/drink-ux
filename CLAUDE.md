@@ -122,14 +122,20 @@ Rules:
 2. **Commit often** with descriptive messages: `type(scope): description` (e.g., `feat(api): add subscription expiry service`)
 3. **Push branch** to origin when work is ready for review
 4. **Open a PR** against `main` with a clear description of changes
-5. **Request review** — CTO reviews engineering PRs, board reviews design/strategy PRs
+5. **Request review** from another engineer — any engineer can review and approve PRs
 6. **CI must pass** before merge — tests, builds, and linting
 7. **Squash merge** preferred for feature branches to keep `main` history clean
+
+### PR Reviews
+
+- Engineers review each other's PRs. You do NOT need board or CTO approval for routine engineering work.
+- The PR author must NOT approve their own PR — get a peer review.
+- Board only reviews: pricing decisions, strategy changes, design approvals, public-facing content.
 
 ### What NOT to Do
 
 - Never push directly to `main`
 - Never force push to shared branches
-- Never merge your own PR without review (except board emergency overrides)
+- Never merge your own PR without a peer review
 - Never commit secrets, `.env` files, or credentials
 - Never leave stale branches — delete after merge
