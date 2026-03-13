@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1200px, initial-scale=1.0" />
+  <title>Admin — Menu Management · Drink-UX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #1A1A2E;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+      gap: 14px;
+    }
+
+    /* ── CSS Variables ─────────────────────────────────────────── */
+    :root {
+      --admin-bg: #F3F4F6;
+      --admin-surface: #FFFFFF;
+      --admin-border: #E5E7EB;
+      --admin-text: #111827;
+      --admin-text-secondary: #6B7280;
+      --admin-text-muted: #9CA3AF;
+      --admin-sidebar: #111827;
+      --blue: #2563EB;
+      --blue-light: rgba(37,99,235,0.1);
+      --green: #059669;
+      --green-light: rgba(5,150,105,0.1);
+      --amber: #D97706;
+      --amber-light: rgba(217,119,6,0.1);
+      --red: #DC2626;
+      --red-light: rgba(220,38,38,0.1);
+      --purple: #7C3AED;
+      --purple-light: rgba(124,58,237,0.1);
+    }
+
+    /* ── Controls Bar ──────────────────────────────────────────── */
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ctrl-label {
+      color: rgba(255,255,255,0.45);
+      font-size: 12px;
+    }
+
+    .ctrl-btn {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    .ctrl-btn.active {
+      background: rgba(255,255,255,0.22);
+      border-color: rgba(255,255,255,0.35);
+      color: white;
+    }
+
+    /* ── App Frame ─────────────────────────────────────────────── */
+    .app-frame {
+      width: 1160px;
+      height: 740px;
+      border-radius: 20px;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 10px #16162A, 0 0 0 12px #2a2a3e;
+      overflow: hidden;
+      display: flex;
+      background: var(--admin-bg);
+      flex-shrink: 0;
+    }
+
+    /* ── Sidebar ───────────────────────────────────────────────── */
+    .sidebar {
+      width: 220px;
+      background: var(--admin-sidebar);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100%;
+    }
+
+    .sidebar-logo {
+      padding: 22px 18px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logomark {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #2563EB, #7C3AED);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .logo-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: white;
+      line-height: 1;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      font-weight: 400;
+      line-height: 1;
+    }
+
+    .nav-section {
+      padding: 12px 10px 6px;
+    }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.28);
+      padding: 0 6px;
+      margin-bottom: 4px;
+      letter-spacing: 0.06em;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.5);
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 1px;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.75);
+    }
+
+    .nav-item.active {
+      background: rgba(37,99,235,0.18);
+      color: #93C5FD;
+    }
+
+    .nav-item svg {
+      flex-shrink: 0;
+      opacity: 0.8;
+    }
+
+    .nav-item.active svg {
+      opacity: 1;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .user-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563EB, #7C3AED);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .user-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .user-role {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+    }
+
+    /* ── Main Content ──────────────────────────────────────────── */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Topbar ────────────────────────────────────────────────── */
+    .topbar {
+      height: 54px;
+      background: white;
+      border-bottom: 1px solid #E5E7EB;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .topbar-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+      flex: 1;
+    }
+
+    .btn-outline {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: white;
+      border: 1px solid #D1D5DB;
+      border-radius: 8px;
+      padding: 6px 13px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #374151;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-outline:hover {
+      background: #F9FAFB;
+      border-color: #9CA3AF;
+    }
+
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--blue);
+      border: none;
+      border-radius: 9px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover {
+      background: #1D4ED8;
+    }
+
+    /* ── 3-Panel Grid ──────────────────────────────────────────── */
+    .panel-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 200px 280px 1fr;
+      overflow: hidden;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #E5E7EB;
+      overflow: hidden;
+    }
+
+    .panel:last-child {
+      border-right: none;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid #E5E7EB;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .panel-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #6B7280;
+      letter-spacing: 0.05em;
+    }
+
+    .panel-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-count {
+      font-size: 11px;
+      color: #9CA3AF;
+    }
+
+    .btn-add-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: none;
+      color: white;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      line-height: 1;
+      transition: background 0.15s;
+    }
+
+    .btn-add-circle:hover {
+      background: #1D4ED8;
+    }
+
+    .panel-scroll {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .panel-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .panel-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .panel-scroll::-webkit-scrollbar-thumb {
+      background: #E5E7EB;
+      border-radius: 2px;
+    }
+
+    /* ── Panel 1: Categories ───────────────────────────────────── */
+    .cat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid #E5E7EB;
+      transition: background 0.1s;
+    }
+
+    .cat-item:hover {
+      background: #F9FAFB;
+    }
+
+    .cat-item.active {
+      background: var(--blue-light);
+    }
+
+    .cat-drag {
+      color: var(--admin-text-muted);
+      cursor: grab;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .cat-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+      flex: 1;
+    }
+
+    .cat-item.active .cat-name {
+      color: var(--blue);
+    }
+
+    .cat-count {
+      font-size: 11px;
+      color: #9CA3AF;
+      background: #F3F4F6;
+      border-radius: 10px;
+      padding: 1px 7px;
+    }
+
+    /* ── Panel 2: Items ────────────────────────────────────────── */
+    .item-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 12px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid #E5E7EB;
+      transition: background 0.1s;
+    }
+
+    .item-card:hover {
+      background: #F9FAFB;
+    }
+
+    .item-card.active {
+      background: var(--blue-light);
+      border-left: 2px solid var(--blue);
+    }
+
+    .item-card.unavailable {
+      opacity: 0.55;
+    }
+
+    .item-drag {
+      color: #9CA3AF;
+      cursor: grab;
+      flex-shrink: 0;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+    }
+
+    .item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .item-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .item-card.unavailable .item-name {
+      text-decoration: line-through;
+    }
+
+    .item-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 3px;
+      flex-wrap: wrap;
+    }
+
+    .item-price {
+      font-size: 12px;
+      color: #6B7280;
+    }
+
+    .item-tag {
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 5px;
+      padding: 1px 6px;
+    }
+
+    .tag-hot {
+      background: rgba(220,38,38,0.1);
+      color: #DC2626;
+    }
+
+    .tag-iced {
+      background: rgba(37,99,235,0.1);
+      color: #2563EB;
+    }
+
+    .tag-both {
+      background: rgba(5,150,105,0.1);
+      color: #059669;
+    }
+
+    .unavail-badge {
+      font-size: 9px;
+      font-weight: 700;
+      background: rgba(217,119,6,0.1);
+      color: #D97706;
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin-top: 4px;
+      display: inline-block;
+    }
+
+    .item-mods {
+      font-size: 11px;
+      color: #9CA3AF;
+      margin-top: 2px;
+    }
+
+    /* ── Toggle Switch ─────────────────────────────────────────── */
+    .toggle-sw {
+      width: 32px;
+      height: 18px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+      position: relative;
+      border: none;
+      outline: none;
+    }
+
+    .toggle-sw.on {
+      background: #2563EB;
+    }
+
+    .toggle-sw.off {
+      background: #D1D5DB;
+    }
+
+    .toggle-thumb {
+      width: 14px;
+      height: 14px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      transition: left 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .toggle-sw.on .toggle-thumb {
+      left: 16px;
+    }
+
+    .toggle-sw.off .toggle-thumb {
+      left: 2px;
+    }
+
+    /* ── Panel 3: Editor ───────────────────────────────────────── */
+    .editor-panel {
+      background: white;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-panel::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .editor-panel::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .editor-panel::-webkit-scrollbar-thumb {
+      background: #E5E7EB;
+      border-radius: 2px;
+    }
+
+    .editor-body {
+      padding: 20px;
+      flex: 1;
+    }
+
+    /* Availability row */
+    .avail-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #E5E7EB;
+      margin-bottom: 20px;
+    }
+
+    .avail-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .avail-status {
+      font-size: 12px;
+    }
+
+    .avail-status.on {
+      color: #059669;
+    }
+
+    .avail-status.off {
+      color: #D97706;
+    }
+
+    /* Large toggle */
+    .toggle-lg {
+      width: 48px;
+      height: 26px;
+      border-radius: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+      position: relative;
+      border: none;
+      outline: none;
+    }
+
+    .toggle-lg.on {
+      background: #2563EB;
+    }
+
+    .toggle-lg.off {
+      background: #D1D5DB;
+    }
+
+    .toggle-lg .toggle-thumb {
+      width: 20px;
+      height: 20px;
+      top: 3px;
+    }
+
+    .toggle-lg.on .toggle-thumb {
+      left: 25px;
+    }
+
+    .toggle-lg.off .toggle-thumb {
+      left: 3px;
+    }
+
+    /* Form groups */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6B7280;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .form-input {
+      width: 100%;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-family: 'Outfit', sans-serif;
+      color: #111827;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .form-input:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
+    .form-textarea {
+      width: 100%;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: 'Outfit', sans-serif;
+      color: #111827;
+      outline: none;
+      resize: none;
+      line-height: 1.5;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .form-textarea:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
+    /* Section heading */
+    .section-heading {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6B7280;
+      background: #E5E7EB;
+      border-radius: 8px;
+      padding: 1px 8px;
+    }
+
+    /* Price grid */
+    .price-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .price-col {
+      border: 1px solid #E5E7EB;
+      border-radius: 9px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+
+    .price-col:hover {
+      border-color: #93C5FD;
+      background: #F8FAFF;
+    }
+
+    .price-col.selected {
+      border-color: #2563EB;
+      background: rgba(37,99,235,0.06);
+    }
+
+    .price-size-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .price-col.selected .price-size-label {
+      color: #2563EB;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 1px;
+    }
+
+    .price-dollar {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6B7280;
+    }
+
+    .price-col.selected .price-dollar {
+      color: #2563EB;
+    }
+
+    .price-number-input {
+      border: none;
+      border-bottom: 2px solid #E5E7EB;
+      font-size: 18px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      color: #111827;
+      width: 60px;
+      outline: none;
+      background: transparent;
+      padding: 0 0 1px 0;
+      transition: border-color 0.15s;
+    }
+
+    .price-number-input:focus {
+      border-bottom-color: #2563EB;
+    }
+
+    .price-col.selected .price-number-input {
+      color: #2563EB;
+    }
+
+    /* Temperature selector */
+    .temp-group {
+      display: flex;
+      gap: 0;
+      margin-bottom: 18px;
+      border: 1px solid #E5E7EB;
+      border-radius: 9px;
+      overflow: hidden;
+    }
+
+    .temp-btn {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      border: none;
+      background: white;
+      color: #6B7280;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.15s;
+      border-right: 1px solid #E5E7EB;
+    }
+
+    .temp-btn:last-child {
+      border-right: none;
+    }
+
+    .temp-btn:hover {
+      background: #F9FAFB;
+      color: #374151;
+    }
+
+    .temp-btn.active {
+      background: rgba(37,99,235,0.08);
+      color: #2563EB;
+      outline: 2px solid #2563EB;
+      outline-offset: -2px;
+      z-index: 1;
+    }
+
+    /* Modifier groups */
+    .mod-group {
+      border: 1px solid #E5E7EB;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .mod-group-hdr {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      background: #F9FAFB;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .mod-group-hdr:hover {
+      background: #F3F4F6;
+    }
+
+    .mod-group-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111827;
+      flex: 1;
+    }
+
+    .mod-group-badge {
+      font-size: 11px;
+      color: #6B7280;
+      background: #E5E7EB;
+      border-radius: 8px;
+      padding: 1px 7px;
+    }
+
+    .mod-chevron {
+      color: #9CA3AF;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .mod-group.collapsed .mod-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .mod-group-body {
+      padding: 8px 14px 10px;
+      border-top: 1px solid #E5E7EB;
+    }
+
+    .mod-group.collapsed .mod-group-body {
+      display: none;
+    }
+
+    .mod-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px solid #F3F4F6;
+    }
+
+    .mod-row:last-of-type {
+      border-bottom: none;
+    }
+
+    .mod-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2563EB;
+      flex-shrink: 0;
+    }
+
+    .mod-name-input {
+      flex: 1;
+      border: none;
+      font-size: 13px;
+      font-family: 'Outfit', sans-serif;
+      color: #111827;
+      padding: 2px 4px;
+      border-radius: 4px;
+      outline: none;
+      background: transparent;
+    }
+
+    .mod-name-input:focus {
+      background: #F0F4FF;
+    }
+
+    .price-wrap {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      border: 1px solid #E5E7EB;
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+
+    .price-prefix {
+      font-size: 12px;
+      color: #6B7280;
+    }
+
+    .price-input {
+      width: 44px;
+      border: none;
+      font-size: 12px;
+      font-family: 'Outfit', sans-serif;
+      color: #111827;
+      outline: none;
+      text-align: right;
+      background: transparent;
+    }
+
+    .mod-del {
+      width: 20px;
+      height: 20px;
+      background: transparent;
+      border: none;
+      color: #9CA3AF;
+      cursor: pointer;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-family: 'Outfit', sans-serif;
+      line-height: 1;
+      transition: all 0.15s;
+    }
+
+    .mod-del:hover {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+
+    .mod-add-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 0 2px;
+      cursor: pointer;
+      color: #2563EB;
+      font-size: 12px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .mod-add-row:hover {
+      opacity: 0.75;
+    }
+
+    .mod-add-link {
+      font-size: 11px;
+      color: #2563EB;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      padding: 0;
+      margin-left: auto;
+    }
+
+    .mod-add-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Presets */
+    .preset-section {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid #E5E7EB;
+    }
+
+    .preset-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid #E5E7EB;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      background: #FAFAFA;
+    }
+
+    .preset-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #2563EB, #7C3AED);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .preset-info {
+      flex: 1;
+    }
+
+    .preset-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .preset-desc {
+      font-size: 11px;
+      color: #9CA3AF;
+      margin-top: 2px;
+    }
+
+    .btn-add-preset {
+      width: 100%;
+      border: 1px dashed #D1D5DB;
+      border-radius: 9px;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6B7280;
+      background: transparent;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      transition: all 0.15s;
+    }
+
+    .btn-add-preset:hover {
+      border-color: #2563EB;
+      color: #2563EB;
+      background: rgba(37,99,235,0.04);
+    }
+
+    /* Editor Footer */
+    .editor-footer {
+      position: sticky;
+      bottom: 0;
+      background: white;
+      border-top: 1px solid #E5E7EB;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .btn-save {
+      background: var(--blue);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      transition: background 0.15s;
+    }
+
+    .btn-save:hover {
+      background: #1D4ED8;
+    }
+
+    .save-hint {
+      flex: 1;
+      font-size: 11px;
+      color: #9CA3AF;
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: #DC2626;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      padding: 6px 10px;
+      border-radius: 7px;
+      transition: background 0.15s;
+    }
+
+    .btn-delete:hover {
+      background: rgba(220,38,38,0.08);
+    }
+
+    /* ── Divider utility ───────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: #E5E7EB;
+      margin: 16px 0;
+    }
+
+    /* ── Temp section label ────────────────────────────────────── */
+    .serve-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6B7280;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 7px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Controls Bar -->
+  <div class="controls-bar">
+    <span class="ctrl-label">Active item:</span>
+    <button class="ctrl-btn active" onclick="selectItem(0)">Oat Milk Latte</button>
+    <button class="ctrl-btn" onclick="selectItem(1)">Matcha Latte</button>
+    <button class="ctrl-btn" onclick="selectItem(2)">Cold Brew</button>
+    <span class="ctrl-label" style="margin-left:12px">Modifiers:</span>
+    <button class="ctrl-btn active" id="mod-expanded-btn" onclick="setModView('expanded')">Expanded</button>
+    <button class="ctrl-btn" id="mod-collapsed-btn" onclick="setModView('collapsed')">Collapsed</button>
+  </div>
+
+  <!-- App Frame -->
+  <div class="app-frame">
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <!-- Logo -->
+      <div class="sidebar-logo">
+        <div class="logomark">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <ellipse cx="9" cy="11" rx="5" ry="4" fill="rgba(255,255,255,0.25)"/>
+            <path d="M9 2 C7 5, 5 7, 5 10 C5 12.2 6.8 14 9 14 C11.2 14 13 12.2 13 10 C13 7 11 5 9 2Z" fill="white"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-name">Drink-UX</span>
+          <span class="logo-sub">Brew &amp; Blossom</span>
+        </div>
+      </div>
+
+      <!-- Primary Nav -->
+      <div class="nav-section">
+        <div class="nav-section-label">Manage</div>
+
+        <div class="nav-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          Dashboard
+        </div>
+
+        <div class="nav-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          Orders
+        </div>
+
+        <div class="nav-item active">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+          </svg>
+          Menu
+        </div>
+
+        <div class="nav-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Reports
+        </div>
+      </div>
+
+      <!-- Settings Nav -->
+      <div class="nav-section" style="margin-top:8px;">
+        <div class="nav-section-label">Settings</div>
+
+        <div class="nav-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>
+          </svg>
+          Integrations
+        </div>
+
+        <div class="nav-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+          Team
+        </div>
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="user-avatar">MB</div>
+        <div class="user-info">
+          <span class="user-name">Morgan B.</span>
+          <span class="user-role">Owner</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+
+      <!-- Topbar -->
+      <div class="topbar">
+        <span class="topbar-title">Menu Management</span>
+
+        <button class="btn-outline">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+          Preview Customer View
+        </button>
+
+        <button class="btn-outline">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+          </svg>
+          Sync from Square
+        </button>
+
+        <button class="btn-primary">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          New Item
+        </button>
+      </div>
+
+      <!-- 3-Panel Grid -->
+      <div class="panel-grid">
+
+        <!-- Panel 1: Categories -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-label">Categories</span>
+            <button class="btn-add-circle" title="Add category">+</button>
+          </div>
+          <div class="panel-scroll">
+
+            <div class="cat-item active" onclick="selectCategory(this, 'ESPRESSO', 4)">
+              <span class="cat-drag">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <circle cx="3" cy="2" r="1.1"/><circle cx="9" cy="2" r="1.1"/>
+                  <circle cx="3" cy="6" r="1.1"/><circle cx="9" cy="6" r="1.1"/>
+                  <circle cx="3" cy="10" r="1.1"/><circle cx="9" cy="10" r="1.1"/>
+                </svg>
+              </span>
+              <span class="cat-name">Espresso</span>
+              <span class="cat-count">4</span>
+            </div>
+
+            <div class="cat-item" onclick="selectCategory(this, 'MATCHA', 3)">
+              <span class="cat-drag">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <circle cx="3" cy="2" r="1.1"/><circle cx="9" cy="2" r="1.1"/>
+                  <circle cx="3" cy="6" r="1.1"/><circle cx="9" cy="6" r="1.1"/>
+                  <circle cx="3" cy="10" r="1.1"/><circle cx="9" cy="10" r="1.1"/>
+                </svg>
+              </span>
+              <span class="cat-name">Matcha</span>
+              <span class="cat-count">3</span>
+            </div>
+
+            <div class="cat-item" onclick="selectCategory(this, 'COLD BREW', 2)">
+              <span class="cat-drag">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <circle cx="3" cy="2" r="1.1"/><circle cx="9" cy="2" r="1.1"/>
+                  <circle cx="3" cy="6" r="1.1"/><circle cx="9" cy="6" r="1.1"/>
+                  <circle cx="3" cy="10" r="1.1"/><circle cx="9" cy="10" r="1.1"/>
+                </svg>
+              </span>
+              <span class="cat-name">Cold Brew</span>
+              <span class="cat-count">2</span>
+            </div>
+
+            <div class="cat-item" onclick="selectCategory(this, 'CHAI', 2)">
+              <span class="cat-drag">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <circle cx="3" cy="2" r="1.1"/><circle cx="9" cy="2" r="1.1"/>
+                  <circle cx="3" cy="6" r="1.1"/><circle cx="9" cy="6" r="1.1"/>
+                  <circle cx="3" cy="10" r="1.1"/><circle cx="9" cy="10" r="1.1"/>
+                </svg>
+              </span>
+              <span class="cat-name">Chai</span>
+              <span class="cat-count">2</span>
+            </div>
+
+            <div class="cat-item" onclick="selectCategory(this, 'SEASONAL', 1)">
+              <span class="cat-drag">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <circle cx="3" cy="2" r="1.1"/><circle cx="9" cy="2" r="1.1"/>
+                  <circle cx="3" cy="6" r="1.1"/><circle cx="9" cy="6" r="1.1"/>
+                  <circle cx="3" cy="10" r="1.1"/><circle cx="9" cy="10" r="1.1"/>
+                </svg>
+              </span>
+              <span class="cat-name">Seasonal</span>
+              <span class="cat-count">1</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Panel 2: Items -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-label" id="category-label">Espresso</span>
+            <div class="panel-header-right">
+              <span class="panel-count" id="item-count">4 items</span>
+            </div>
+          </div>
+          <div class="panel-scroll">
+
+            <!-- Item 0: Oat Milk Latte (active, available) -->
+            <div class="item-card active" id="item-card-0" onclick="selectItem(0)">
+              <span class="item-drag">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="#9CA3AF">
+                  <circle cx="3" cy="2" r="1.1"/><circle cx="9" cy="2" r="1.1"/>
+                  <circle cx="3" cy="6" r="1.1"/><circle cx="9" cy="6" r="1.1"/>
+                  <circle cx="3" cy="10" r="1.1"/><circle cx="9" cy="10" r="1.1"/>
+                </svg>
+              </span>
+              <div class="item-info">
+                <div class="item-name">Oat Milk Latte</div>
+                <div class="item-meta">
+                  <span class="item-price">$5.75</span>
+                  <span class="item-tag tag-both">Both</span>
+                </div>
+                <div class="item-mods">3 modifier groups</div>
+              </div>
+              <button class="toggle-sw on" id="toggle-0" onclick="event.stopPropagation(); toggleAvail(this, 0)" title="Toggle availability">
+                <div class="toggle-thumb"></div>
+              </button>
+            </div>
+
+            <!-- Item 1: Double Espresso (unavailable) -->
+            <div class="item-card unavailable" id="item-card-1" onclick="selectItem(1)">
+              <span class="item-drag">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="#9CA3AF">
+                  <circle cx="3" cy="2" r="1.1"/><circle cx="9" cy="2" r="1.1"/>
+                  <circle cx="3" cy="6" r="1.1"/><circle cx="9" cy="6" r="1.1"/>
+                  <circle cx="3" cy="10" r="1.1"/><circle cx="9" cy="10" r="1.1"/>
+                </svg>
+              </span>
+              <div class="item-info">
+                <div class="item-name">Double Espresso</div>
+                <div class="item-meta">
+                  <span class="item-price">$4.50</span>
+                  <span class="item-tag tag-hot">Hot</span>
+                </div>
+                <div><span class="unavail-badge">Hidden from customers</span></div>
+                <div class="item-mods">1 modifier group</div>
+              </div>
+              <button class="toggle-sw off" id="toggle-1" onclick="event.stopPropagation(); toggleAvail(this, 1)" title="Toggle availability">
+                <div class="toggle-thumb"></div>
+              </button>
+            </div>
+
+            <!-- Item 2: Cortado -->
+            <div class="item-card" id="item-card-2" onclick="selectItem(2)">
+              <span class="item-drag">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="#9CA3AF">
+                  <circle cx="3" cy="2" r="1.1"/><circle cx="9" cy="2" r="1.1"/>
+                  <circle cx="3" cy="6" r="1.1"/><circle cx="9" cy="6" r="1.1"/>
+                  <circle cx="3" cy="10" r="1.1"/><circle cx="9" cy="10" r="1.1"/>
+                </svg>
+              </span>
+              <div class="item-info">
+                <div class="item-name">Cortado</div>
+                <div class="item-meta">
+                  <span class="item-price">$4.25</span>
+                  <span class="item-tag tag-hot">Hot</span>
+                </div>
+                <div class="item-mods">2 modifier groups</div>
+              </div>
+              <button class="toggle-sw on" id="toggle-2" onclick="event.stopPropagation(); toggleAvail(this, 2)" title="Toggle availability">
+                <div class="toggle-thumb"></div>
+              </button>
+            </div>
+
+            <!-- Item 3: Café Americano -->
+            <div class="item-card" id="item-card-3" onclick="selectItem(3)">
+              <span class="item-drag">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="#9CA3AF">
+                  <circle cx="3" cy="2" r="1.1"/><circle cx="9" cy="2" r="1.1"/>
+                  <circle cx="3" cy="6" r="1.1"/><circle cx="9" cy="6" r="1.1"/>
+                  <circle cx="3" cy="10" r="1.1"/><circle cx="9" cy="10" r="1.1"/>
+                </svg>
+              </span>
+              <div class="item-info">
+                <div class="item-name">Café Americano</div>
+                <div class="item-meta">
+                  <span class="item-price">$3.75</span>
+                  <span class="item-tag tag-both">Both</span>
+                </div>
+                <div class="item-mods">1 modifier group</div>
+              </div>
+              <button class="toggle-sw on" id="toggle-3" onclick="event.stopPropagation(); toggleAvail(this, 3)" title="Toggle availability">
+                <div class="toggle-thumb"></div>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Panel 3: Editor -->
+        <div class="panel editor-panel" id="editor-panel">
+          <div class="editor-body">
+
+            <!-- 1. Availability Row -->
+            <div class="avail-row" id="avail-row">
+              <div>
+                <span class="avail-label">Availability</span>
+                <span class="avail-status on" id="avail-status">Showing on your menu</span>
+              </div>
+              <button class="toggle-lg on" id="editor-toggle" onclick="toggleEditorAvail()">
+                <div class="toggle-thumb"></div>
+              </button>
+            </div>
+
+            <!-- 2. Name Input -->
+            <div class="form-group">
+              <label class="form-label" for="drink-name">Drink Name</label>
+              <input class="form-input" id="drink-name" type="text" value="Oat Milk Latte" />
+            </div>
+
+            <!-- 3. Description -->
+            <div class="form-group">
+              <label class="form-label" for="drink-desc">Description (optional)</label>
+              <textarea class="form-textarea" id="drink-desc" rows="3">Rich espresso pulled over silky oat milk. A café classic.</textarea>
+            </div>
+
+            <!-- 4. Base Prices -->
+            <div class="section-heading" style="margin-top:4px;">Base Prices</div>
+            <div class="price-grid">
+              <div class="price-col" onclick="selectPrice(this)">
+                <span class="price-size-label">Small</span>
+                <div class="price-row">
+                  <span class="price-dollar">$</span>
+                  <input class="price-number-input" type="text" value="4.75" onclick="event.stopPropagation()" />
+                </div>
+              </div>
+              <div class="price-col selected" onclick="selectPrice(this)">
+                <span class="price-size-label">Medium</span>
+                <div class="price-row">
+                  <span class="price-dollar">$</span>
+                  <input class="price-number-input" type="text" value="5.75" onclick="event.stopPropagation()" />
+                </div>
+              </div>
+              <div class="price-col" onclick="selectPrice(this)">
+                <span class="price-size-label">Large</span>
+                <div class="price-row">
+                  <span class="price-dollar">$</span>
+                  <input class="price-number-input" type="text" value="6.75" onclick="event.stopPropagation()" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Temperature -->
+            <div class="form-group">
+              <div class="serve-label">Serve As</div>
+              <div class="temp-group">
+                <button class="temp-btn" onclick="setTemp(this, 'hot')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                  </svg>
+                  Hot only
+                </button>
+                <button class="temp-btn" onclick="setTemp(this, 'iced')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 7 13 17 8 12 1 19"/><polyline points="17 7 23 7 23 13"/>
+                  </svg>
+                  Iced only
+                </button>
+                <button class="temp-btn active" onclick="setTemp(this, 'both')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                  </svg>
+                  Both
+                </button>
+              </div>
+            </div>
+
+            <!-- 6. Modifiers -->
+            <div class="section-heading">
+              Modifiers
+              <span class="section-badge">3 groups</span>
+            </div>
+
+            <!-- Milk Type group (expanded) -->
+            <div class="mod-group" id="mod-group-0">
+              <button class="mod-group-hdr" onclick="toggleGroup(this)">
+                <svg class="mod-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                <span class="mod-group-title">Milk Type</span>
+                <span class="mod-group-badge">4 options</span>
+                <button class="mod-add-link" onclick="event.stopPropagation()">Add option</button>
+              </button>
+              <div class="mod-group-body">
+                <div class="mod-row">
+                  <span class="mod-dot"></span>
+                  <input class="mod-name-input" type="text" value="Oat Milk" />
+                  <div class="price-wrap">
+                    <span class="price-prefix">+$</span>
+                    <input class="price-input" type="text" value="0.75" />
+                  </div>
+                  <button class="mod-del">×</button>
+                </div>
+                <div class="mod-row">
+                  <span class="mod-dot" style="background:#7C3AED;"></span>
+                  <input class="mod-name-input" type="text" value="Almond Milk" />
+                  <div class="price-wrap">
+                    <span class="price-prefix">+$</span>
+                    <input class="price-input" type="text" value="0.75" />
+                  </div>
+                  <button class="mod-del">×</button>
+                </div>
+                <div class="mod-row">
+                  <span class="mod-dot" style="background:#059669;"></span>
+                  <input class="mod-name-input" type="text" value="Whole Milk" />
+                  <div class="price-wrap">
+                    <span class="price-prefix">+$</span>
+                    <input class="price-input" type="text" value="0.00" />
+                  </div>
+                  <button class="mod-del">×</button>
+                </div>
+                <div class="mod-row">
+                  <span class="mod-dot" style="background:#D97706;"></span>
+                  <input class="mod-name-input" type="text" value="Coconut Milk" />
+                  <div class="price-wrap">
+                    <span class="price-prefix">+$</span>
+                    <input class="price-input" type="text" value="0.75" />
+                  </div>
+                  <button class="mod-del">×</button>
+                </div>
+                <button class="mod-add-row">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Add option
+                </button>
+              </div>
+            </div>
+
+            <!-- Syrups group (expanded) -->
+            <div class="mod-group" id="mod-group-1">
+              <button class="mod-group-hdr" onclick="toggleGroup(this)">
+                <svg class="mod-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                <span class="mod-group-title">Syrups</span>
+                <span class="mod-group-badge">3 options</span>
+                <button class="mod-add-link" onclick="event.stopPropagation()">Add option</button>
+              </button>
+              <div class="mod-group-body">
+                <div class="mod-row">
+                  <span class="mod-dot" style="background:#DC2626;"></span>
+                  <input class="mod-name-input" type="text" value="Vanilla" />
+                  <div class="price-wrap">
+                    <span class="price-prefix">+$</span>
+                    <input class="price-input" type="text" value="0.50" />
+                  </div>
+                  <button class="mod-del">×</button>
+                </div>
+                <div class="mod-row">
+                  <span class="mod-dot" style="background:#D97706;"></span>
+                  <input class="mod-name-input" type="text" value="Caramel" />
+                  <div class="price-wrap">
+                    <span class="price-prefix">+$</span>
+                    <input class="price-input" type="text" value="0.50" />
+                  </div>
+                  <button class="mod-del">×</button>
+                </div>
+                <div class="mod-row">
+                  <span class="mod-dot" style="background:#7C3AED;"></span>
+                  <input class="mod-name-input" type="text" value="Lavender" />
+                  <div class="price-wrap">
+                    <span class="price-prefix">+$</span>
+                    <input class="price-input" type="text" value="0.75" />
+                  </div>
+                  <button class="mod-del">×</button>
+                </div>
+                <button class="mod-add-row">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Add option
+                </button>
+              </div>
+            </div>
+
+            <!-- Toppings & Extras group (collapsed by default) -->
+            <div class="mod-group collapsed" id="mod-group-2">
+              <button class="mod-group-hdr" onclick="toggleGroup(this)">
+                <svg class="mod-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                <span class="mod-group-title">Toppings &amp; Extras</span>
+                <span class="mod-group-badge">2 options</span>
+                <button class="mod-add-link" onclick="event.stopPropagation()">Add option</button>
+              </button>
+              <div class="mod-group-body">
+                <div class="mod-row">
+                  <span class="mod-dot" style="background:#059669;"></span>
+                  <input class="mod-name-input" type="text" value="Whipped Cream" />
+                  <div class="price-wrap">
+                    <span class="price-prefix">+$</span>
+                    <input class="price-input" type="text" value="0.50" />
+                  </div>
+                  <button class="mod-del">×</button>
+                </div>
+                <div class="mod-row">
+                  <span class="mod-dot" style="background:#9CA3AF;"></span>
+                  <input class="mod-name-input" type="text" value="Cinnamon Dust" />
+                  <div class="price-wrap">
+                    <span class="price-prefix">+$</span>
+                    <input class="price-input" type="text" value="0.00" />
+                  </div>
+                  <button class="mod-del">×</button>
+                </div>
+                <button class="mod-add-row">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Add option
+                </button>
+              </div>
+            </div>
+
+            <!-- 7. Presets -->
+            <div class="preset-section">
+              <div class="section-heading">Customer Presets</div>
+
+              <div class="preset-card">
+                <div class="preset-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+                  </svg>
+                </div>
+                <div class="preset-info">
+                  <div class="preset-name">Iced Oat Latte</div>
+                  <div class="preset-desc">Default: Medium, Iced, Oat milk</div>
+                </div>
+                <button class="mod-del" style="width:24px;height:24px;font-size:16px;">×</button>
+              </div>
+
+              <button class="btn-add-preset">+ Add Preset for this Drink</button>
+            </div>
+
+          </div><!-- /editor-body -->
+
+          <!-- Editor Footer (sticky) -->
+          <div class="editor-footer">
+            <button class="btn-save" onclick="saveChanges(this)">Save Changes</button>
+            <span class="save-hint" id="save-hint">Saved 2 min ago</span>
+            <button class="btn-delete">Delete Item</button>
+          </div>
+
+        </div><!-- /editor-panel -->
+
+      </div><!-- /panel-grid -->
+
+    </div><!-- /main-content -->
+
+  </div><!-- /app-frame -->
+
+  <script>
+    // ── Item data ───────────────────────────────────────────────────────────
+    const items = [
+      {
+        name: 'Oat Milk Latte',
+        price: '5.75',
+        tag: 'both',
+        tagLabel: 'Both',
+        mods: '3 modifier groups',
+        available: true,
+        desc: 'Rich espresso pulled over silky oat milk. A café classic.',
+        temp: 'both',
+        prices: { small: '4.75', medium: '5.75', large: '6.75' }
+      },
+      {
+        name: 'Matcha Latte',
+        price: '5.50',
+        tag: 'both',
+        tagLabel: 'Both',
+        mods: '2 modifier groups',
+        available: true,
+        desc: 'Ceremonial-grade matcha whisked with steamed milk. Earthy and sweet.',
+        temp: 'both',
+        prices: { small: '4.50', medium: '5.50', large: '6.50' }
+      },
+      {
+        name: 'Cold Brew',
+        price: '4.50',
+        tag: 'iced',
+        tagLabel: 'Iced',
+        mods: '1 modifier group',
+        available: true,
+        desc: '18-hour slow-steeped cold brew. Smooth, bold, low-acidity.',
+        temp: 'iced',
+        prices: { small: '3.75', medium: '4.50', large: '5.25' }
+      }
+    ];
+
+    let currentItem = 0;
+
+    // ── selectItem ─────────────────────────────────────────────────────────
+    function selectItem(idx) {
+      // Only switch if item exists in items data array
+      if (idx >= items.length) idx = 0;
+      currentItem = idx;
+
+      // Update item cards in panel 2
+      document.querySelectorAll('.item-card').forEach((card, i) => {
+        card.classList.toggle('active', i === idx);
+      });
+
+      // Update controls bar buttons
+      document.querySelectorAll('.controls-bar .ctrl-btn').forEach((btn, i) => {
+        if (i < 3) btn.classList.toggle('active', i === idx);
+      });
+
+      const item = items[idx];
+
+      // Update editor name + desc
+      document.getElementById('drink-name').value = item.name;
+      document.getElementById('drink-desc').value = item.desc;
+
+      // Update availability
+      const isOn = item.available;
+      const editorToggle = document.getElementById('editor-toggle');
+      editorToggle.className = 'toggle-lg ' + (isOn ? 'on' : 'off');
+      const availStatus = document.getElementById('avail-status');
+      availStatus.textContent = isOn ? 'Showing on your menu' : 'Hidden from customers';
+      availStatus.className = 'avail-status ' + (isOn ? 'on' : 'off');
+
+      // Update prices
+      const priceCols = document.querySelectorAll('.price-col');
+      const sizes = ['small', 'medium', 'large'];
+      priceCols.forEach((col, i) => {
+        col.querySelector('.price-number-input').value = item.prices[sizes[i]];
+      });
+
+      // Update temp
+      document.querySelectorAll('.temp-btn').forEach(btn => btn.classList.remove('active'));
+      const tempMap = { hot: 0, iced: 1, both: 2 };
+      const tempBtns = document.querySelectorAll('.temp-btn');
+      const activeIdx = tempMap[item.temp] || 2;
+      tempBtns[activeIdx].classList.add('active');
+
+      // Reset save hint
+      document.getElementById('save-hint').textContent = 'Saved 2 min ago';
+    }
+
+    // ── toggleAvail (panel 2 toggle) ────────────────────────────────────────
+    function toggleAvail(el, idx) {
+      const isOn = el.classList.contains('on');
+      el.className = 'toggle-sw ' + (isOn ? 'off' : 'on');
+
+      const card = document.getElementById('item-card-' + idx);
+      const badge = card.querySelector('.unavail-badge');
+
+      if (isOn) {
+        // turning off
+        card.classList.add('unavailable');
+        if (!badge) {
+          const info = card.querySelector('.item-info');
+          const b = document.createElement('div');
+          b.innerHTML = '<span class="unavail-badge">Hidden from customers</span>';
+          info.appendChild(b);
+        }
+        // sync editor toggle if this is the active item
+        if (idx === currentItem) {
+          document.getElementById('editor-toggle').className = 'toggle-lg off';
+          const st = document.getElementById('avail-status');
+          st.textContent = 'Hidden from customers';
+          st.className = 'avail-status off';
+        }
+      } else {
+        // turning on
+        card.classList.remove('unavailable');
+        if (badge) badge.parentElement.remove();
+        if (idx === currentItem) {
+          document.getElementById('editor-toggle').className = 'toggle-lg on';
+          const st = document.getElementById('avail-status');
+          st.textContent = 'Showing on your menu';
+          st.className = 'avail-status on';
+        }
+      }
+
+      // update items data
+      if (idx < items.length) items[idx].available = !isOn;
+    }
+
+    // ── toggleEditorAvail ──────────────────────────────────────────────────
+    function toggleEditorAvail() {
+      const tog = document.getElementById('editor-toggle');
+      const isOn = tog.classList.contains('on');
+      tog.className = 'toggle-lg ' + (isOn ? 'off' : 'on');
+      const st = document.getElementById('avail-status');
+      st.textContent = isOn ? 'Hidden from customers' : 'Showing on your menu';
+      st.className = 'avail-status ' + (isOn ? 'off' : 'on');
+
+      // sync panel 2 toggle for current item
+      const panelToggle = document.getElementById('toggle-' + currentItem);
+      if (panelToggle) {
+        panelToggle.className = 'toggle-sw ' + (isOn ? 'off' : 'on');
+        const card = document.getElementById('item-card-' + currentItem);
+        const badge = card ? card.querySelector('.unavail-badge') : null;
+        if (isOn) {
+          card && card.classList.add('unavailable');
+          if (card && !badge) {
+            const info = card.querySelector('.item-info');
+            const b = document.createElement('div');
+            b.innerHTML = '<span class="unavail-badge">Hidden from customers</span>';
+            info.appendChild(b);
+          }
+        } else {
+          card && card.classList.remove('unavailable');
+          if (badge) badge.parentElement.remove();
+        }
+      }
+
+      if (currentItem < items.length) items[currentItem].available = !isOn;
+    }
+
+    // ── setTemp ────────────────────────────────────────────────────────────
+    function setTemp(btn, mode) {
+      document.querySelectorAll('.temp-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (currentItem < items.length) items[currentItem].temp = mode;
+    }
+
+    // ── selectPrice ────────────────────────────────────────────────────────
+    function selectPrice(col) {
+      document.querySelectorAll('.price-col').forEach(c => c.classList.remove('selected'));
+      col.classList.add('selected');
+    }
+
+    // ── toggleGroup ────────────────────────────────────────────────────────
+    function toggleGroup(hdr) {
+      hdr.closest('.mod-group').classList.toggle('collapsed');
+    }
+
+    // ── setModView ─────────────────────────────────────────────────────────
+    function setModView(mode) {
+      document.querySelectorAll('.mod-group').forEach(g => {
+        g.classList.toggle('collapsed', mode === 'collapsed');
+      });
+
+      // Update only the mod-view buttons (the last two ctrl-btns)
+      const modBtns = [
+        document.getElementById('mod-expanded-btn'),
+        document.getElementById('mod-collapsed-btn')
+      ];
+      modBtns.forEach(b => b.classList.remove('active'));
+      if (mode === 'expanded') modBtns[0].classList.add('active');
+      else modBtns[1].classList.add('active');
+    }
+
+    // ── selectCategory ─────────────────────────────────────────────────────
+    function selectCategory(el, name, count) {
+      document.querySelectorAll('.cat-item').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('category-label').textContent = name.charAt(0) + name.slice(1).toLowerCase();
+      document.getElementById('item-count').textContent = count + ' item' + (count !== 1 ? 's' : '');
+    }
+
+    // ── saveChanges ────────────────────────────────────────────────────────
+    function saveChanges(btn) {
+      btn.textContent = 'Saving…';
+      btn.style.opacity = '0.7';
+      setTimeout(() => {
+        btn.textContent = 'Save Changes';
+        btn.style.opacity = '';
+        document.getElementById('save-hint').textContent = 'Saved just now';
+      }, 800);
+    }
+  </script>
+
+</body>
+</html>

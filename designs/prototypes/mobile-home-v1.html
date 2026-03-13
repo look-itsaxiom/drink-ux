@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390px, initial-scale=1.0">
+  <title>Drink-UX — Mobile Home (Menu Browser) v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── Theme Variables ──────────────────────────────────── */
+    :root {
+      --theme-primary: #6B4226;
+      --theme-primaryDark: #4a2e1a;
+      --theme-secondary: #D4A574;
+      --theme-background: #FDF8F5;
+      --theme-surface: #FFFFFF;
+      --theme-text: #2C1810;
+      --theme-textSecondary: #8B7E74;
+      --theme-accent: #E67E22;
+      --theme-border: rgba(107, 66, 38, 0.12);
+      --theme-shadow: rgba(107, 66, 38, 0.15);
+      --theme-success: #2D9B6F;
+      --theme-warning: #F59E0B;
+      --theme-error: #E53E3E;
+      --theme-gradient-primary: linear-gradient(135deg, #6B4226, #a0622f);
+      --theme-gradient-secondary: linear-gradient(135deg, #D4A574, #e8c18a);
+    }
+
+    /* ── Theme Switcher Options ─────────────────────────── */
+    [data-theme="ocean"] {
+      --theme-primary: #1A6B8A;
+      --theme-primaryDark: #0f4d65;
+      --theme-secondary: #5BC4D4;
+      --theme-background: #F0F9FC;
+      --theme-surface: #FFFFFF;
+      --theme-text: #0D2D3A;
+      --theme-textSecondary: #4A7A8A;
+      --theme-accent: #FF6B6B;
+      --theme-border: rgba(26, 107, 138, 0.12);
+      --theme-shadow: rgba(26, 107, 138, 0.15);
+      --theme-gradient-primary: linear-gradient(135deg, #1A6B8A, #2589ad);
+      --theme-gradient-secondary: linear-gradient(135deg, #5BC4D4, #7dd8e6);
+    }
+
+    [data-theme="cherry"] {
+      --theme-primary: #C0392B;
+      --theme-primaryDark: #922b21;
+      --theme-secondary: #F1948A;
+      --theme-background: #FFF5F5;
+      --theme-surface: #FFFFFF;
+      --theme-text: #2C1010;
+      --theme-textSecondary: #8B6060;
+      --theme-accent: #E67E22;
+      --theme-border: rgba(192, 57, 43, 0.12);
+      --theme-shadow: rgba(192, 57, 43, 0.15);
+      --theme-gradient-primary: linear-gradient(135deg, #C0392B, #e04e40);
+      --theme-gradient-secondary: linear-gradient(135deg, #F1948A, #f5b0aa);
+    }
+
+    [data-theme="forest"] {
+      --theme-primary: #2D6A4F;
+      --theme-primaryDark: #1b4332;
+      --theme-secondary: #74C69D;
+      --theme-background: #F2FAF5;
+      --theme-surface: #FFFFFF;
+      --theme-text: #1B3A2A;
+      --theme-textSecondary: #52796F;
+      --theme-accent: #95D5B2;
+      --theme-border: rgba(45, 106, 79, 0.12);
+      --theme-shadow: rgba(45, 106, 79, 0.15);
+      --theme-gradient-primary: linear-gradient(135deg, #2D6A4F, #3d8a67);
+      --theme-gradient-secondary: linear-gradient(135deg, #74C69D, #95d5b2);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    /* ── Theme Switcher Bar ─────────────────────────────── */
+    .theme-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 16px;
+      background: white;
+      padding: 10px 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .theme-bar span {
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .theme-btn {
+      border: none;
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .theme-btn:hover { transform: scale(1.05); }
+    .theme-btn.active { outline: 2px solid #333; outline-offset: 1px; }
+    .theme-btn[data-t="espresso"] { background: #6B4226; color: white; }
+    .theme-btn[data-t="ocean"]    { background: #1A6B8A; color: white; }
+    .theme-btn[data-t="cherry"]   { background: #C0392B; color: white; }
+    .theme-btn[data-t="forest"]   { background: #2D6A4F; color: white; }
+
+    /* ── Phone Shell ────────────────────────────────────── */
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: var(--theme-background);
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.25), 0 0 0 2px rgba(255,255,255,0.4) inset;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Status Bar ─────────────────────────────────────── */
+    .status-bar {
+      background: var(--theme-primary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px 10px;
+      flex-shrink: 0;
+    }
+
+    .status-time {
+      font-size: 15px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.95);
+      letter-spacing: -0.3px;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .status-icons svg {
+      fill: rgba(255,255,255,0.9);
+    }
+
+    /* ── App Header ─────────────────────────────────────── */
+    .app-header {
+      background: var(--theme-primary);
+      padding: 8px 20px 20px;
+      flex-shrink: 0;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .shop-logo-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .shop-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+
+    .shop-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: -0.3px;
+    }
+
+    .shop-tagline {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      font-weight: 400;
+      margin-top: 1px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .icon-btn svg { fill: white; }
+
+    .cart-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--theme-secondary);
+      color: var(--theme-primaryDark);
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--theme-primary);
+    }
+
+    /* Search bar in header */
+    .search-bar {
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,0.15);
+      border-radius: 14px;
+      padding: 10px 14px;
+      gap: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      backdrop-filter: blur(4px);
+    }
+
+    .search-bar svg { fill: rgba(255,255,255,0.7); flex-shrink: 0; }
+
+    .search-placeholder {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* ── Scrollable Content ─────────────────────────────── */
+    .scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: var(--theme-background);
+      scrollbar-width: none;
+    }
+
+    .scroll-content::-webkit-scrollbar { display: none; }
+
+    /* ── Category Pills ─────────────────────────────────── */
+    .category-strip {
+      padding: 16px 0 12px;
+      background: var(--theme-surface);
+      border-bottom: 1px solid var(--theme-border);
+    }
+
+    .category-scroll {
+      display: flex;
+      gap: 8px;
+      padding: 0 20px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .category-scroll::-webkit-scrollbar { display: none; }
+
+    .cat-pill {
+      flex-shrink: 0;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-family: 'Outfit', sans-serif;
+      border: 1.5px solid transparent;
+    }
+
+    .cat-pill.active {
+      background: var(--theme-primary);
+      color: white;
+      border-color: var(--theme-primary);
+    }
+
+    .cat-pill.inactive {
+      background: transparent;
+      color: var(--theme-textSecondary);
+      border-color: var(--theme-border);
+    }
+
+    .cat-pill.inactive:hover {
+      border-color: var(--theme-primary);
+      color: var(--theme-primary);
+    }
+
+    /* ── Section Labels ─────────────────────────────────── */
+    .section-label {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--theme-text);
+      letter-spacing: -0.3px;
+    }
+
+    .section-sublabel {
+      font-size: 13px;
+      color: var(--theme-textSecondary);
+      margin-top: 2px;
+    }
+
+    /* ── Featured Presets (horizontal scroll) ───────────── */
+    .featured-section {
+      padding: 20px 0 8px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 20px 14px;
+    }
+
+    .see-all {
+      font-size: 13px;
+      color: var(--theme-primary);
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .preset-scroll {
+      display: flex;
+      gap: 14px;
+      padding: 0 20px 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .preset-scroll::-webkit-scrollbar { display: none; }
+
+    .preset-card {
+      flex-shrink: 0;
+      width: 150px;
+      border-radius: 20px;
+      background: var(--theme-surface);
+      box-shadow: 0 2px 12px var(--theme-shadow);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid var(--theme-border);
+    }
+
+    .preset-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px var(--theme-shadow);
+    }
+
+    .preset-visual {
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preset-visual-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0.15;
+    }
+
+    .preset-cup-svg {
+      position: relative;
+      z-index: 1;
+    }
+
+    .preset-info {
+      padding: 10px 12px 12px;
+    }
+
+    .preset-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--theme-text);
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .preset-desc {
+      font-size: 11px;
+      color: var(--theme-textSecondary);
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .preset-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preset-price {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--theme-primary);
+    }
+
+    .preset-add-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: var(--theme-primary);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .preset-add-btn svg { fill: white; }
+
+    /* ── Menu Items (List) ──────────────────────────────── */
+    .menu-section {
+      padding: 20px 0 0;
+    }
+
+    .menu-items {
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .menu-item {
+      background: var(--theme-surface);
+      border-radius: 18px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 8px var(--theme-shadow);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      border: 1px solid var(--theme-border);
+    }
+
+    .menu-item:active {
+      transform: scale(0.98);
+    }
+
+    .menu-item:hover {
+      box-shadow: 0 4px 16px var(--theme-shadow);
+    }
+
+    .item-visual {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .item-visual-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0.12;
+    }
+
+    .item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .item-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--theme-text);
+      letter-spacing: -0.2px;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .item-desc {
+      font-size: 12px;
+      color: var(--theme-textSecondary);
+      line-height: 1.35;
+      margin-bottom: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .item-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .item-price {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--theme-primary);
+    }
+
+    .item-temp-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(107, 66, 38, 0.1);
+      color: var(--theme-primary);
+    }
+
+    .item-add {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--theme-primary);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+
+    .item-add:active { transform: scale(0.92); }
+    .item-add svg { fill: white; }
+
+    /* ── Bottom Spacer (for cart bar) ───────────────────── */
+    .bottom-spacer { height: 90px; }
+
+    /* ── Cart Bar ───────────────────────────────────────── */
+    .cart-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 12px 20px 28px;
+      background: linear-gradient(to top, var(--theme-background) 70%, transparent);
+    }
+
+    .cart-bar-btn {
+      width: 100%;
+      height: 56px;
+      border-radius: 18px;
+      background: var(--theme-gradient-primary);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px var(--theme-shadow);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .cart-bar-btn:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 10px var(--theme-shadow);
+    }
+
+    .cart-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cart-count-pill {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .cart-bar-text {
+      font-size: 15px;
+      font-weight: 700;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .cart-bar-price {
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* ── Divider ────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: var(--theme-border);
+      margin: 0 20px;
+    }
+
+    /* ── Rating stars ───────────────────────────────────── */
+    .stars {
+      display: flex;
+      gap: 1px;
+    }
+    .star { color: var(--theme-secondary); font-size: 10px; }
+  </style>
+</head>
+<body>
+
+  <!-- Theme Switcher -->
+  <div class="theme-bar">
+    <span>Theme:</span>
+    <button class="theme-btn active" data-t="espresso" onclick="setTheme('espresso', this)">☕ Espresso</button>
+    <button class="theme-btn" data-t="ocean" onclick="setTheme('ocean', this)">🌊 Ocean</button>
+    <button class="theme-btn" data-t="cherry" onclick="setTheme('cherry', this)">🍒 Cherry</button>
+    <button class="theme-btn" data-t="forest" onclick="setTheme('forest', this)">🌿 Forest</button>
+  </div>
+
+  <!-- Phone Shell -->
+  <div class="phone" id="phone">
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <div class="status-icons">
+        <svg width="16" height="12" viewBox="0 0 16 12"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4" y="2" width="3" height="10" rx="1"/><rect x="8" y="0" width="3" height="12" rx="1"/><rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/></svg>
+        <svg width="15" height="12" viewBox="0 0 15 12"><path d="M7.5 2.5C9.8 2.5 11.8 3.5 13.2 5.1L14.5 3.8C12.7 1.8 10.2 0.5 7.5 0.5C4.8 0.5 2.3 1.8 0.5 3.8L1.8 5.1C3.2 3.5 5.2 2.5 7.5 2.5ZM7.5 6C8.9 6 10.1 6.6 11 7.6L12.3 6.3C11 5 9.3 4.2 7.5 4.2C5.7 4.2 4 5 2.7 6.3L4 7.6C4.9 6.6 6.1 6 7.5 6ZM7.5 9.5C8.3 9.5 9 9.8 9.5 10.3L7.5 12.5L5.5 10.3C6 9.8 6.7 9.5 7.5 9.5Z"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="3" stroke="white" stroke-width="1.5" fill="none" opacity="0.6"/><rect x="22.5" y="3.5" width="2" height="5" rx="1" fill="white" opacity="0.5"/><rect x="1.5" y="2.5" width="17" height="7" rx="2" fill="white"/></svg>
+      </div>
+    </div>
+
+    <!-- App Header -->
+    <div class="app-header">
+      <div class="header-top">
+        <div class="shop-logo-name">
+          <div class="shop-logo">☕</div>
+          <div>
+            <div class="shop-name">Brew & Co.</div>
+            <div class="shop-tagline">Specialty Coffee · Open now</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke="white" stroke-width="2" fill="none"/></svg>
+          </button>
+          <button class="icon-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" stroke="white" stroke-width="2" fill="none"/><line x1="3" y1="6" x2="21" y2="6" stroke="white" stroke-width="2"/><path d="M16 10a4 4 0 01-8 0" stroke="white" stroke-width="2" fill="none"/></svg>
+            <div class="cart-badge">2</div>
+          </button>
+        </div>
+      </div>
+      <!-- Search -->
+      <div class="search-bar">
+        <svg width="16" height="16" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke="rgba(255,255,255,0.7)" stroke-width="2" fill="none"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="rgba(255,255,255,0.7)" stroke-width="2"/></svg>
+        <span class="search-placeholder">Search drinks…</span>
+      </div>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="scroll-content">
+
+      <!-- Category Pills -->
+      <div class="category-strip">
+        <div class="category-scroll">
+          <button class="cat-pill active">All</button>
+          <button class="cat-pill inactive">Espresso</button>
+          <button class="cat-pill inactive">Iced</button>
+          <button class="cat-pill inactive">Tea</button>
+          <button class="cat-pill inactive">Blended</button>
+          <button class="cat-pill inactive">Seasonal</button>
+        </div>
+      </div>
+
+      <!-- Featured Presets -->
+      <div class="featured-section">
+        <div class="section-header">
+          <div>
+            <div class="section-label">⭐ Signature Drinks</div>
+            <div class="section-sublabel">Fan favorites, ready to order</div>
+          </div>
+          <span class="see-all">See all</span>
+        </div>
+        <div class="preset-scroll">
+
+          <!-- Preset 1: Vanilla Oat Latte -->
+          <div class="preset-card">
+            <div class="preset-visual" style="background: linear-gradient(160deg, rgba(212,165,116,0.3) 0%, rgba(107,66,38,0.15) 100%);">
+              <div class="preset-visual-bg" style="background: var(--theme-secondary);"></div>
+              <!-- Cup SVG -->
+              <svg class="preset-cup-svg" width="52" height="72" viewBox="0 0 52 72">
+                <path d="M8 12 L44 12 L40 62 Q40 68 26 68 Q12 68 12 62 Z" fill="rgba(212,165,116,0.35)" stroke="rgba(107,66,38,0.3)" stroke-width="1.5"/>
+                <path d="M8 12 L44 12" stroke="rgba(107,66,38,0.4)" stroke-width="2" fill="none"/>
+                <ellipse cx="26" cy="12" rx="18" ry="4" fill="rgba(255,255,255,0.6)"/>
+                <!-- liquid layers -->
+                <path d="M10 30 L42 30 L41 28 L11 28 Z" fill="rgba(212,165,116,0.6)"/>
+                <path d="M10 30 Q10 62 12 62 Q26 68 40 62 Q42 55 42 30 Z" fill="rgba(212,165,116,0.4)"/>
+                <!-- foam -->
+                <path d="M8 12 L44 12 L43 22 Q36 18 26 20 Q16 18 9 22 Z" fill="rgba(255,255,255,0.75)"/>
+              </svg>
+            </div>
+            <div class="preset-info">
+              <div class="preset-name">Vanilla Oat Latte</div>
+              <div class="preset-desc">Oat milk, vanilla syrup</div>
+              <div class="preset-footer">
+                <span class="preset-price">$6.50</span>
+                <button class="preset-add-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5"/><line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preset 2: Caramel Macchiato -->
+          <div class="preset-card">
+            <div class="preset-visual" style="background: linear-gradient(160deg, rgba(230,126,34,0.25) 0%, rgba(107,66,38,0.2) 100%);">
+              <svg class="preset-cup-svg" width="52" height="72" viewBox="0 0 52 72">
+                <path d="M8 12 L44 12 L40 62 Q40 68 26 68 Q12 68 12 62 Z" fill="rgba(107,66,38,0.3)" stroke="rgba(107,66,38,0.3)" stroke-width="1.5"/>
+                <path d="M10 36 Q10 62 12 62 Q26 68 40 62 Q42 55 42 36 Z" fill="rgba(107,66,38,0.5)"/>
+                <path d="M10 24 L42 24 L42 36 L10 36 Z" fill="rgba(212,165,116,0.5)"/>
+                <path d="M8 12 L44 12 L43 24 L9 24 Z" fill="rgba(230,126,34,0.4)"/>
+                <ellipse cx="26" cy="12" rx="18" ry="4" fill="rgba(255,255,255,0.5)"/>
+              </svg>
+            </div>
+            <div class="preset-info">
+              <div class="preset-name">Caramel Macchiato</div>
+              <div class="preset-desc">Vanilla, caramel drizzle</div>
+              <div class="preset-footer">
+                <span class="preset-price">$5.75</span>
+                <button class="preset-add-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5"/><line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preset 3: Matcha Latte -->
+          <div class="preset-card">
+            <div class="preset-visual" style="background: linear-gradient(160deg, rgba(45,155,111,0.2) 0%, rgba(45,106,79,0.15) 100%);">
+              <svg class="preset-cup-svg" width="52" height="72" viewBox="0 0 52 72">
+                <path d="M8 12 L44 12 L40 62 Q40 68 26 68 Q12 68 12 62 Z" fill="rgba(45,155,111,0.25)" stroke="rgba(45,106,79,0.3)" stroke-width="1.5"/>
+                <path d="M10 28 Q10 62 12 62 Q26 68 40 62 Q42 55 42 28 Z" fill="rgba(45,155,111,0.45)"/>
+                <path d="M8 12 L44 12 L43 28 L9 28 Z" fill="rgba(255,255,255,0.6)"/>
+                <ellipse cx="26" cy="12" rx="18" ry="4" fill="rgba(255,255,255,0.5)"/>
+              </svg>
+            </div>
+            <div class="preset-info">
+              <div class="preset-name">Matcha Latte</div>
+              <div class="preset-desc">Oat milk, ceremonial grade</div>
+              <div class="preset-footer">
+                <span class="preset-price">$6.25</span>
+                <button class="preset-add-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5"/><line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preset 4: Cold Brew -->
+          <div class="preset-card">
+            <div class="preset-visual" style="background: linear-gradient(160deg, rgba(44,24,16,0.15) 0%, rgba(107,66,38,0.2) 100%);">
+              <svg class="preset-cup-svg" width="52" height="72" viewBox="0 0 52 72">
+                <!-- Iced cup: wider, tapered -->
+                <path d="M6 8 L46 8 L42 62 Q42 68 26 68 Q10 68 10 62 Z" fill="rgba(44,24,16,0.2)" stroke="rgba(107,66,38,0.3)" stroke-width="1.5"/>
+                <path d="M8 20 Q8 62 10 62 Q26 68 42 62 Q44 55 44 20 Z" fill="rgba(44,24,16,0.55)"/>
+                <!-- ice cubes -->
+                <rect x="14" y="22" width="10" height="10" rx="3" fill="rgba(255,255,255,0.35)"/>
+                <rect x="28" y="26" width="10" height="10" rx="3" fill="rgba(255,255,255,0.3)"/>
+                <!-- straw -->
+                <rect x="30" y="4" width="4" height="40" rx="2" fill="rgba(212,165,116,0.7)"/>
+                <!-- foam top -->
+                <ellipse cx="26" cy="8" rx="20" ry="5" fill="rgba(255,255,255,0.4)"/>
+              </svg>
+            </div>
+            <div class="preset-info">
+              <div class="preset-name">Nitro Cold Brew</div>
+              <div class="preset-desc">Smooth, low acid, iced</div>
+              <div class="preset-footer">
+                <span class="preset-price">$5.25</span>
+                <button class="preset-add-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5"/><line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="divider" style="margin: 4px 20px 0;"></div>
+
+      <!-- Menu Items List -->
+      <div class="menu-section">
+        <div class="section-header">
+          <div>
+            <div class="section-label">Espresso Drinks</div>
+            <div class="section-sublabel">8 items</div>
+          </div>
+        </div>
+
+        <div class="menu-items">
+
+          <!-- Item 1 -->
+          <div class="menu-item">
+            <div class="item-visual" style="background: linear-gradient(135deg, rgba(107,66,38,0.08), rgba(212,165,116,0.15));">
+              <svg width="36" height="48" viewBox="0 0 36 48">
+                <path d="M5 8 L31 8 L28 40 Q28 44 18 44 Q8 44 8 40 Z" fill="rgba(107,66,38,0.3)" stroke="rgba(107,66,38,0.4)" stroke-width="1.5"/>
+                <path d="M6 18 Q6 40 8 40 Q18 44 28 40 Q29 35 29 18 Z" fill="rgba(107,66,38,0.55)"/>
+                <ellipse cx="18" cy="8" rx="13" ry="3" fill="rgba(255,255,255,0.5)"/>
+              </svg>
+            </div>
+            <div class="item-info">
+              <div class="item-name">Americano</div>
+              <div class="item-desc">Espresso shots + hot water. Clean and bold.</div>
+              <div class="item-meta">
+                <span class="item-price">$3.75</span>
+                <span class="item-temp-badge">Hot / Iced</span>
+              </div>
+            </div>
+            <button class="item-add">
+              <svg width="18" height="18" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5"/><line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5"/></svg>
+            </button>
+          </div>
+
+          <!-- Item 2 -->
+          <div class="menu-item">
+            <div class="item-visual" style="background: linear-gradient(135deg, rgba(212,165,116,0.1), rgba(255,255,255,0.5));">
+              <svg width="36" height="48" viewBox="0 0 36 48">
+                <path d="M5 8 L31 8 L28 40 Q28 44 18 44 Q8 44 8 40 Z" fill="rgba(212,165,116,0.3)" stroke="rgba(107,66,38,0.3)" stroke-width="1.5"/>
+                <path d="M6 22 Q6 40 8 40 Q18 44 28 40 Q29 35 29 22 Z" fill="rgba(212,165,116,0.5)"/>
+                <path d="M5 8 L31 8 L30 22 L6 22 Z" fill="rgba(255,255,255,0.65)"/>
+                <ellipse cx="18" cy="8" rx="13" ry="3" fill="rgba(255,255,255,0.6)"/>
+              </svg>
+            </div>
+            <div class="item-info">
+              <div class="item-name">Flat White</div>
+              <div class="item-desc">Double ristretto, micro-foamed milk</div>
+              <div class="item-meta">
+                <span class="item-price">$4.50</span>
+                <span class="item-temp-badge">Hot only</span>
+              </div>
+            </div>
+            <button class="item-add">
+              <svg width="18" height="18" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5"/><line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5"/></svg>
+            </button>
+          </div>
+
+          <!-- Item 3 -->
+          <div class="menu-item">
+            <div class="item-visual" style="background: linear-gradient(135deg, rgba(44,24,16,0.08), rgba(107,66,38,0.15));">
+              <svg width="36" height="48" viewBox="0 0 36 48">
+                <!-- Iced cup -->
+                <path d="M4 6 L32 6 L29 40 Q29 44 18 44 Q7 44 7 40 Z" fill="rgba(44,24,16,0.2)" stroke="rgba(107,66,38,0.3)" stroke-width="1.5"/>
+                <path d="M5 14 Q5 40 7 40 Q18 44 29 40 Q30 35 30 14 Z" fill="rgba(44,24,16,0.5)"/>
+                <rect x="9" y="15" width="7" height="7" rx="2" fill="rgba(255,255,255,0.3)"/>
+                <rect x="20" y="18" width="7" height="7" rx="2" fill="rgba(255,255,255,0.25)"/>
+                <rect x="22" y="2" width="3" height="30" rx="1.5" fill="rgba(212,165,116,0.6)"/>
+                <ellipse cx="18" cy="6" rx="14" ry="3.5" fill="rgba(255,255,255,0.35)"/>
+              </svg>
+            </div>
+            <div class="item-info">
+              <div class="item-name">Iced Latte</div>
+              <div class="item-desc">Espresso over ice, your choice of milk</div>
+              <div class="item-meta">
+                <span class="item-price">$5.00</span>
+                <span class="item-temp-badge">Iced only</span>
+              </div>
+            </div>
+            <button class="item-add">
+              <svg width="18" height="18" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5"/><line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5"/></svg>
+            </button>
+          </div>
+
+          <!-- Item 4 — Cappuccino -->
+          <div class="menu-item">
+            <div class="item-visual" style="background: linear-gradient(135deg, rgba(255,255,255,0.5), rgba(212,165,116,0.1));">
+              <svg width="36" height="48" viewBox="0 0 36 48">
+                <path d="M7 10 L29 10 L27 40 Q27 44 18 44 Q9 44 9 40 Z" fill="rgba(107,66,38,0.2)" stroke="rgba(107,66,38,0.3)" stroke-width="1.5"/>
+                <path d="M7 28 Q7 40 9 40 Q18 44 27 40 Q28 35 28 28 Z" fill="rgba(107,66,38,0.4)"/>
+                <path d="M7 10 L29 10 L28 28 L8 28 Z" fill="rgba(255,255,255,0.8)"/>
+                <ellipse cx="18" cy="10" rx="11" ry="3" fill="rgba(255,255,255,0.7)"/>
+                <!-- Latte art dots -->
+                <circle cx="15" cy="20" r="2" fill="rgba(107,66,38,0.2)"/>
+                <circle cx="21" cy="18" r="1.5" fill="rgba(107,66,38,0.2)"/>
+              </svg>
+            </div>
+            <div class="item-info">
+              <div class="item-name">Cappuccino</div>
+              <div class="item-desc">Espresso, steamed milk, thick foam</div>
+              <div class="item-meta">
+                <span class="item-price">$4.25</span>
+                <span class="item-temp-badge">Hot only</span>
+              </div>
+            </div>
+            <button class="item-add">
+              <svg width="18" height="18" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="2.5"/><line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="2.5"/></svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="bottom-spacer"></div>
+    </div>
+
+    <!-- Cart Bar (fixed at bottom) -->
+    <div class="cart-bar">
+      <button class="cart-bar-btn">
+        <div class="cart-bar-left">
+          <div class="cart-count-pill">2</div>
+          <span class="cart-bar-text">View Cart</span>
+        </div>
+        <span class="cart-bar-price">$11.75</span>
+      </button>
+    </div>
+
+  </div><!-- /phone -->
+
+  <script>
+    function setTheme(theme, btn) {
+      const phone = document.getElementById('phone');
+      // Remove existing theme attr
+      phone.removeAttribute('data-theme');
+      if (theme !== 'espresso') phone.setAttribute('data-theme', theme);
+
+      // Update button states
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // Make category pills interactive
+    document.querySelectorAll('.cat-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.cat-pill').forEach(p => {
+          p.classList.remove('active');
+          p.classList.add('inactive');
+        });
+        pill.classList.remove('inactive');
+        pill.classList.add('active');
+      });
+    });
+  </script>
+
+</body>
+</html>

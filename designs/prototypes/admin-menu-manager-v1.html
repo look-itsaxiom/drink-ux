@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200px, initial-scale=1.0">
+  <title>Drink-UX — Admin Menu Manager v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: #EAECF0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px; }
+
+    :root {
+      --brand: #6B4226;
+      --brand-light: rgba(107,66,38,0.08);
+      --border: #E5E7EB;
+      --bg: #F4F5F7;
+      --surface: #FFFFFF;
+      --text: #111827;
+      --text2: #6B7280;
+      --green: #059669;
+      --yellow: #D97706;
+      --red: #DC2626;
+    }
+
+    /* Tab bar */
+    .tab-bar { display: flex; gap: 0; background: white; border-radius: 12px; padding: 4px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .tab-btn { border: none; border-radius: 8px; padding: 7px 20px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; color: var(--text2); background: transparent; transition: all 0.2s; }
+    .tab-btn.active { background: var(--brand); color: white; }
+
+    .frame {
+      width: 100%; max-width: 1100px;
+      background: var(--surface);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+      display: flex;
+      min-height: 640px;
+    }
+
+    /* ── Left: Category/Item tree ──────────────────────── */
+    .tree-panel {
+      width: 280px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+    }
+
+    .tree-header {
+      padding: 16px 16px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .tree-header-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .add-btn {
+      height: 30px; padding: 0 12px;
+      background: var(--brand); color: white;
+      border: none; border-radius: 8px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    .search-box {
+      margin: 10px 12px;
+      background: var(--bg);
+      border-radius: 10px; padding: 8px 12px;
+      display: flex; align-items: center; gap: 8px;
+      border: 1px solid var(--border);
+    }
+    .search-box-input {
+      background: transparent; border: none; outline: none;
+      font-size: 13px; color: var(--text); flex: 1;
+      font-family: 'Outfit', sans-serif;
+    }
+    .search-box-input::placeholder { color: var(--text2); }
+
+    .tree-scroll { flex: 1; overflow-y: auto; padding: 4px 8px 12px; scrollbar-width: thin; }
+
+    .category-group { margin-bottom: 4px; }
+
+    .category-row {
+      display: flex; align-items: center;
+      padding: 8px 10px; border-radius: 10px;
+      cursor: pointer; gap: 8px;
+      transition: background 0.1s;
+    }
+    .category-row:hover { background: var(--bg); }
+    .category-row.active { background: var(--brand-light); }
+
+    .cat-chevron { font-size: 10px; color: var(--text2); transition: transform 0.2s; width: 12px; flex-shrink: 0; }
+    .category-group.open .cat-chevron { transform: rotate(90deg); }
+    .cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .cat-label { font-size: 13px; font-weight: 700; color: var(--text); flex: 1; }
+    .cat-count { font-size: 10px; color: var(--text2); background: var(--border); border-radius: 5px; padding: 1px 6px; font-weight: 600; }
+
+    .items-list { padding-left: 28px; display: none; }
+    .category-group.open .items-list { display: block; }
+
+    .item-row {
+      display: flex; align-items: center;
+      padding: 6px 10px 6px 8px; border-radius: 8px;
+      cursor: pointer; gap: 8px; margin-bottom: 1px;
+      transition: background 0.1s;
+    }
+    .item-row:hover { background: var(--bg); }
+    .item-row.selected { background: var(--brand-light); }
+    .item-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+    .item-row.selected .item-dot { background: var(--brand); }
+    .item-label { font-size: 12px; font-weight: 600; color: var(--text); flex: 1; }
+    .item-price { font-size: 11px; color: var(--text2); }
+    .item-unavail { font-size: 9px; background: rgba(220,38,38,0.1); color: var(--red); border-radius: 4px; padding: 1px 5px; font-weight: 700; }
+
+    .tree-footer {
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      display: flex; gap: 6px;
+    }
+    .tree-footer-btn {
+      flex: 1; height: 32px; border-radius: 8px;
+      border: 1.5px solid var(--border); background: var(--bg);
+      font-size: 11px; font-weight: 700; color: var(--text2);
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+    }
+    .tree-footer-btn.primary { background: var(--brand); color: white; border-color: var(--brand); }
+
+    /* ── Right: Detail editor ──────────────────────────── */
+    .detail-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .detail-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      background: var(--surface); flex-shrink: 0;
+    }
+    .detail-title-row { display: flex; align-items: center; gap: 10px; }
+    .detail-breadcrumb { font-size: 12px; color: var(--text2); }
+    .detail-crumb-sep { margin: 0 4px; color: var(--border); }
+    .detail-name { font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+
+    .detail-badge {
+      font-size: 10px; font-weight: 700; padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .badge-available { background: rgba(5,150,105,0.1); color: var(--green); }
+    .badge-unavailable { background: rgba(220,38,38,0.1); color: var(--red); }
+
+    .detail-actions { display: flex; gap: 8px; }
+    .detail-action-btn {
+      height: 34px; padding: 0 14px;
+      border-radius: 9px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+    }
+    .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--text2); }
+    .btn-save { background: var(--brand); color: white; border: none; box-shadow: 0 2px 8px rgba(107,66,38,0.2); }
+    .btn-danger { background: rgba(220,38,38,0.08); color: var(--red); border: 1.5px solid rgba(220,38,38,0.2); }
+
+    .detail-scroll { flex: 1; overflow-y: auto; padding: 20px 24px; scrollbar-width: thin; }
+
+    /* Form fields */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-field { display: flex; flex-direction: column; gap: 5px; }
+    .form-field.full { grid-column: 1 / -1; }
+    .form-label { font-size: 12px; font-weight: 700; color: var(--text); }
+    .form-input {
+      height: 38px; border: 1.5px solid var(--border); border-radius: 9px;
+      padding: 0 12px; font-size: 13px; font-weight: 500;
+      font-family: 'Outfit', sans-serif; color: var(--text);
+      background: var(--bg);
+    }
+    .form-input:focus { outline: none; border-color: var(--brand); }
+    .form-select {
+      height: 38px; border: 1.5px solid var(--border); border-radius: 9px;
+      padding: 0 12px; font-size: 13px; font-weight: 600;
+      font-family: 'Outfit', sans-serif; color: var(--text);
+      background: var(--bg); appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+    }
+    .form-hint { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+    /* Toggle */
+    .toggle-field { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg); border-radius: 9px; border: 1.5px solid var(--border); }
+    .toggle-label-wrap { }
+    .toggle-label { font-size: 13px; font-weight: 600; color: var(--text); }
+    .toggle-desc { font-size: 11px; color: var(--text2); margin-top: 1px; }
+    .toggle-switch { width: 40px; height: 22px; border-radius: 11px; background: var(--green); position: relative; cursor: pointer; flex-shrink: 0; }
+    .toggle-knob { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: white; top: 2px; right: 2px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+    .toggle-switch.off { background: var(--border); }
+    .toggle-switch.off .toggle-knob { right: auto; left: 2px; }
+
+    /* Modifiers section */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin: 16px 0 10px;
+    }
+    .section-label { font-size: 13px; font-weight: 700; color: var(--text); }
+    .section-add { font-size: 12px; font-weight: 700; color: var(--brand); cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+    .modifier-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .mod-chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 8px;
+      border: 1.5px solid var(--border); cursor: pointer;
+      font-size: 12px; font-weight: 600; color: var(--text);
+      background: var(--bg); transition: all 0.15s;
+    }
+    .mod-chip.active { background: var(--brand-light); border-color: var(--brand); color: var(--brand); }
+    .mod-chip-price { font-size: 10px; color: var(--text2); }
+    .mod-chip.active .mod-chip-price { color: var(--brand); opacity: 0.7; }
+    .mod-chip-remove { font-size: 12px; color: var(--text2); }
+
+    /* Color preview */
+    .color-row { display: flex; align-items: center; gap: 10px; }
+    .color-dot { width: 32px; height: 32px; border-radius: 8px; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.15); flex-shrink: 0; cursor: pointer; }
+
+    /* Temperature constraint display */
+    .temp-chips { display: flex; gap: 6px; }
+    .temp-chip {
+      padding: 5px 12px; border-radius: 8px;
+      font-size: 12px; font-weight: 600;
+      border: 1.5px solid var(--border); cursor: pointer;
+      background: var(--bg); color: var(--text2);
+    }
+    .temp-chip.active { background: var(--brand); color: white; border-color: var(--brand); }
+
+    /* Divider */
+    .field-divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+    /* Visual settings */
+    .visual-preview {
+      background: var(--bg); border-radius: 12px; padding: 16px;
+      display: flex; align-items: center; gap: 16px;
+      border: 1.5px solid var(--border);
+    }
+    .cup-mini {
+      flex-shrink: 0;
+    }
+    .visual-controls { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .visual-control-row { display: flex; align-items: center; gap: 10px; }
+    .visual-control-label { font-size: 12px; font-weight: 600; color: var(--text2); min-width: 70px; }
+    .visual-slider { flex: 1; accent-color: var(--brand); }
+  </style>
+</head>
+<body>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="setTab(this, 'bases')">☕ Drinks (Bases)</button>
+    <button class="tab-btn" onclick="setTab(this, 'modifiers')">🍯 Modifiers</button>
+    <button class="tab-btn" onclick="setTab(this, 'presets')">⭐ Signature Drinks</button>
+    <button class="tab-btn" onclick="setTab(this, 'categories')">📂 Categories</button>
+  </div>
+
+  <div class="frame">
+
+    <!-- Tree panel -->
+    <div class="tree-panel">
+      <div class="tree-header">
+        <span class="tree-header-title">Menu Items</span>
+        <button class="add-btn">+ Add</button>
+      </div>
+
+      <div class="search-box">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="#9CA3AF" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#9CA3AF" stroke-width="2"/></svg>
+        <input class="search-box-input" placeholder="Search menu…">
+      </div>
+
+      <div class="tree-scroll">
+
+        <!-- Category 1 -->
+        <div class="category-group open" id="cat1">
+          <div class="category-row active" onclick="toggleCat('cat1')">
+            <span class="cat-chevron">▶</span>
+            <span class="cat-dot" style="background:#6B4226;"></span>
+            <span class="cat-label">Espresso Drinks</span>
+            <span class="cat-count">8</span>
+          </div>
+          <div class="items-list">
+            <div class="item-row selected" onclick="selectItem(this)">
+              <div class="item-dot"></div>
+              <span class="item-label">Americano</span>
+              <span class="item-price">$3.75</span>
+            </div>
+            <div class="item-row" onclick="selectItem(this)">
+              <div class="item-dot"></div>
+              <span class="item-label">Cappuccino</span>
+              <span class="item-price">$4.25</span>
+            </div>
+            <div class="item-row" onclick="selectItem(this)">
+              <div class="item-dot"></div>
+              <span class="item-label">Flat White</span>
+              <span class="item-price">$4.50</span>
+            </div>
+            <div class="item-row" onclick="selectItem(this)">
+              <div class="item-dot"></div>
+              <span class="item-label">Latte</span>
+              <span class="item-price">$5.00</span>
+            </div>
+            <div class="item-row" onclick="selectItem(this)">
+              <div class="item-dot"></div>
+              <span class="item-label">Macchiato</span>
+              <span class="item-price">$4.75</span>
+            </div>
+            <div class="item-row" onclick="selectItem(this)">
+              <div class="item-dot"></div>
+              <span class="item-label">Cortado</span>
+              <span class="item-price">$4.25</span>
+            </div>
+            <div class="item-row" onclick="selectItem(this)">
+              <div class="item-dot"></div>
+              <span class="item-label">Espresso Shot</span>
+              <span class="item-price">$2.50</span>
+            </div>
+            <div class="item-row" onclick="selectItem(this)">
+              <div class="item-dot"></div>
+              <span class="item-label">Double Espresso</span>
+              <span class="item-price">$3.50</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category 2 -->
+        <div class="category-group" id="cat2">
+          <div class="category-row" onclick="toggleCat('cat2')">
+            <span class="cat-chevron">▶</span>
+            <span class="cat-dot" style="background:#1A6B8A;"></span>
+            <span class="cat-label">Iced Drinks</span>
+            <span class="cat-count">6</span>
+          </div>
+          <div class="items-list">
+            <div class="item-row" onclick="selectItem(this)">
+              <div class="item-dot"></div>
+              <span class="item-label">Iced Latte</span>
+              <span class="item-price">$5.00</span>
+            </div>
+            <div class="item-row" onclick="selectItem(this)">
+              <div class="item-dot"></div>
+              <span class="item-label">Cold Brew</span>
+              <span class="item-price">$4.75</span>
+              <span class="item-unavail">OFF</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category 3 -->
+        <div class="category-group" id="cat3">
+          <div class="category-row" onclick="toggleCat('cat3')">
+            <span class="cat-chevron">▶</span>
+            <span class="cat-dot" style="background:#2D6A4F;"></span>
+            <span class="cat-label">Teas</span>
+            <span class="cat-count">5</span>
+          </div>
+          <div class="items-list">
+            <div class="item-row" onclick="selectItem(this)"><div class="item-dot"></div><span class="item-label">Matcha Latte</span><span class="item-price">$5.50</span></div>
+            <div class="item-row" onclick="selectItem(this)"><div class="item-dot"></div><span class="item-label">Chai Latte</span><span class="item-price">$4.50</span></div>
+          </div>
+        </div>
+
+      </div><!-- /tree-scroll -->
+
+      <div class="tree-footer">
+        <button class="tree-footer-btn">↕ Reorder</button>
+        <button class="tree-footer-btn primary">🔄 Sync to POS</button>
+      </div>
+    </div>
+
+    <!-- Detail panel: Americano editor -->
+    <div class="detail-panel">
+      <div class="detail-topbar">
+        <div class="detail-title-row">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+              <span class="detail-breadcrumb">Espresso Drinks</span>
+              <span class="detail-crumb-sep">›</span>
+              <span class="detail-name">Americano</span>
+              <span class="detail-badge badge-available">Available</span>
+            </div>
+            <div style="font-size:11px;color:var(--text2);">Linked to Square catalog · Last edited 2h ago</div>
+          </div>
+        </div>
+        <div class="detail-actions">
+          <button class="detail-action-btn btn-danger">🗑 Delete</button>
+          <button class="detail-action-btn btn-ghost">Duplicate</button>
+          <button class="detail-action-btn btn-save">Save Changes</button>
+        </div>
+      </div>
+
+      <div class="detail-scroll">
+
+        <!-- Basic info -->
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Drink Name</label>
+            <input class="form-input" value="Americano">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Base Price (Medium)</label>
+            <input class="form-input" value="$3.75">
+            <div class="form-hint">Small −$0.50 · Large +$0.50 automatically</div>
+          </div>
+          <div class="form-field full">
+            <label class="form-label">Description (shown on menu)</label>
+            <input class="form-input" value="Espresso shots topped with hot water. Bold, clean, and simple.">
+          </div>
+        </div>
+
+        <!-- Temperature -->
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Temperature</label>
+            <div class="temp-chips">
+              <button class="temp-chip active">Hot</button>
+              <button class="temp-chip active">Iced</button>
+              <button class="temp-chip" style="opacity:0.4;cursor:default;">Both ✓</button>
+            </div>
+            <div class="form-hint">Both enabled (customer chooses)</div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Category</label>
+            <select class="form-select">
+              <option selected>Espresso Drinks</option>
+              <option>Iced Drinks</option>
+              <option>Teas</option>
+              <option>Seasonal</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Availability toggle -->
+        <div class="toggle-field" style="margin-bottom:16px;">
+          <div class="toggle-label-wrap">
+            <div class="toggle-label">Available on storefront</div>
+            <div class="toggle-desc">Customers can order this drink. Turn off to 86 it temporarily.</div>
+          </div>
+          <div class="toggle-switch" onclick="this.classList.toggle('off')">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+
+        <div class="field-divider"></div>
+
+        <!-- Modifiers -->
+        <div class="section-header">
+          <span class="section-label">🥛 Milk Options</span>
+          <span class="section-add">+ Add modifier</span>
+        </div>
+        <div class="modifier-chips">
+          <div class="mod-chip active">Whole Milk <span class="mod-chip-price">Included</span></div>
+          <div class="mod-chip active">Oat Milk <span class="mod-chip-price">+$0.75</span></div>
+          <div class="mod-chip active">Almond Milk <span class="mod-chip-price">+$0.75</span></div>
+          <div class="mod-chip active">Coconut Milk <span class="mod-chip-price">+$0.75</span></div>
+          <div class="mod-chip active">No Milk <span class="mod-chip-price">—</span></div>
+          <div class="mod-chip" style="border-style:dashed;">+ Soy Milk</div>
+        </div>
+
+        <div class="section-header" style="margin-top:14px;">
+          <span class="section-label">🍯 Syrups</span>
+          <span class="section-add">+ Add syrup</span>
+        </div>
+        <div class="modifier-chips">
+          <div class="mod-chip active">Vanilla <span class="mod-chip-price">+$0.50</span></div>
+          <div class="mod-chip active">Caramel <span class="mod-chip-price">+$0.50</span></div>
+          <div class="mod-chip active">Hazelnut <span class="mod-chip-price">+$0.50</span></div>
+          <div class="mod-chip active">Brown Sugar <span class="mod-chip-price">+$0.50</span></div>
+          <div class="mod-chip">Lavender <span class="mod-chip-price">+$0.65</span></div>
+          <div class="mod-chip" style="border-style:dashed;">+ Simple Syrup</div>
+        </div>
+
+        <div class="section-header" style="margin-top:14px;">
+          <span class="section-label">✨ Toppings</span>
+          <span class="section-add">+ Add topping</span>
+        </div>
+        <div class="modifier-chips">
+          <div class="mod-chip active">Caramel Drizzle <span class="mod-chip-price">+$0.25</span></div>
+          <div class="mod-chip active">Whipped Cream <span class="mod-chip-price">+$0.75</span></div>
+          <div class="mod-chip active">Cinnamon <span class="mod-chip-price">Free</span></div>
+          <div class="mod-chip">Cocoa Powder <span class="mod-chip-price">Free</span></div>
+          <div class="mod-chip" style="border-style:dashed;">+ Cold Foam</div>
+        </div>
+
+        <div class="field-divider"></div>
+
+        <!-- Visual settings -->
+        <div class="section-label" style="margin-bottom:10px;">🎨 Visual Display (Drink Builder)</div>
+        <div class="visual-preview">
+          <svg class="cup-mini" width="56" height="80" viewBox="0 0 56 80">
+            <path d="M8 14 L48 14 L43 66 Q43 72 28 72 Q13 72 13 66 Z" fill="rgba(107,66,38,0.2)" stroke="rgba(107,66,38,0.3)" stroke-width="1.5"/>
+            <path d="M9 40 Q9 66 13 66 Q28 72 43 66 Q44 60 44 40 Z" fill="rgba(107,66,38,0.65)"/>
+            <path d="M8 14 L48 14 L47 40 L9 40 Z" fill="rgba(255,255,255,0.5)"/>
+            <ellipse cx="28" cy="14" rx="20" ry="5" fill="rgba(255,255,255,0.7)"/>
+          </svg>
+          <div class="visual-controls">
+            <div class="visual-control-row">
+              <span class="visual-control-label">Liquid Color</span>
+              <div class="color-dot" style="background:#6B4226;"></div>
+              <input style="flex:1;height:32px;border:1.5px solid var(--border);border-radius:8px;padding:0 10px;font-size:12px;font-family:'Outfit',monospace;" value="#6B4226">
+            </div>
+            <div class="visual-control-row">
+              <span class="visual-control-label">Opacity</span>
+              <input type="range" class="visual-slider" min="20" max="100" value="65" style="flex:1;">
+              <span style="font-size:11px;color:var(--text2);min-width:30px;text-align:right;">65%</span>
+            </div>
+            <div class="visual-control-row">
+              <span class="visual-control-label">Layer order</span>
+              <input style="width:60px;height:32px;border:1.5px solid var(--border);border-radius:8px;padding:0 10px;font-size:12px;text-align:center;" value="1">
+              <span style="font-size:11px;color:var(--text2);">Lower = bottom layer</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /detail-scroll -->
+    </div><!-- /detail-panel -->
+
+  </div><!-- /frame -->
+
+  <script>
+    function toggleCat(id) {
+      document.getElementById(id).classList.toggle('open');
+    }
+
+    function selectItem(el) {
+      document.querySelectorAll('.item-row').forEach(r => r.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function setTab(btn, tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>
