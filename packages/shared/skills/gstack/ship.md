@@ -1,36 +1,75 @@
 ---
 name: ship
 description: |
-  Ship workflow: merge main/develop, run tests, review diff, bump version, commit, push, create PR.
+  Ship workflow: merge develop, run tests, review diff, bump version, commit, push, create PR.
 ---
 
 # Ship: Fully Automated Ship Workflow
 
 This is a **non-interactive, fully automated** workflow. Do NOT ask for confirmation at any step. The user said `/ship` which means DO IT.
 
-## The Shipping Process
+**Only stop for:**
+- On `develop` or `main` branch (abort).
+- Merge conflicts that can't be auto-resolved.
+- Test failures (stop, show failures).
+- Pre-landing review finds **CRITICAL** issues.
 
-### Step 1: Sync & Test
-1.  **Pull latest:** `git pull --rebase origin develop` (or `main` if appropriate).
-2.  **Run Quality Gates:**
-    - `npm test` (in affected package or root).
-    - `npm run lint` (if available).
-    - `npm run build` (if available).
-3.  **Stop if failed:** If any test/lint/build fails, stop and report the error.
+---
 
-### Step 2: Prepare the Commit
-1.  **Analyze the diff:** `git diff develop` (or `main`).
-2.  **Generate Commit Message:** Write a clear, concise commit message (Follow project conventions).
-3.  **Final Diff Review:** Ensure only intended changes are included.
+## Step 1: Pre-flight
+1. Check the current branch. If on `develop` or `main`, **abort**: "Ship from a feature branch."
+2. Run `git status`. Uncommitted changes are included.
+3. Run `git diff develop --stat` and `git log develop..HEAD --oneline`.
 
-### Step 3: Land the Changes
-1.  **Commit:** `git add . && git commit -m "[message]"`
-2.  **Push:** `git push origin [current-branch]`
-3.  **Open PR (if requested or customary):** If you have the ability to create a Pull Request, do it now.
+## Step 2: Merge develop (BEFORE tests)
+Fetch and merge `develop` into the feature branch:
+```bash
+git fetch origin develop && git merge origin/develop --no-edit
+```
+**If conflicts occur:** Stop and show them.
 
-## Output Format
-1. **Ship Status:** (SUCCESS / FAILED).
-2. **Summary of Changes:** 2-3 bullet points.
-3. **Tests Run:** List of tests that passed.
-4. **Link to PR:** (if created).
-5. **Next Step:** What should the user or next agent do?
+## Step 3: Run Quality Gates
+Run tests for affected packages:
+```bash
+# Example for a monorepo
+npm test
+```
+**If any test fails:** Show failures and **STOP**.
+
+## Step 3.5: Pre-Landing Review
+Run the `/review` workflow (Pass 1 & Pass 2).
+- **If CRITICAL issues found:** Use `ask_user` for EACH issue. If the user chooses "Fix it now", apply fixes and **STOP** (user must run `/ship` again).
+- **If only INFORMATIONAL or no issues:** Continue.
+
+## Step 4: Version Bump
+1. Read the current version from `package.json` (or `VERSION` file if exists).
+2. **Auto-decide bump level:**
+   - **PATCH:** Bug fixes, small tweaks.
+   - **MINOR:** New features (ASK user via `ask_user`).
+   - **MAJOR:** Breaking changes (ASK user via `ask_user`).
+
+## Step 5: CHANGELOG
+Update `CHANGELOG.md` (if it exists) or create a summary of changes from `git log develop..HEAD`.
+
+## Step 6: Commit (Bisectable chunks)
+Group changes into logical commits:
+- Infrastructure / Migrations
+- Services / Models (with tests)
+- UI / Components (with tests)
+- Version / Changelog (final commit)
+
+Each commit message format: `<type>(<issue-id>): <summary>`
+
+## Step 7: Push
+```bash
+git push -u origin <branch-name>
+```
+
+## Step 8: Create PR
+If `gh` CLI is available, create a PR. Otherwise, provide the link to create one manually.
+Summary should include:
+- Key changes
+- Review findings
+- Test results
+
+**Output the PR URL at the end.**

@@ -7,41 +7,32 @@ description: |
 
 # Pre-Landing PR Review
 
-You are running the `/review` workflow. Analyze the current branch's diff against main for structural issues that tests don't catch.
+You are running the `/review` workflow. Analyze the current branch's diff against `develop` (or `main`) for structural issues that tests don't catch.
 
-## Philosophy
-- **Paranoid Reviewer Mode:** Assume tests pass, but the code could still be dangerous or fragile.
-- **Structural Integrity over Style:** Don't comment on formatting (assume linting/formatting is handled).
-- **Hunt for "Invisible" Bugs:** Focus on race conditions, side effects, and security vulnerabilities.
+## Step 1: Check branch
+1. Run `git branch --show-current` to get the current branch.
+2. If on `develop` or `main`, output: **"Nothing to review — you're on a base branch."** and stop.
+3. Check the diff against `develop`: `git diff develop --stat`. If no diff, stop.
 
-## Review Areas
+## Step 2: Read the checklist
+Read `packages/shared/skills/gstack/checklist.md`.
 
-### 1. Data Integrity & SQL Safety
-- Look for unsanitized inputs in raw SQL queries or Prisma `queryRaw` calls.
-- Check for transactions where multiple related operations occur.
-- Verify migrations are correct and reversible.
+## Step 3: Get the diff
+Run `git diff develop` to get the full diff. This includes both committed and uncommitted changes against the `develop` branch.
 
-### 2. State & Race Conditions
-- Identify async operations that could overlap (e.g., two simultaneous updates).
-- Check for component side effects that could trigger multiple times.
-- Verify that loading and error states are correctly handled in the UI.
+## Step 4: Two-pass review
+Apply the checklist against the diff in two passes:
+1. **Pass 1 (CRITICAL):** SQL & Data Safety, LLM Output Trust Boundary, Race Conditions.
+2. **Pass 2 (INFORMATIONAL):** Logic, Side Effects, Dead Code, Quality.
 
-### 3. Business Logic Accuracy
-- Ensure that the implementation matches the original issue requirements.
-- Look for "off-by-one" errors in calculations (especially pricing or subscriptions).
-- Verify that edge cases defined in the plan are handled.
+## Step 5: Output findings
+**Always output ALL findings.** Be **terse**: one line for the problem, one line for the recommended fix.
 
-### 4. Code Quality & Maintainability
-- Identify redundant code or complex logic that could be simplified.
-- Check for hardcoded values that should be environment variables.
-- Ensure that exported types and interfaces are accurate.
+- **If CRITICAL issues found:** Output all findings, then for EACH critical issue use `ask_user` with the problem, your recommended fix, and options (A: Fix it now, B: Acknowledge, C: False positive — skip).
+- **If only non-critical issues found:** Output findings. No further action needed.
+- **If no issues found:** Output `Pre-Landing Review: No issues found.`
 
-## Output Format
-1. **Overall Verdict:** (APPROVE / REQUEST CHANGES / REJECT).
-2. **Critical Issues:** High-priority problems that could cause a production failure.
-3. **Refinement Ideas:** Suggestions for cleaner code or better performance.
-4. **Final Checklist:**
-   - [ ] No unsanitized SQL
-   - [ ] No hardcoded secrets
-   - [ ] Edge cases handled
-   - [ ] Types are accurate
+## Rules
+- **Read-only by default.** Only modify files if the user explicitly chooses "Fix it now" on a critical issue.
+- **Do NOT flag** anything listed in the "DO NOT flag" section of the checklist.
+- **Be opinionated.** State clearly WHY something is a problem.

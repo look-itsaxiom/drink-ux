@@ -35,6 +35,11 @@ This skill uses the `mcp_chrome-devtools` server to give you "eyes" in the brows
 - **`list_network_requests()`:** Verify that API calls are happening as expected.
 - **`lighthouse_audit()`:** Get scores for A11y, SEO, and Best Practices.
 
+## Performance Tips
+1. **Navigate Once, Query Many:** Load the page, then use `take_snapshot` to find UIDs. Use those UIDs for multiple interactions without re-loading.
+2. **Use Snapshots for State:** Check if a button is disabled or a loader is present by taking a quick snapshot.
+3. **Lighthouse for Quality:** Run an audit on key pages (Home, Checkout) to ensure we meet performance and accessibility standards.
+
 ## Output Format
 1. **Browse Status:** (SUCCESS / FAILED).
 2. **Current URL:** The URL of the page being browsed.
