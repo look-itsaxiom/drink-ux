@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390px, initial-scale=1.0">
+  <title>Drink-UX — Drink Customizer v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── Theme Variables ──────────────────────────────────── */
+    :root {
+      --theme-primary: #6B4226;
+      --theme-primaryDark: #4a2e1a;
+      --theme-secondary: #D4A574;
+      --theme-background: #FDF8F5;
+      --theme-surface: #FFFFFF;
+      --theme-text: #2C1810;
+      --theme-textSecondary: #8B7E74;
+      --theme-accent: #E67E22;
+      --theme-border: rgba(107, 66, 38, 0.12);
+      --theme-shadow: rgba(107, 66, 38, 0.15);
+      --theme-success: #2D9B6F;
+      --theme-gradient-primary: linear-gradient(135deg, #6B4226, #a0622f);
+    }
+
+    [data-theme="ocean"] {
+      --theme-primary: #1A6B8A;
+      --theme-primaryDark: #0f4d65;
+      --theme-secondary: #5BC4D4;
+      --theme-background: #F0F9FC;
+      --theme-surface: #FFFFFF;
+      --theme-text: #0D2D3A;
+      --theme-textSecondary: #4A7A8A;
+      --theme-border: rgba(26, 107, 138, 0.12);
+      --theme-shadow: rgba(26, 107, 138, 0.15);
+      --theme-gradient-primary: linear-gradient(135deg, #1A6B8A, #2589ad);
+    }
+
+    [data-theme="cherry"] {
+      --theme-primary: #C0392B;
+      --theme-primaryDark: #922b21;
+      --theme-secondary: #F1948A;
+      --theme-background: #FFF5F5;
+      --theme-surface: #FFFFFF;
+      --theme-text: #2C1010;
+      --theme-textSecondary: #8B6060;
+      --theme-border: rgba(192, 57, 43, 0.12);
+      --theme-shadow: rgba(192, 57, 43, 0.15);
+      --theme-gradient-primary: linear-gradient(135deg, #C0392B, #e04e40);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .theme-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 16px;
+      background: white;
+      padding: 10px 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      max-width: 420px;
+    }
+    .theme-bar span { font-size: 12px; font-weight: 600; color: #666; }
+    .theme-btn { border: none; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: transform 0.1s; }
+    .theme-btn:hover { transform: scale(1.05); }
+    .theme-btn.active { outline: 2px solid #333; outline-offset: 1px; }
+    .theme-btn[data-t="espresso"] { background: #6B4226; color: white; }
+    .theme-btn[data-t="ocean"]    { background: #1A6B8A; color: white; }
+    .theme-btn[data-t="cherry"]   { background: #C0392B; color: white; }
+
+    /* Phone */
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: var(--theme-background);
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.25);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      background: var(--theme-background);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px 8px;
+      flex-shrink: 0;
+    }
+    .status-time { font-size: 15px; font-weight: 700; color: var(--theme-text); }
+    .status-icons { display: flex; gap: 6px; align-items: center; }
+
+    /* Nav Header */
+    .nav-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 20px 16px;
+      flex-shrink: 0;
+    }
+    .back-btn {
+      width: 38px; height: 38px;
+      border-radius: 12px;
+      background: var(--theme-surface);
+      border: 1.5px solid var(--theme-border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 1px 4px var(--theme-shadow);
+    }
+    .back-btn svg { fill: var(--theme-text); }
+    .nav-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--theme-text);
+      letter-spacing: -0.3px;
+    }
+    .fav-btn {
+      width: 38px; height: 38px;
+      border-radius: 12px;
+      background: var(--theme-surface);
+      border: 1.5px solid var(--theme-border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 1px 4px var(--theme-shadow);
+    }
+    .fav-btn svg { fill: none; stroke: var(--theme-textSecondary); stroke-width: 2; }
+
+    /* Scroll content */
+    .scroll-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+    }
+    .scroll-content::-webkit-scrollbar { display: none; }
+
+    /* ── Cup Visualization ─────────────────────────────────── */
+    .cup-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 20px 24px;
+      background: var(--theme-background);
+      position: relative;
+    }
+
+    .drink-name-row {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .drink-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--theme-text);
+      letter-spacing: -0.5px;
+    }
+    .drink-base-info {
+      font-size: 13px;
+      color: var(--theme-textSecondary);
+      margin-top: 2px;
+    }
+
+    .cup-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Ambient glow behind cup */
+    .cup-glow {
+      position: absolute;
+      width: 140px;
+      height: 100px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(212,165,116,0.3) 0%, transparent 70%);
+      bottom: 0;
+      filter: blur(20px);
+    }
+
+    .cup-svg-container {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Size selector below cup */
+    .size-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
+      background: var(--theme-surface);
+      border-radius: 16px;
+      padding: 5px;
+      border: 1.5px solid var(--theme-border);
+    }
+
+    .size-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 7px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      transition: all 0.2s;
+      color: var(--theme-textSecondary);
+      background: transparent;
+    }
+    .size-btn.active {
+      background: var(--theme-primary);
+      color: white;
+      box-shadow: 0 2px 8px var(--theme-shadow);
+    }
+    .size-btn:hover:not(.active) { color: var(--theme-text); }
+
+    /* ── Customization Sections ───────────────────────────── */
+    .options-wrap {
+      padding: 0 20px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option-section {
+      background: var(--theme-surface);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1.5px solid var(--theme-border);
+      box-shadow: 0 2px 8px var(--theme-shadow);
+    }
+
+    .option-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px;
+      cursor: pointer;
+    }
+
+    .option-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .option-icon {
+      width: 32px; height: 32px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      background: rgba(107,66,38,0.08);
+    }
+
+    .option-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--theme-text);
+    }
+
+    .option-subtitle {
+      font-size: 12px;
+      color: var(--theme-textSecondary);
+      margin-top: 1px;
+    }
+
+    .option-chevron {
+      width: 20px; height: 20px;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .option-chevron svg { fill: var(--theme-textSecondary); }
+    .option-section.open .option-chevron { transform: rotate(180deg); }
+
+    .option-body {
+      padding: 0 16px 16px;
+      border-top: 1px solid var(--theme-border);
+      display: none;
+    }
+
+    .option-section.open .option-body { display: block; }
+
+    /* Temperature toggle */
+    .temp-toggle {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .temp-opt {
+      flex: 1;
+      border: 2px solid var(--theme-border);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .temp-opt.active {
+      border-color: var(--theme-primary);
+      background: rgba(107,66,38,0.06);
+    }
+    .temp-emoji { font-size: 22px; display: block; margin-bottom: 4px; }
+    .temp-label { font-size: 13px; font-weight: 600; color: var(--theme-text); }
+    .temp-desc { font-size: 11px; color: var(--theme-textSecondary); margin-top: 2px; }
+
+    /* Milk options */
+    .milk-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .milk-opt {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1.5px solid var(--theme-border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .milk-opt.active {
+      border-color: var(--theme-primary);
+      background: rgba(107,66,38,0.05);
+    }
+    .milk-opt-left { display: flex; align-items: center; gap: 10px; }
+    .milk-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid var(--theme-border);
+      transition: all 0.2s;
+    }
+    .milk-opt.active .milk-dot {
+      background: var(--theme-primary);
+      border-color: var(--theme-primary);
+      box-shadow: 0 0 0 3px rgba(107,66,38,0.15);
+    }
+    .milk-name { font-size: 14px; font-weight: 600; color: var(--theme-text); }
+    .milk-note { font-size: 11px; color: var(--theme-textSecondary); margin-top: 1px; }
+    .milk-price { font-size: 13px; color: var(--theme-textSecondary); font-weight: 500; }
+    .milk-price.added { color: var(--theme-primary); font-weight: 600; }
+
+    /* Syrup chips */
+    .syrup-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .syrup-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--theme-border);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--theme-textSecondary);
+      transition: all 0.2s;
+      background: transparent;
+      font-family: 'Outfit', sans-serif;
+    }
+    .syrup-chip.active {
+      background: var(--theme-primary);
+      color: white;
+      border-color: var(--theme-primary);
+    }
+    .syrup-check {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px;
+    }
+    .syrup-price-tag {
+      font-size: 11px;
+      opacity: 0.75;
+      margin-left: 2px;
+    }
+
+    /* Topping chips — same as syrup */
+    .topping-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+    /* ── Price Summary ─────────────────────────────────────── */
+    .price-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 20px 8px;
+    }
+
+    .price-breakdown {
+      font-size: 12px;
+      color: var(--theme-textSecondary);
+      line-height: 1.6;
+    }
+
+    .price-total {
+      text-align: right;
+    }
+    .price-total-label { font-size: 12px; color: var(--theme-textSecondary); }
+    .price-total-amount {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--theme-text);
+      letter-spacing: -1px;
+    }
+
+    /* Bottom spacer */
+    .bottom-spacer { height: 90px; }
+
+    /* ── Add to Cart Bar ────────────────────────────────────── */
+    .cart-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 12px 20px 28px;
+      background: linear-gradient(to top, var(--theme-background) 70%, transparent);
+    }
+
+    .add-to-cart-btn {
+      width: 100%;
+      height: 58px;
+      border-radius: 20px;
+      background: var(--theme-gradient-primary);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      cursor: pointer;
+      box-shadow: 0 6px 24px var(--theme-shadow);
+      transition: transform 0.15s;
+    }
+    .add-to-cart-btn:active { transform: scale(0.98); }
+
+    .atc-left { display: flex; align-items: center; gap: 12px; }
+    .qty-stepper {
+      display: flex; align-items: center; gap: 0;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .qty-btn {
+      width: 28px; height: 28px;
+      border: none; background: transparent;
+      color: white; font-size: 16px; font-weight: 700;
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qty-num {
+      min-width: 22px; text-align: center;
+      font-size: 14px; font-weight: 700; color: white;
+    }
+    .atc-text {
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+    }
+    .atc-price {
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Theme Switcher -->
+  <div class="theme-bar">
+    <span>Theme:</span>
+    <button class="theme-btn active" data-t="espresso" onclick="setTheme('espresso', this)">☕ Espresso</button>
+    <button class="theme-btn" data-t="ocean" onclick="setTheme('ocean', this)">🌊 Ocean</button>
+    <button class="theme-btn" data-t="cherry" onclick="setTheme('cherry', this)">🍒 Cherry</button>
+  </div>
+
+  <!-- Phone -->
+  <div class="phone" id="phone">
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <div class="status-icons">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="var(--theme-text)"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4" y="2" width="3" height="10" rx="1"/><rect x="8" y="0" width="3" height="12" rx="1"/><rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="3" stroke="var(--theme-textSecondary)" stroke-width="1.5" fill="none"/><rect x="22.5" y="3.5" width="2" height="5" rx="1" fill="var(--theme-textSecondary)" opacity="0.5"/><rect x="1.5" y="2.5" width="17" height="7" rx="2" fill="var(--theme-text)"/></svg>
+      </div>
+    </div>
+
+    <!-- Nav Header -->
+    <div class="nav-header">
+      <button class="back-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" stroke="var(--theme-text)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+      </button>
+      <span class="nav-title">Customize Drink</span>
+      <button class="fav-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </button>
+    </div>
+
+    <!-- Scroll Content -->
+    <div class="scroll-content">
+
+      <!-- Cup Stage -->
+      <div class="cup-stage">
+        <div class="drink-name-row">
+          <div class="drink-name">Vanilla Oat Latte</div>
+          <div class="drink-base-info">Espresso base · from $5.50</div>
+        </div>
+
+        <div class="cup-wrapper">
+          <div class="cup-glow"></div>
+          <!-- Animated SVG Cup -->
+          <svg class="cup-svg-container" id="cupSvg" width="120" height="180" viewBox="0 0 120 180">
+            <!-- Cup body outline -->
+            <path id="cupBody" d="M18 28 L102 28 L93 150 Q93 160 60 162 Q27 160 27 150 Z"
+              fill="none" stroke="rgba(107,66,38,0.2)" stroke-width="2"/>
+
+            <!-- Liquid layers (bottom-up) -->
+            <!-- Base espresso layer -->
+            <path id="layerEspresso"
+              d="M29 145 Q29 158 60 160 Q91 158 91 145 L89 115 Q90 115 30 115 Z"
+              fill="rgba(107,66,38,0.72)"/>
+
+            <!-- Milk layer -->
+            <path id="layerMilk"
+              d="M22 88 L98 88 L89 115 L31 115 Z"
+              fill="rgba(241,220,193,0.85)"/>
+
+            <!-- Syrup swirl (vanilla) -->
+            <path id="layerSyrup"
+              d="M35 88 Q45 82 55 88 Q65 94 75 88 Q85 82 91 88 L89 115 Q65 110 35 115 Z"
+              fill="rgba(230,190,120,0.55)"/>
+
+            <!-- Foam top -->
+            <path id="layerFoam"
+              d="M18 28 L102 28 L98 60 Q92 50 80 54 Q70 46 60 50 Q50 46 40 54 Q28 50 22 60 Z"
+              fill="rgba(255,255,255,0.88)"/>
+
+            <!-- Foam texture dots -->
+            <circle cx="48" cy="42" r="5" fill="rgba(212,165,116,0.25)"/>
+            <circle cx="60" cy="38" r="4" fill="rgba(212,165,116,0.2)"/>
+            <circle cx="72" cy="43" r="5" fill="rgba(212,165,116,0.22)"/>
+
+            <!-- Cup rim -->
+            <ellipse cx="60" cy="28" rx="42" ry="9" fill="rgba(255,255,255,0.6)"/>
+            <ellipse cx="60" cy="28" rx="42" ry="9" fill="none" stroke="rgba(107,66,38,0.15)" stroke-width="1.5"/>
+
+            <!-- Cup shine -->
+            <path d="M32 50 Q28 80 30 130" stroke="rgba(255,255,255,0.3)" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+            <!-- Cup bottom -->
+            <ellipse cx="60" cy="160" rx="33" ry="5" fill="rgba(107,66,38,0.12)"/>
+          </svg>
+        </div>
+
+        <!-- Size Selector -->
+        <div class="size-selector">
+          <button class="size-btn" onclick="setSize('S',this)">S · 8oz</button>
+          <button class="size-btn active" onclick="setSize('M',this)">M · 12oz</button>
+          <button class="size-btn" onclick="setSize('L',this)">L · 16oz</button>
+        </div>
+      </div>
+
+      <!-- Price row -->
+      <div class="price-row">
+        <div class="price-breakdown">
+          Base $5.50 · Oat milk +$0.75<br>Vanilla syrup +$0.50
+        </div>
+        <div class="price-total">
+          <div class="price-total-label">Total</div>
+          <div class="price-total-amount" id="totalPrice">$6.75</div>
+        </div>
+      </div>
+
+      <!-- Options Sections -->
+      <div class="options-wrap">
+
+        <!-- Temperature -->
+        <div class="option-section open" id="sec-temp">
+          <div class="option-header" onclick="toggleSection('sec-temp')">
+            <div class="option-header-left">
+              <div class="option-icon">🌡️</div>
+              <div>
+                <div class="option-title">Temperature</div>
+                <div class="option-subtitle" id="temp-summary">Hot</div>
+              </div>
+            </div>
+            <div class="option-chevron">
+              <svg width="20" height="20" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" stroke="var(--theme-textSecondary)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="option-body">
+            <div class="temp-toggle">
+              <div class="temp-opt active" onclick="setTemp('hot', this)">
+                <span class="temp-emoji">☕</span>
+                <div class="temp-label">Hot</div>
+                <div class="temp-desc">Steamed, ~150°F</div>
+              </div>
+              <div class="temp-opt" onclick="setTemp('iced', this)">
+                <span class="temp-emoji">🧊</span>
+                <div class="temp-label">Iced</div>
+                <div class="temp-desc">Over ice, chilled</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Milk -->
+        <div class="option-section open" id="sec-milk">
+          <div class="option-header" onclick="toggleSection('sec-milk')">
+            <div class="option-header-left">
+              <div class="option-icon">🥛</div>
+              <div>
+                <div class="option-title">Milk</div>
+                <div class="option-subtitle" id="milk-summary">Oat Milk +$0.75</div>
+              </div>
+            </div>
+            <div class="option-chevron">
+              <svg width="20" height="20" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" stroke="var(--theme-textSecondary)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="option-body">
+            <div class="milk-grid">
+              <div class="milk-opt" onclick="selectMilk(this, 'Whole Milk', 0)">
+                <div class="milk-opt-left">
+                  <div class="milk-dot"></div>
+                  <div>
+                    <div class="milk-name">Whole Milk</div>
+                    <div class="milk-note">Rich and creamy</div>
+                  </div>
+                </div>
+                <span class="milk-price">Included</span>
+              </div>
+              <div class="milk-opt active" onclick="selectMilk(this, 'Oat Milk', 0.75)">
+                <div class="milk-opt-left">
+                  <div class="milk-dot"></div>
+                  <div>
+                    <div class="milk-name">Oat Milk</div>
+                    <div class="milk-note">Naturally sweet, vegan</div>
+                  </div>
+                </div>
+                <span class="milk-price added">+$0.75</span>
+              </div>
+              <div class="milk-opt" onclick="selectMilk(this, 'Almond Milk', 0.75)">
+                <div class="milk-opt-left">
+                  <div class="milk-dot"></div>
+                  <div>
+                    <div class="milk-name">Almond Milk</div>
+                    <div class="milk-note">Light, nutty</div>
+                  </div>
+                </div>
+                <span class="milk-price">+$0.75</span>
+              </div>
+              <div class="milk-opt" onclick="selectMilk(this, 'Coconut Milk', 0.75)">
+                <div class="milk-opt-left">
+                  <div class="milk-dot"></div>
+                  <div>
+                    <div class="milk-name">Coconut Milk</div>
+                    <div class="milk-note">Tropical, dairy-free</div>
+                  </div>
+                </div>
+                <span class="milk-price">+$0.75</span>
+              </div>
+              <div class="milk-opt" onclick="selectMilk(this, 'No Milk', 0)">
+                <div class="milk-opt-left">
+                  <div class="milk-dot"></div>
+                  <div>
+                    <div class="milk-name">No Milk</div>
+                    <div class="milk-note">Black / espresso only</div>
+                  </div>
+                </div>
+                <span class="milk-price">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Syrups -->
+        <div class="option-section open" id="sec-syrup">
+          <div class="option-header" onclick="toggleSection('sec-syrup')">
+            <div class="option-header-left">
+              <div class="option-icon">🍯</div>
+              <div>
+                <div class="option-title">Syrups</div>
+                <div class="option-subtitle" id="syrup-summary">Vanilla +$0.50</div>
+              </div>
+            </div>
+            <div class="option-chevron">
+              <svg width="20" height="20" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" stroke="var(--theme-textSecondary)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="option-body">
+            <div class="syrup-grid" id="syrup-grid">
+              <button class="syrup-chip active" onclick="toggleSyrup(this, 'Vanilla', 0.50)">
+                <span>🍦 Vanilla</span>
+                <span class="syrup-price-tag">+$0.50</span>
+                <span class="syrup-check">✓</span>
+              </button>
+              <button class="syrup-chip" onclick="toggleSyrup(this, 'Caramel', 0.50)">
+                <span>🍮 Caramel</span>
+                <span class="syrup-price-tag">+$0.50</span>
+              </button>
+              <button class="syrup-chip" onclick="toggleSyrup(this, 'Hazelnut', 0.50)">
+                <span>🌰 Hazelnut</span>
+                <span class="syrup-price-tag">+$0.50</span>
+              </button>
+              <button class="syrup-chip" onclick="toggleSyrup(this, 'Brown Sugar', 0.50)">
+                <span>🤎 Brown Sugar</span>
+                <span class="syrup-price-tag">+$0.50</span>
+              </button>
+              <button class="syrup-chip" onclick="toggleSyrup(this, 'Lavender', 0.65)">
+                <span>💜 Lavender</span>
+                <span class="syrup-price-tag">+$0.65</span>
+              </button>
+              <button class="syrup-chip" onclick="toggleSyrup(this, 'Classic', 0)">
+                <span>Classic Simple</span>
+                <span class="syrup-price-tag">Free</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toppings -->
+        <div class="option-section" id="sec-topping">
+          <div class="option-header" onclick="toggleSection('sec-topping')">
+            <div class="option-header-left">
+              <div class="option-icon">✨</div>
+              <div>
+                <div class="option-title">Toppings</div>
+                <div class="option-subtitle" id="topping-summary">None selected</div>
+              </div>
+            </div>
+            <div class="option-chevron">
+              <svg width="20" height="20" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" stroke="var(--theme-textSecondary)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div class="option-body">
+            <div class="topping-grid">
+              <button class="syrup-chip" onclick="toggleSyrup(this, 'Caramel Drizzle', 0.25)">
+                <span>🌀 Caramel Drizzle</span>
+                <span class="syrup-price-tag">+$0.25</span>
+              </button>
+              <button class="syrup-chip" onclick="toggleSyrup(this, 'Whipped Cream', 0.75)">
+                <span>☁️ Whipped Cream</span>
+                <span class="syrup-price-tag">+$0.75</span>
+              </button>
+              <button class="syrup-chip" onclick="toggleSyrup(this, 'Cinnamon', 0)">
+                <span>🫙 Cinnamon</span>
+                <span class="syrup-price-tag">Free</span>
+              </button>
+              <button class="syrup-chip" onclick="toggleSyrup(this, 'Cocoa Powder', 0)">
+                <span>🍫 Cocoa Powder</span>
+                <span class="syrup-price-tag">Free</span>
+              </button>
+              <button class="syrup-chip" onclick="toggleSyrup(this, 'Cold Foam', 0.75)">
+                <span>🫧 Cold Foam</span>
+                <span class="syrup-price-tag">+$0.75</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /options-wrap -->
+
+      <div class="bottom-spacer"></div>
+    </div><!-- /scroll-content -->
+
+    <!-- Add to Cart Bar -->
+    <div class="cart-bar">
+      <button class="add-to-cart-btn">
+        <div class="atc-left">
+          <div class="qty-stepper">
+            <button class="qty-btn" onclick="changeQty(-1)">−</button>
+            <span class="qty-num" id="qtyDisplay">1</span>
+            <button class="qty-btn" onclick="changeQty(1)">+</button>
+          </div>
+          <span class="atc-text">Add to Cart</span>
+        </div>
+        <span class="atc-price" id="atcPrice">$6.75</span>
+      </button>
+    </div>
+
+  </div><!-- /phone -->
+
+  <script>
+    // ── State ─────────────────────────────────────────────
+    let basePrice = 5.50;
+    let milkPrice = 0.75;
+    let syrupPrice = 0.50;
+    let toppingPrice = 0;
+    let qty = 1;
+
+    function calcTotal() {
+      return (basePrice + milkPrice + syrupPrice + toppingPrice) * qty;
+    }
+
+    function updatePriceDisplay() {
+      const total = calcTotal();
+      document.getElementById('totalPrice').textContent = '$' + total.toFixed(2);
+      document.getElementById('atcPrice').textContent = '$' + total.toFixed(2);
+    }
+
+    // ── Size ──────────────────────────────────────────────
+    function setSize(size, btn) {
+      document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Animate cup scale
+      const svg = document.getElementById('cupSvg');
+      if (size === 'S') { svg.style.transform = 'scale(0.82)'; basePrice = 4.50; }
+      else if (size === 'M') { svg.style.transform = 'scale(1)'; basePrice = 5.50; }
+      else { svg.style.transform = 'scale(1.16)'; basePrice = 6.50; }
+      updatePriceDisplay();
+    }
+
+    // ── Temperature ───────────────────────────────────────
+    function setTemp(temp, el) {
+      document.querySelectorAll('.temp-opt').forEach(o => o.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('temp-summary').textContent = temp === 'hot' ? 'Hot' : 'Iced';
+      // Animate: iced changes foam to clear-ish
+      const foam = document.getElementById('layerFoam');
+      if (temp === 'iced') {
+        foam.setAttribute('fill', 'rgba(200,235,255,0.5)');
+      } else {
+        foam.setAttribute('fill', 'rgba(255,255,255,0.88)');
+      }
+    }
+
+    // ── Milk ──────────────────────────────────────────────
+    function selectMilk(el, name, price) {
+      document.querySelectorAll('.milk-opt').forEach(o => {
+        o.classList.remove('active');
+        o.querySelector('.milk-price').classList.remove('added');
+      });
+      el.classList.add('active');
+      el.querySelector('.milk-price').classList.add('added');
+      milkPrice = price;
+      document.getElementById('milk-summary').textContent = price > 0
+        ? `${name} +$${price.toFixed(2)}`
+        : name;
+      updatePriceDisplay();
+
+      // Animate milk layer color
+      const ml = document.getElementById('layerMilk');
+      if (name === 'Oat Milk') ml.setAttribute('fill', 'rgba(241,220,193,0.85)');
+      else if (name === 'Almond Milk') ml.setAttribute('fill', 'rgba(248,235,210,0.85)');
+      else if (name === 'Coconut Milk') ml.setAttribute('fill', 'rgba(255,252,240,0.85)');
+      else if (name === 'No Milk') ml.setAttribute('fill', 'rgba(107,66,38,0)');
+      else ml.setAttribute('fill', 'rgba(255,250,245,0.9)');
+    }
+
+    // ── Syrups & Toppings ─────────────────────────────────
+    let selectedSyrups = { 'Vanilla': 0.50 };
+    let selectedToppings = {};
+
+    function toggleSyrup(btn, name, price) {
+      const isActive = btn.classList.contains('active');
+      if (isActive) {
+        btn.classList.remove('active');
+        // Remove check mark
+        const check = btn.querySelector('.syrup-check');
+        if (check) check.remove();
+        delete selectedSyrups[name];
+      } else {
+        btn.classList.add('active');
+        if (!btn.querySelector('.syrup-check')) {
+          const check = document.createElement('span');
+          check.className = 'syrup-check';
+          check.textContent = '✓';
+          btn.appendChild(check);
+        }
+        selectedSyrups[name] = price;
+      }
+      syrupPrice = Object.values(selectedSyrups).reduce((a,b) => a+b, 0);
+      const names = Object.keys(selectedSyrups);
+      document.getElementById('syrup-summary').textContent = names.length === 0
+        ? 'None'
+        : names.slice(0,2).join(', ') + (syrupPrice > 0 ? ` +$${syrupPrice.toFixed(2)}` : '');
+      updatePriceDisplay();
+    }
+
+    // ── Section Toggle ────────────────────────────────────
+    function toggleSection(id) {
+      document.getElementById(id).classList.toggle('open');
+    }
+
+    // ── Quantity ──────────────────────────────────────────
+    function changeQty(delta) {
+      qty = Math.max(1, qty + delta);
+      document.getElementById('qtyDisplay').textContent = qty;
+      updatePriceDisplay();
+    }
+
+    // ── Theme ─────────────────────────────────────────────
+    function setTheme(theme, btn) {
+      const phone = document.getElementById('phone');
+      phone.removeAttribute('data-theme');
+      if (theme !== 'espresso') phone.setAttribute('data-theme', theme);
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>

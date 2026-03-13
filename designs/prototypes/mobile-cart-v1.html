@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=390px, initial-scale=1.0">
+  <title>Drink-UX — Cart v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --theme-primary: #6B4226;
+      --theme-primaryDark: #4a2e1a;
+      --theme-secondary: #D4A574;
+      --theme-background: #FDF8F5;
+      --theme-surface: #FFFFFF;
+      --theme-text: #2C1810;
+      --theme-textSecondary: #8B7E74;
+      --theme-accent: #E67E22;
+      --theme-border: rgba(107, 66, 38, 0.12);
+      --theme-shadow: rgba(107, 66, 38, 0.15);
+      --theme-success: #2D9B6F;
+      --theme-gradient-primary: linear-gradient(135deg, #6B4226, #a0622f);
+    }
+    [data-theme="ocean"] {
+      --theme-primary: #1A6B8A; --theme-primaryDark: #0f4d65;
+      --theme-secondary: #5BC4D4; --theme-background: #F0F9FC;
+      --theme-surface: #FFFFFF; --theme-text: #0D2D3A;
+      --theme-textSecondary: #4A7A8A; --theme-border: rgba(26,107,138,0.12);
+      --theme-shadow: rgba(26,107,138,0.15);
+      --theme-gradient-primary: linear-gradient(135deg, #1A6B8A, #2589ad);
+    }
+    [data-theme="cherry"] {
+      --theme-primary: #C0392B; --theme-primaryDark: #922b21;
+      --theme-secondary: #F1948A; --theme-background: #FFF5F5;
+      --theme-surface: #FFFFFF; --theme-text: #2C1010;
+      --theme-textSecondary: #8B6060; --theme-border: rgba(192,57,43,0.12);
+      --theme-shadow: rgba(192,57,43,0.15);
+      --theme-gradient-primary: linear-gradient(135deg, #C0392B, #e04e40);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: #f0f0f0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 16px; }
+    .theme-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; background: white; padding: 10px 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-wrap: wrap; justify-content: center; max-width: 420px; width: 100%; }
+    .theme-bar span { font-size: 12px; font-weight: 600; color: #666; }
+    .theme-btn { border: none; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; }
+    .theme-btn.active { outline: 2px solid #333; outline-offset: 1px; }
+    .theme-btn[data-t="espresso"] { background: #6B4226; color: white; }
+    .theme-btn[data-t="ocean"]    { background: #1A6B8A; color: white; }
+    .theme-btn[data-t="cherry"]   { background: #C0392B; color: white; }
+
+    .phone { width: 390px; height: 844px; background: var(--theme-background); border-radius: 40px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.25); position: relative; display: flex; flex-direction: column; }
+
+    /* Status bar */
+    .status-bar { background: var(--theme-background); display: flex; justify-content: space-between; align-items: center; padding: 14px 24px 8px; flex-shrink: 0; }
+    .status-time { font-size: 15px; font-weight: 700; color: var(--theme-text); }
+
+    /* Header */
+    .page-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 20px 20px; flex-shrink: 0; }
+    .back-btn { width: 38px; height: 38px; border-radius: 12px; background: var(--theme-surface); border: 1.5px solid var(--theme-border); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 4px var(--theme-shadow); }
+    .page-title { font-size: 20px; font-weight: 800; color: var(--theme-text); letter-spacing: -0.5px; }
+    .clear-btn { font-size: 13px; color: var(--theme-textSecondary); font-weight: 600; cursor: pointer; padding: 4px; font-family: 'Outfit', sans-serif; }
+
+    /* Scroll */
+    .scroll-content { flex: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; padding: 0 20px; }
+    .scroll-content::-webkit-scrollbar { display: none; }
+
+    /* Cart Item */
+    .cart-item {
+      background: var(--theme-surface);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1.5px solid var(--theme-border);
+      box-shadow: 0 2px 10px var(--theme-shadow);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+
+    .item-cup {
+      width: 56px; height: 72px;
+      border-radius: 14px;
+      background: var(--theme-background);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .item-details { flex: 1; min-width: 0; }
+
+    .item-name {
+      font-size: 16px; font-weight: 700; color: var(--theme-text);
+      letter-spacing: -0.2px; margin-bottom: 4px;
+    }
+
+    .item-modifiers {
+      font-size: 12px; color: var(--theme-textSecondary);
+      line-height: 1.5; margin-bottom: 10px;
+    }
+
+    .item-mod-tag {
+      display: inline-block;
+      background: rgba(107,66,38,0.07);
+      color: var(--theme-textSecondary);
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-size: 11px;
+      margin: 1px 2px 1px 0;
+    }
+
+    .item-bottom { display: flex; align-items: center; justify-content: space-between; }
+
+    .item-price { font-size: 16px; font-weight: 700; color: var(--theme-primary); }
+
+    .qty-control {
+      display: flex; align-items: center; gap: 0;
+      background: var(--theme-background);
+      border-radius: 12px;
+      border: 1.5px solid var(--theme-border);
+      overflow: hidden;
+    }
+    .qty-btn {
+      width: 34px; height: 34px;
+      border: none; background: transparent;
+      font-size: 18px; font-weight: 600;
+      color: var(--theme-primary);
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qty-num {
+      min-width: 30px; text-align: center;
+      font-size: 14px; font-weight: 700;
+      color: var(--theme-text);
+    }
+
+    /* Delete swipe hint */
+    .delete-btn {
+      position: absolute; top: 12px; right: 12px;
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: rgba(229, 62, 62, 0.1);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Notes field */
+    .notes-field {
+      background: var(--theme-surface);
+      border-radius: 16px;
+      padding: 14px 16px;
+      border: 1.5px solid var(--theme-border);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .notes-text { font-size: 14px; color: var(--theme-textSecondary); font-family: 'Outfit', sans-serif; }
+
+    /* Order Summary */
+    .summary-card {
+      background: var(--theme-surface);
+      border-radius: 20px;
+      padding: 16px;
+      border: 1.5px solid var(--theme-border);
+      box-shadow: 0 2px 10px var(--theme-shadow);
+      margin-bottom: 12px;
+    }
+    .summary-title { font-size: 14px; font-weight: 700; color: var(--theme-text); margin-bottom: 12px; }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .summary-label { font-size: 13px; color: var(--theme-textSecondary); }
+    .summary-value { font-size: 13px; font-weight: 600; color: var(--theme-text); }
+    .summary-divider { height: 1px; background: var(--theme-border); margin: 10px 0; }
+    .summary-total-label { font-size: 15px; font-weight: 700; color: var(--theme-text); }
+    .summary-total-value { font-size: 20px; font-weight: 800; color: var(--theme-primary); letter-spacing: -0.5px; }
+
+    /* Promo code row */
+    .promo-row {
+      background: var(--theme-surface);
+      border-radius: 16px;
+      padding: 12px 16px;
+      border: 1.5px dashed var(--theme-border);
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; margin-bottom: 12px;
+    }
+    .promo-text { font-size: 13px; color: var(--theme-textSecondary); flex: 1; }
+    .promo-arrow { color: var(--theme-primary); font-weight: 700; font-size: 16px; }
+
+    .bottom-spacer { height: 100px; }
+
+    /* Checkout bar */
+    .checkout-bar {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 12px 20px 28px;
+      background: linear-gradient(to top, var(--theme-background) 70%, transparent);
+    }
+    .checkout-btn {
+      width: 100%; height: 58px;
+      border-radius: 20px;
+      background: var(--theme-gradient-primary);
+      border: none;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 22px;
+      cursor: pointer;
+      box-shadow: 0 6px 24px var(--theme-shadow);
+    }
+    .checkout-btn-left { display: flex; align-items: center; gap: 12px; }
+    .item-count-badge {
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 13px; font-weight: 700; color: white;
+    }
+    .checkout-label { font-size: 16px; font-weight: 700; color: white; font-family: 'Outfit', sans-serif; }
+    .checkout-total { font-size: 16px; font-weight: 800; color: white; }
+
+    /* Section label */
+    .section-label-sm { font-size: 12px; font-weight: 700; color: var(--theme-textSecondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <div class="theme-bar">
+    <span>Theme:</span>
+    <button class="theme-btn active" data-t="espresso" onclick="setTheme('espresso',this)">☕ Espresso</button>
+    <button class="theme-btn" data-t="ocean" onclick="setTheme('ocean',this)">🌊 Ocean</button>
+    <button class="theme-btn" data-t="cherry" onclick="setTheme('cherry',this)">🍒 Cherry</button>
+  </div>
+
+  <div class="phone" id="phone">
+
+    <div class="status-bar">
+      <span class="status-time">9:41</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="var(--theme-text)"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4" y="2" width="3" height="10" rx="1"/><rect x="8" y="0" width="3" height="12" rx="1"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="3" stroke="var(--theme-textSecondary)" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="17" height="7" rx="2" fill="var(--theme-text)"/></svg>
+      </div>
+    </div>
+
+    <div class="page-header">
+      <button class="back-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" stroke="var(--theme-text)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+      </button>
+      <span class="page-title">My Cart</span>
+      <span class="clear-btn">Clear all</span>
+    </div>
+
+    <div class="scroll-content">
+
+      <div class="section-label-sm">2 items</div>
+
+      <!-- Cart Item 1 -->
+      <div class="cart-item">
+        <div class="item-cup">
+          <svg width="38" height="52" viewBox="0 0 38 52">
+            <path d="M5 8 L33 8 L30 44 Q30 48 19 48 Q8 48 8 44 Z" fill="rgba(212,165,116,0.3)" stroke="rgba(107,66,38,0.25)" stroke-width="1.5"/>
+            <path d="M6 24 Q6 44 8 44 Q19 48 30 44 Q31 40 31 24 Z" fill="rgba(212,165,116,0.5)"/>
+            <path d="M5 8 L33 8 L32 20 L6 20 Z" fill="rgba(255,255,255,0.75)"/>
+            <ellipse cx="19" cy="8" rx="14" ry="3.5" fill="rgba(255,255,255,0.6)"/>
+          </svg>
+        </div>
+        <div class="item-details">
+          <div class="item-name">Vanilla Oat Latte</div>
+          <div style="margin-bottom:8px;">
+            <span class="item-mod-tag">Medium</span>
+            <span class="item-mod-tag">Hot</span>
+            <span class="item-mod-tag">Oat milk</span>
+            <span class="item-mod-tag">Vanilla</span>
+          </div>
+          <div class="item-bottom">
+            <div class="item-price">$6.75</div>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="updateQty(this,-1,6.75,'item1')">−</button>
+              <span class="qty-num" id="qty-item1">1</span>
+              <button class="qty-btn" onclick="updateQty(this,1,6.75,'item1')">+</button>
+            </div>
+          </div>
+        </div>
+        <button class="delete-btn" onclick="removeItem(this)">
+          <svg width="14" height="14" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" stroke="#E53E3E" stroke-width="2" fill="none"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="#E53E3E" stroke-width="2" fill="none"/><path d="M10 11v6M14 11v6" stroke="#E53E3E" stroke-width="2" fill="none"/></svg>
+        </button>
+      </div>
+
+      <!-- Cart Item 2 -->
+      <div class="cart-item">
+        <div class="item-cup">
+          <svg width="38" height="52" viewBox="0 0 38 52">
+            <path d="M4 6 L34 6 L31 44 Q31 48 19 48 Q7 48 7 44 Z" fill="rgba(44,24,16,0.2)" stroke="rgba(107,66,38,0.25)" stroke-width="1.5"/>
+            <path d="M5 14 Q5 44 7 44 Q19 48 31 44 Q32 40 32 14 Z" fill="rgba(44,24,16,0.5)"/>
+            <rect x="8" y="15" width="7" height="7" rx="2" fill="rgba(255,255,255,0.3)"/>
+            <rect x="19" y="18" width="7" height="7" rx="2" fill="rgba(255,255,255,0.25)"/>
+            <rect x="23" y="2" width="3" height="28" rx="1.5" fill="rgba(212,165,116,0.6)"/>
+            <ellipse cx="19" cy="6" rx="15" ry="4" fill="rgba(255,255,255,0.35)"/>
+          </svg>
+        </div>
+        <div class="item-details">
+          <div class="item-name">Nitro Cold Brew</div>
+          <div style="margin-bottom:8px;">
+            <span class="item-mod-tag">Large</span>
+            <span class="item-mod-tag">Iced</span>
+            <span class="item-mod-tag">No milk</span>
+          </div>
+          <div class="item-bottom">
+            <div class="item-price">$6.50</div>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="updateQty(this,-1,6.50,'item2')">−</button>
+              <span class="qty-num" id="qty-item2">1</span>
+              <button class="qty-btn" onclick="updateQty(this,1,6.50,'item2')">+</button>
+            </div>
+          </div>
+        </div>
+        <button class="delete-btn" onclick="removeItem(this)">
+          <svg width="14" height="14" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" stroke="#E53E3E" stroke-width="2" fill="none"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" stroke="#E53E3E" stroke-width="2" fill="none"/><path d="M10 11v6M14 11v6" stroke="#E53E3E" stroke-width="2" fill="none"/></svg>
+        </button>
+      </div>
+
+      <!-- Add more button -->
+      <div style="display:flex;align-items:center;justify-content:center;padding:4px 0 20px;gap:8px;cursor:pointer;">
+        <div style="width:28px;height:28px;border-radius:8px;border:1.5px dashed var(--theme-border);display:flex;align-items:center;justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="var(--theme-primary)" stroke-width="2.5"/><line x1="5" y1="12" x2="19" y2="12" stroke="var(--theme-primary)" stroke-width="2.5"/></svg>
+        </div>
+        <span style="font-size:13px;font-weight:600;color:var(--theme-primary);">Add another drink</span>
+      </div>
+
+      <!-- Promo code -->
+      <div class="promo-row">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="12" rx="3" stroke="var(--theme-textSecondary)" stroke-width="2"/><circle cx="12" cy="12" r="2" fill="var(--theme-textSecondary)"/></svg>
+        <span class="promo-text">Add promo code</span>
+        <span class="promo-arrow">›</span>
+      </div>
+
+      <!-- Order Notes -->
+      <div class="notes-field">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="var(--theme-textSecondary)" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="var(--theme-textSecondary)" stroke-width="2" fill="none"/><line x1="16" y1="13" x2="8" y2="13" stroke="var(--theme-textSecondary)" stroke-width="2"/><line x1="16" y1="17" x2="8" y2="17" stroke="var(--theme-textSecondary)" stroke-width="2"/></svg>
+        <span class="notes-text">Add order notes (allergies, special requests…)</span>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="summary-card">
+        <div class="summary-title">Order Summary</div>
+        <div class="summary-row">
+          <span class="summary-label">Subtotal</span>
+          <span class="summary-value" id="subtotal">$13.25</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Tax (8.25%)</span>
+          <span class="summary-value" id="tax">$1.09</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">Service fee</span>
+          <span class="summary-value">$0.00</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row">
+          <span class="summary-total-label">Total</span>
+          <span class="summary-total-value" id="total-display">$14.34</span>
+        </div>
+      </div>
+
+      <div class="bottom-spacer"></div>
+    </div>
+
+    <!-- Checkout Bar -->
+    <div class="checkout-bar">
+      <button class="checkout-btn">
+        <div class="checkout-btn-left">
+          <span class="item-count-badge" id="item-count">2 items</span>
+          <span class="checkout-label">Proceed to Checkout</span>
+        </div>
+        <span class="checkout-total" id="checkout-total">$14.34</span>
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    let quantities = { item1: 1, item2: 1 };
+    let prices = { item1: 6.75, item2: 6.50 };
+
+    function updateQty(btn, delta, price, itemId) {
+      quantities[itemId] = Math.max(1, quantities[itemId] + delta);
+      document.getElementById('qty-' + itemId).textContent = quantities[itemId];
+      recalc();
+    }
+
+    function removeItem(btn) {
+      btn.closest('.cart-item').style.transform = 'translateX(100%)';
+      btn.closest('.cart-item').style.opacity = '0';
+      setTimeout(() => {
+        btn.closest('.cart-item').remove();
+        recalc();
+      }, 300);
+    }
+
+    function recalc() {
+      let subtotal = 0;
+      document.querySelectorAll('.cart-item').forEach(item => {
+        // Simple recalc based on rendered state
+      });
+      subtotal = quantities.item1 * prices.item1 + quantities.item2 * prices.item2;
+      const tax = subtotal * 0.0825;
+      const total = subtotal + tax;
+      document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+      document.getElementById('tax').textContent = '$' + tax.toFixed(2);
+      document.getElementById('total-display').textContent = '$' + total.toFixed(2);
+      document.getElementById('checkout-total').textContent = '$' + total.toFixed(2);
+    }
+
+    function setTheme(theme, btn) {
+      const phone = document.getElementById('phone');
+      phone.removeAttribute('data-theme');
+      if (theme !== 'espresso') phone.setAttribute('data-theme', theme);
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>
