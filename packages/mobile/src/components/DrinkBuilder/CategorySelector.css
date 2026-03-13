@@ -1,6 +1,5 @@
 /* Category Selector Component Styles */
 
-/* Category List Styles */
 .category-list {
   background: transparent;
   margin: 0;
@@ -8,21 +7,36 @@
 }
 
 .category-item {
-  /* Inherit from interactive-item-large class */
   animation-delay: var(--animation-delay, 0s);
+  --background: var(--theme-surface);
+  --border-radius: 14px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  margin: 8px 0;
+  border: 1px solid var(--theme-border);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px var(--theme-shadow);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
 .category-item::part(native) {
-  transition: var(--transition);
+  transition: background 0.25s ease;
+}
+
+.category-item:hover {
+  box-shadow: 0 4px 16px rgba(44, 24, 16, 0.12);
+  transform: translateY(-1px);
 }
 
 .category-avatar {
   --border-radius: 50%;
-  --background: var(--ion-color-light);
-  width: 60px;
-  height: 60px;
-  margin-right: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --background: var(--theme-primary-light, rgba(139, 94, 60, 0.08));
+  width: 56px;
+  height: 56px;
+  margin-right: 14px;
+  box-shadow: 0 2px 6px rgba(44, 24, 16, 0.1);
   overflow: hidden;
   position: relative;
 }
@@ -35,12 +49,8 @@
   transition: transform 0.3s ease;
 }
 
-.category-item:hover .category-avatar {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
 .category-item:hover .category-image {
-  transform: scale(1.1);
+  transform: scale(1.08);
 }
 
 .category-item ion-label {
@@ -48,41 +58,26 @@
 }
 
 .category-item ion-label h2 {
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--theme-text);
-  margin: 0 0 4px 0;
+  margin: 0 0 3px 0;
   line-height: 1.3;
+  letter-spacing: -0.01em;
 }
 
 .category-item ion-note {
-  font-size: 0.9rem;
-  line-height: 1.3;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: var(--theme-textSecondary);
   display: block;
-}
-
-/* Add a subtle gradient overlay on hover */
-.category-item:hover::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1),
-    rgba(255, 255, 255, 0)
-  );
-  border-radius: 16px;
-  pointer-events: none;
 }
 
 /* Slide up animation */
 @keyframes slideInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -99,24 +94,23 @@
 
   .category-item {
     --min-height: 90px;
-    margin: 12px 0;
+    margin: 10px 0;
   }
 
   .category-avatar {
-    width: 70px;
-    height: 70px;
+    width: 64px;
+    height: 64px;
   }
 
   .category-item ion-label h2 {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
   }
 
   .category-item ion-note {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 }
 
-/* Laptop screens - better proportions */
 @media (min-width: 1024px) {
   .category-selector {
     padding: 20px 0;
@@ -134,41 +128,40 @@
 
   .category-item {
     --min-height: 100px;
-    margin: 16px 0;
-    --padding-start: 24px;
-    --padding-end: 24px;
-    --padding-top: 20px;
-    --padding-bottom: 20px;
+    margin: 12px 0;
+    --padding-start: 20px;
+    --padding-end: 20px;
+    --padding-top: 18px;
+    --padding-bottom: 18px;
   }
 
   .category-avatar {
-    width: 80px;
-    height: 80px;
-    margin-right: 20px;
+    width: 72px;
+    height: 72px;
+    margin-right: 18px;
   }
 
   .category-item ion-label h2 {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
   }
 
   .category-item ion-note {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 }
 
-/* Large desktop screens - grid layout for better use of space */
 @media (min-width: 1440px) {
   .category-list {
     max-width: 800px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 16px;
     padding: 0 20px;
   }
 
   .category-item {
     margin: 0;
-    --min-height: 120px;
+    --min-height: 110px;
   }
 
   .selector-title {
@@ -177,15 +170,15 @@
   }
 
   .category-avatar {
-    width: 90px;
-    height: 90px;
+    width: 80px;
+    height: 80px;
   }
 
   .category-item ion-label h2 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
   }
 
   .category-item ion-note {
-    font-size: 1.2rem;
+    font-size: 1.05rem;
   }
 }

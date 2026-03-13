@@ -1,0 +1,58 @@
+/* AppHeader Component Styles */
+
+.header-logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+}
+
+.header-logo {
+  max-height: 36px;
+  max-width: 120px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  transition: opacity 0.3s ease;
+}
+
+.header-logo:hover {
+  opacity: 0.9;
+}
+
+/* Ensure logo doesn't push title too far */
+.app-header .header-logo-container + ion-title {
+  padding-left: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 320px) {
+  .header-logo {
+    max-height: 28px;
+    max-width: 80px;
+  }
+}
+
+/* Loading skeleton for logo */
+.header-logo-skeleton {
+  width: 80px;
+  height: 28px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.08) 25%,
+    rgba(0, 0, 0, 0.12) 50%,
+    rgba(0, 0, 0, 0.08) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

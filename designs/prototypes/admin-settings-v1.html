@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200px, initial-scale=1.0">
+  <title>Drink-UX — Admin Settings & Subscription v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: #EAECF0; min-height: 100vh;
+           display: flex; flex-direction: column; align-items: center; padding: 24px; gap: 16px; }
+
+    /* Toggle bar */
+    .toggle-bar { display: flex; gap: 8px; }
+    .toggle-btn { border: none; border-radius: 8px; padding: 6px 16px; font-size: 12px;
+                  font-weight: 700; cursor: pointer; font-family: 'Outfit', sans-serif;
+                  background: white; color: #666; }
+    .toggle-btn.active { background: #111827; color: white; }
+
+    /* App shell */
+    .app-shell {
+      width: 1100px; background: #F9FAFB; border-radius: 20px;
+      overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+      display: flex; min-height: 680px;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px; flex-shrink: 0;
+      background: #111827;
+      display: flex; flex-direction: column;
+      padding: 0;
+    }
+    .sidebar-brand {
+      padding: 20px 20px 16px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sb-icon { width: 32px; height: 32px; border-radius: 8px;
+               background: linear-gradient(135deg, #6B4226, #a0622f);
+               display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .sb-name { font-size: 14px; font-weight: 800; color: white; letter-spacing: -0.3px; }
+    .sb-sub  { font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 500; }
+
+    .sidebar-nav { padding: 12px 10px; flex: 1; }
+    .nav-section { font-size: 9px; font-weight: 700; color: rgba(255,255,255,0.3);
+                   text-transform: uppercase; letter-spacing: 1px;
+                   padding: 8px 10px 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 8px; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.5);
+      transition: all 0.15s; margin-bottom: 1px;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); }
+    .nav-item.active { background: rgba(107,66,38,0.25); color: white; }
+    .nav-item.active .nav-icon { opacity: 1; }
+    .nav-icon { font-size: 14px; opacity: 0.6; }
+
+    .sidebar-footer {
+      padding: 14px 10px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* Main content area */
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    /* Top bar */
+    .topbar {
+      height: 56px; background: white; border-bottom: 1px solid #E5E7EB;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; flex-shrink: 0;
+    }
+    .page-title { font-size: 17px; font-weight: 800; color: #111827; letter-spacing: -0.4px; }
+    .page-path { font-size: 12px; color: #9CA3AF; font-weight: 500; margin-top: 1px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .save-btn {
+      height: 34px; padding: 0 18px;
+      background: linear-gradient(135deg, #6B4226, #a0622f);
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 700; color: white;
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+    }
+
+    /* Settings sections tabs */
+    .settings-tabs {
+      display: flex; gap: 0;
+      background: white; border-bottom: 1px solid #E5E7EB;
+      padding: 0 28px;
+    }
+    .stab {
+      padding: 12px 16px; font-size: 13px; font-weight: 600;
+      color: #6B7280; cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; transition: all 0.15s; white-space: nowrap;
+    }
+    .stab.active { color: #6B4226; border-bottom-color: #6B4226; }
+
+    /* Content area */
+    .content-area {
+      flex: 1; overflow-y: auto; padding: 28px;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+    .content-area::-webkit-scrollbar { width: 4px; }
+    .content-area::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 2px; }
+
+    /* Cards */
+    .settings-card {
+      background: white; border-radius: 16px;
+      border: 1px solid #E5E7EB;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid #F3F4F6;
+      display: flex; align-items: flex-start; justify-content: space-between;
+    }
+    .card-title { font-size: 15px; font-weight: 800; color: #111827; letter-spacing: -0.3px; }
+    .card-desc { font-size: 12px; color: #6B7280; margin-top: 3px; }
+    .card-body { padding: 20px 22px; }
+
+    /* Subscription card — hero treatment */
+    .sub-card {
+      background: linear-gradient(135deg, #2C1810 0%, #6B4226 60%, #a0622f 100%);
+      border-radius: 16px; padding: 24px; color: white;
+      border: none; position: relative; overflow: hidden;
+    }
+    .sub-card::before {
+      content: '';
+      position: absolute; top: -40px; right: -40px;
+      width: 160px; height: 160px; border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+    }
+    .sub-card::after {
+      content: '';
+      position: absolute; bottom: -20px; right: 80px;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+    .sub-plan { font-size: 11px; font-weight: 700; letter-spacing: 1px;
+                text-transform: uppercase; opacity: 0.6; margin-bottom: 6px; }
+    .sub-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+    .sub-price { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
+    .sub-price span { font-size: 14px; font-weight: 500; opacity: 0.6; }
+    .sub-meta { font-size: 12px; opacity: 0.65; margin-top: 6px; line-height: 1.5; }
+    .sub-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(5,150,105,0.25); border: 1px solid rgba(5,150,105,0.4);
+      border-radius: 20px; padding: 4px 10px;
+      font-size: 11px; font-weight: 700; color: #6EE7B7;
+      margin-bottom: 14px;
+    }
+    .sub-actions { display: flex; gap: 10px; margin-top: 18px; }
+    .sub-btn {
+      height: 36px; padding: 0 18px; border-radius: 10px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      font-family: 'Outfit', sans-serif; border: none;
+      transition: opacity 0.15s;
+    }
+    .sub-btn-primary { background: white; color: #6B4226; }
+    .sub-btn-ghost { background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2); }
+    .sub-stats {
+      display: flex; gap: 28px; margin-top: 20px;
+      padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.12);
+    }
+    .sub-stat-num { font-size: 20px; font-weight: 800; }
+    .sub-stat-label { font-size: 10px; opacity: 0.5; margin-top: 1px; font-weight: 500; }
+
+    /* Billing history */
+    .bill-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px 0; border-bottom: 1px solid #F3F4F6;
+    }
+    .bill-row:last-child { border-bottom: none; }
+    .bill-icon { width: 32px; height: 32px; border-radius: 8px;
+                 background: rgba(5,150,105,0.08); display: flex; align-items: center;
+                 justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .bill-month { font-size: 13px; font-weight: 700; color: #111827; }
+    .bill-date  { font-size: 11px; color: #9CA3AF; margin-top: 1px; }
+    .bill-amount { margin-left: auto; font-size: 14px; font-weight: 700; color: #111827; }
+    .bill-status {
+      font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px;
+    }
+    .bill-paid { background: rgba(5,150,105,0.08); color: #059669; }
+    .bill-link { font-size: 12px; color: #6B7280; cursor: pointer; margin-left: 10px; }
+
+    /* Branding section */
+    .branding-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .brand-left { display: flex; flex-direction: column; gap: 16px; }
+
+    .field-group { display: flex; flex-direction: column; gap: 5px; }
+    .field-label { font-size: 11px; font-weight: 700; color: #374151;
+                   text-transform: uppercase; letter-spacing: 0.5px; }
+    .field-input {
+      height: 40px; border: 1.5px solid #E5E7EB; border-radius: 10px;
+      padding: 0 12px; font-family: 'Outfit', sans-serif; font-size: 14px;
+      font-weight: 500; color: #111827; background: white; outline: none;
+      transition: border-color 0.2s;
+    }
+    .field-input:focus { border-color: #6B4226; }
+    .field-hint { font-size: 11px; color: #9CA3AF; }
+
+    /* Color picker row */
+    .color-row { display: flex; align-items: center; gap: 10px; }
+    .color-swatch-group { display: flex; gap: 6px; }
+    .color-swatch {
+      width: 28px; height: 28px; border-radius: 8px; cursor: pointer;
+      border: 2px solid transparent; transition: all 0.15s; flex-shrink: 0;
+    }
+    .color-swatch.selected { border-color: #111827; box-shadow: 0 0 0 2px white, 0 0 0 4px #111827; }
+    .color-input-wrap { position: relative; }
+    .color-input {
+      width: 28px; height: 28px; border-radius: 8px; cursor: pointer;
+      border: 2px solid #E5E7EB; padding: 0; background: none; overflow: hidden;
+    }
+    .color-hex {
+      height: 40px; border: 1.5px solid #E5E7EB; border-radius: 10px;
+      padding: 0 12px; font-family: 'Outfit', sans-serif; font-size: 13px;
+      font-weight: 500; color: #111827; background: white; outline: none;
+      width: 100px;
+    }
+
+    /* Logo upload */
+    .logo-upload {
+      border: 1.5px dashed #D1D5DB; border-radius: 12px;
+      padding: 20px; text-align: center; cursor: pointer;
+      background: #FAFAFA; transition: all 0.15s;
+    }
+    .logo-upload:hover { border-color: #6B4226; background: rgba(107,66,38,0.02); }
+    .logo-placeholder { font-size: 28px; margin-bottom: 8px; }
+    .logo-label { font-size: 13px; font-weight: 600; color: #374151; }
+    .logo-sub { font-size: 11px; color: #9CA3AF; margin-top: 3px; }
+
+    /* Live preview phone */
+    .brand-preview {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .preview-label { font-size: 11px; font-weight: 700; color: #6B7280;
+                     text-transform: uppercase; letter-spacing: 0.5px; }
+    .preview-phone {
+      width: 180px; background: #F3F4F6; border-radius: 24px; overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+    }
+    .preview-statusbar {
+      height: 20px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 12px; font-size: 8px; color: white; font-weight: 700;
+      background-color: var(--preview-color, #6B4226);
+    }
+    .preview-nav {
+      padding: 8px 10px;
+      background-color: var(--preview-color, #6B4226);
+    }
+    .preview-shop-name { font-size: 11px; font-weight: 800; color: white; }
+    .preview-search {
+      height: 22px; background: rgba(255,255,255,0.15); border-radius: 6px;
+      margin-top: 6px; display: flex; align-items: center; padding: 0 8px;
+      font-size: 9px; color: rgba(255,255,255,0.6);
+    }
+    .preview-body { background: #F9FAFB; padding: 8px; }
+    .preview-pill {
+      display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 8px;
+      font-weight: 700; color: white; margin-bottom: 8px;
+      background-color: var(--preview-color, #6B4226);
+    }
+    .preview-item { background: white; border-radius: 8px; padding: 8px;
+                    margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+                    border: 1px solid #E5E7EB; }
+    .preview-item-icon { width: 24px; height: 24px; border-radius: 6px;
+                         display: flex; align-items: center; justify-content: center;
+                         font-size: 12px; background: #F3F4F6; }
+    .preview-item-name { font-size: 8px; font-weight: 700; color: #111827; }
+    .preview-item-price { font-size: 8px; color: #6B7280; }
+    .preview-item-btn {
+      margin-left: auto; font-size: 10px; padding: 3px 6px; border-radius: 5px;
+      background-color: var(--preview-color, #6B4226); color: white; font-weight: 700;
+    }
+    .preview-cart {
+      height: 32px; display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; color: white;
+      background-color: var(--preview-color, #6B4226);
+    }
+
+    /* POS Connection */
+    .pos-card { background: #F9FAFB; border-radius: 12px; border: 1px solid #E5E7EB;
+                padding: 16px; display: flex; align-items: center; gap: 14px; }
+    .pos-icon { width: 48px; height: 48px; border-radius: 12px;
+                background: white; border: 1px solid #E5E7EB;
+                display: flex; align-items: center; justify-content: center; font-size: 24px;
+                flex-shrink: 0; }
+    .pos-info { flex: 1; }
+    .pos-name { font-size: 14px; font-weight: 700; color: #111827; }
+    .pos-sub { font-size: 11px; color: #6B7280; margin-top: 2px; }
+    .pos-status {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 600; margin-top: 6px;
+    }
+    .pos-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .pos-connected .pos-dot { background: #059669; }
+    .pos-connected .pos-status-text { color: #059669; }
+    .pos-action {
+      height: 34px; padding: 0 16px; border-radius: 8px;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+    }
+    .pos-action-primary {
+      background: linear-gradient(135deg, #6B4226, #a0622f);
+      border: none; color: white;
+    }
+    .pos-action-danger { background: white; border: 1.5px solid #FCA5A5; color: #DC2626; }
+
+    /* Location list */
+    .loc-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid #F3F4F6;
+    }
+    .loc-row:last-child { border-bottom: none; }
+    .loc-icon { width: 32px; height: 32px; border-radius: 8px;
+                background: rgba(107,66,38,0.06); display: flex; align-items: center;
+                justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .loc-name { font-size: 13px; font-weight: 700; color: #111827; }
+    .loc-addr { font-size: 11px; color: #9CA3AF; margin-top: 1px; }
+    .loc-badge { margin-left: auto; font-size: 10px; font-weight: 700;
+                 padding: 3px 8px; border-radius: 10px; }
+    .loc-active { background: rgba(5,150,105,0.08); color: #059669; }
+    .loc-inactive { background: #F3F4F6; color: #9CA3AF; }
+
+    /* Account info */
+    .acct-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .danger-zone {
+      background: rgba(254,242,242,1); border-radius: 12px;
+      border: 1.5px solid #FCA5A5; padding: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .danger-title { font-size: 13px; font-weight: 700; color: #DC2626; }
+    .danger-desc { font-size: 11px; color: #6B7280; margin-top: 2px; }
+    .danger-btn {
+      height: 34px; padding: 0 16px; border-radius: 8px; border: 1.5px solid #DC2626;
+      background: white; color: #DC2626; font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: 'Outfit', sans-serif; flex-shrink: 0;
+    }
+
+    /* Screen section visibility */
+    .settings-section { display: none; }
+    .settings-section.active { display: flex; flex-direction: column; gap: 20px; }
+
+    /* Notification toggle */
+    .notif-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 14px 0; border-bottom: 1px solid #F3F4F6;
+    }
+    .notif-row:last-child { border-bottom: none; }
+    .notif-label { font-size: 13px; font-weight: 600; color: #111827; }
+    .notif-desc { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
+    .toggle-switch {
+      width: 44px; height: 24px; border-radius: 12px; cursor: pointer;
+      position: relative; flex-shrink: 0; transition: background 0.2s;
+    }
+    .toggle-switch.on { background: #6B4226; }
+    .toggle-switch.off { background: #D1D5DB; }
+    .toggle-knob {
+      width: 20px; height: 20px; border-radius: 50%; background: white;
+      position: absolute; top: 2px; transition: left 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle-switch.on .toggle-knob { left: 22px; }
+    .toggle-switch.off .toggle-knob { left: 2px; }
+  </style>
+</head>
+<body>
+
+  <div class="toggle-bar">
+    <button class="toggle-btn active" onclick="showTab('subscription', this)">Subscription</button>
+    <button class="toggle-btn" onclick="showTab('branding', this)">Branding</button>
+    <button class="toggle-btn" onclick="showTab('pos', this)">POS Connection</button>
+    <button class="toggle-btn" onclick="showTab('account', this)">Account</button>
+  </div>
+
+  <div class="app-shell">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-brand">
+        <div class="sb-icon">☕</div>
+        <div>
+          <div class="sb-name">Brew &amp; Co</div>
+          <div class="sb-sub">Active · Trial ends in 8d</div>
+        </div>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">Main</div>
+        <div class="nav-item"><span class="nav-icon">📊</span>Dashboard</div>
+        <div class="nav-item"><span class="nav-icon">📦</span>Orders</div>
+        <div class="nav-item"><span class="nav-icon">🍵</span>Menu Manager</div>
+        <div class="nav-section" style="margin-top:8px;">Settings</div>
+        <div class="nav-item active"><span class="nav-icon">⚙️</span>Settings</div>
+        <div class="nav-item"><span class="nav-icon">📱</span>Storefront</div>
+        <div class="nav-item"><span class="nav-icon">📈</span>Analytics</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="nav-item"><span class="nav-icon">👤</span>Alex Chen</div>
+        <div class="nav-item"><span class="nav-icon">🚪</span>Sign Out</div>
+      </div>
+    </div>
+
+    <!-- Main area -->
+    <div class="main">
+
+      <!-- Topbar -->
+      <div class="topbar">
+        <div>
+          <div class="page-title">Settings</div>
+          <div class="page-path">Brew &amp; Co / Settings</div>
+        </div>
+        <div class="topbar-right">
+          <button class="save-btn" id="saveBtn" style="display:none" onclick="this.textContent='Saved ✓'; setTimeout(()=>this.textContent='Save Changes',1500)">Save Changes</button>
+        </div>
+      </div>
+
+      <!-- Settings tabs -->
+      <div class="settings-tabs">
+        <div class="stab active" onclick="showTab('subscription', null, this)">💳 Subscription</div>
+        <div class="stab" onclick="showTab('branding', null, this)">🎨 Branding</div>
+        <div class="stab" onclick="showTab('pos', null, this)">🔗 POS Connection</div>
+        <div class="stab" onclick="showTab('account', null, this)">👤 Account</div>
+        <div class="stab" onclick="showTab('notifications', null, this)">🔔 Notifications</div>
+      </div>
+
+      <!-- Content -->
+      <div class="content-area">
+
+        <!-- ── SUBSCRIPTION ── -->
+        <div class="settings-section active" id="section-subscription">
+
+          <!-- Hero subscription card -->
+          <div class="sub-card">
+            <div class="sub-badge">
+              <span>●</span> Active — Trial Period
+            </div>
+            <div class="sub-plan">Current Plan</div>
+            <div class="sub-title">Monthly Plan</div>
+            <div class="sub-price">$49 <span>/ month</span></div>
+            <div class="sub-meta">
+              Trial ends <strong>March 20, 2026</strong> · Billing starts automatically<br>
+              Next charge: $49.00 on March 21, 2026 to Visa ····4242
+            </div>
+            <div class="sub-actions">
+              <button class="sub-btn sub-btn-primary">Upgrade to Annual · Save $98</button>
+              <button class="sub-btn sub-btn-ghost">Manage Payment</button>
+              <button class="sub-btn sub-btn-ghost">Cancel Plan</button>
+            </div>
+            <div class="sub-stats">
+              <div>
+                <div class="sub-stat-num">8</div>
+                <div class="sub-stat-label">Days left in trial</div>
+              </div>
+              <div>
+                <div class="sub-stat-num">14</div>
+                <div class="sub-stat-label">Days total trial</div>
+              </div>
+              <div>
+                <div class="sub-stat-num">$0</div>
+                <div class="sub-stat-label">Charged so far</div>
+              </div>
+              <div>
+                <div class="sub-stat-num">∞</div>
+                <div class="sub-stat-label">Orders included</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Plan comparison -->
+          <div class="settings-card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Plan Options</div>
+                <div class="card-desc">Change or upgrade your subscription plan</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                <div style="border:2px solid #6B4226; border-radius:12px; padding:18px; background:rgba(107,66,38,0.03);">
+                  <div style="font-size:10px;font-weight:700;color:#6B4226;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Current Plan</div>
+                  <div style="font-size:16px;font-weight:800;color:#111827;">Monthly</div>
+                  <div style="font-size:28px;font-weight:800;color:#6B4226;letter-spacing:-0.5px;margin:4px 0;">$49<span style="font-size:12px;font-weight:500;color:#6B7280;">/mo</span></div>
+                  <div style="font-size:11px;color:#6B7280;line-height:1.6;">
+                    ✓ Unlimited orders<br>
+                    ✓ Full menu manager<br>
+                    ✓ Square POS sync<br>
+                    ✓ Custom branding<br>
+                    ✓ Email support
+                  </div>
+                </div>
+                <div style="border:1.5px solid #E5E7EB; border-radius:12px; padding:18px; position:relative; overflow:hidden;">
+                  <div style="position:absolute;top:12px;right:12px;background:rgba(5,150,105,0.1);color:#059669;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;">Save $98/yr</div>
+                  <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Best Value</div>
+                  <div style="font-size:16px;font-weight:800;color:#111827;">Annual</div>
+                  <div style="font-size:28px;font-weight:800;color:#374151;letter-spacing:-0.5px;margin:4px 0;">$490<span style="font-size:12px;font-weight:500;color:#6B7280;">/yr</span></div>
+                  <div style="font-size:11px;color:#6B7280;line-height:1.6;">
+                    ✓ Everything in Monthly<br>
+                    ✓ Priority support<br>
+                    ✓ Early feature access<br>
+                    ✓ Billing once a year<br>
+                    ✓ Save 16%
+                  </div>
+                  <button style="margin-top:12px;width:100%;height:34px;background:linear-gradient(135deg,#6B4226,#a0622f);border:none;border-radius:8px;font-size:12px;font-weight:700;color:white;cursor:pointer;font-family:'Outfit',sans-serif;">Switch to Annual →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Billing history -->
+          <div class="settings-card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Billing History</div>
+                <div class="card-desc">Invoices and payment records</div>
+              </div>
+              <button style="height:32px;padding:0 14px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-weight:600;color:#374151;background:white;cursor:pointer;font-family:'Outfit',sans-serif;">Download All</button>
+            </div>
+            <div class="card-body" style="padding-top:0;">
+              <div class="bill-row">
+                <div class="bill-icon">📄</div>
+                <div>
+                  <div class="bill-month">Trial (active)</div>
+                  <div class="bill-date">Mar 6 – Mar 20, 2026</div>
+                </div>
+                <div class="bill-amount">$0.00</div>
+                <span class="bill-status bill-paid">FREE TRIAL</span>
+              </div>
+              <!-- Future entries would appear here after trial ends -->
+              <div style="text-align:center;padding:20px;color:#9CA3AF;font-size:12px;">
+                Billing history will appear here after your trial ends.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── BRANDING ── -->
+        <div class="settings-section" id="section-branding">
+          <div class="settings-card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Brand Identity</div>
+                <div class="card-desc">Customize how your shop looks to customers</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="branding-grid">
+                <div class="brand-left">
+
+                  <div class="field-group">
+                    <div class="field-label">Shop Name</div>
+                    <input class="field-input" type="text" value="Brew &amp; Co">
+                    <div class="field-hint">Shown in app header and customer emails</div>
+                  </div>
+
+                  <div class="field-group">
+                    <div class="field-label">Tagline</div>
+                    <input class="field-input" type="text" placeholder="Your neighborhood coffee shop">
+                    <div class="field-hint">Shown on the app home screen (optional)</div>
+                  </div>
+
+                  <div class="field-group">
+                    <div class="field-label">Primary Color</div>
+                    <div class="color-row">
+                      <div class="color-swatch-group">
+                        <div class="color-swatch selected" style="background:#6B4226" onclick="setBrandColor('#6B4226', this)"></div>
+                        <div class="color-swatch" style="background:#1A6B8A" onclick="setBrandColor('#1A6B8A', this)"></div>
+                        <div class="color-swatch" style="background:#9B1D42" onclick="setBrandColor('#9B1D42', this)"></div>
+                        <div class="color-swatch" style="background:#2D6A4F" onclick="setBrandColor('#2D6A4F', this)"></div>
+                        <div class="color-swatch" style="background:#7C3AED" onclick="setBrandColor('#7C3AED', this)"></div>
+                        <div class="color-swatch" style="background:#D97706" onclick="setBrandColor('#D97706', this)"></div>
+                      </div>
+                      <input class="color-hex" type="text" id="colorHexInput" value="#6B4226">
+                    </div>
+                    <div class="field-hint">Applied to buttons, header, and accent elements</div>
+                  </div>
+
+                  <div class="field-group">
+                    <div class="field-label">Shop Logo</div>
+                    <div class="logo-upload">
+                      <div class="logo-placeholder">☕</div>
+                      <div class="logo-label">Upload your logo</div>
+                      <div class="logo-sub">PNG or SVG · 512×512 recommended · Max 2MB</div>
+                    </div>
+                  </div>
+
+                  <div class="field-group">
+                    <div class="field-label">App Icon (square)</div>
+                    <div class="logo-upload" style="padding:12px;">
+                      <div style="display:flex;align-items:center;gap:14px;justify-content:center;">
+                        <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#6B4226,#a0622f);display:flex;align-items:center;justify-content:center;font-size:28px;" id="previewAppIcon">☕</div>
+                        <div style="text-align:left;">
+                          <div class="logo-label">App Icon Preview</div>
+                          <div class="logo-sub" style="margin-top:4px;">Used on device home screen</div>
+                          <button style="margin-top:6px;padding:4px 10px;border-radius:6px;border:1.5px solid #D1D5DB;background:white;font-size:11px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;">Change Icon</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Live preview phone -->
+                <div class="brand-preview">
+                  <div class="preview-label">Live Preview</div>
+                  <div class="preview-phone" id="previewPhone">
+                    <div class="preview-statusbar" id="prevStatusBar">
+                      <span>9:41</span><span>●●●</span>
+                    </div>
+                    <div class="preview-nav" id="prevNav">
+                      <div class="preview-shop-name" id="prevShopName">Brew &amp; Co</div>
+                      <div class="preview-search">🔍 Search drinks...</div>
+                    </div>
+                    <div class="preview-body">
+                      <div class="preview-pill" id="prevPill">Espresso</div>
+                      <div class="preview-item">
+                        <div class="preview-item-icon">☕</div>
+                        <div>
+                          <div class="preview-item-name">Americano</div>
+                          <div class="preview-item-price">$3.75</div>
+                        </div>
+                        <div class="preview-item-btn" id="prevBtn1">+</div>
+                      </div>
+                      <div class="preview-item">
+                        <div class="preview-item-icon">🥛</div>
+                        <div>
+                          <div class="preview-item-name">Latte</div>
+                          <div class="preview-item-price">$5.00</div>
+                        </div>
+                        <div class="preview-item-btn" id="prevBtn2">+</div>
+                      </div>
+                      <div class="preview-item">
+                        <div class="preview-item-icon">🌿</div>
+                        <div>
+                          <div class="preview-item-name">Matcha Latte</div>
+                          <div class="preview-item-price">$5.50</div>
+                        </div>
+                        <div class="preview-item-btn" id="prevBtn3">+</div>
+                      </div>
+                    </div>
+                    <div class="preview-cart" id="prevCart">View Cart · $14.75</div>
+                  </div>
+                  <div style="font-size:10px;color:#9CA3AF;text-align:center;line-height:1.5;">
+                    Updates in real-time as<br>you change your brand color
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── POS CONNECTION ── -->
+        <div class="settings-section" id="section-pos">
+          <div class="settings-card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Point of Sale Integration</div>
+                <div class="card-desc">Connect your Square account to sync your menu and accept payments</div>
+              </div>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+
+              <div class="pos-card pos-connected">
+                <div class="pos-icon">■</div>
+                <div class="pos-info">
+                  <div class="pos-name">Square POS</div>
+                  <div class="pos-sub">Connected as Brew &amp; Co · Location: Main St.</div>
+                  <div class="pos-status">
+                    <div class="pos-dot"></div>
+                    <span class="pos-status-text">Connected &amp; syncing · Last sync 2 min ago</span>
+                  </div>
+                </div>
+                <button class="pos-action pos-action-danger">Disconnect</button>
+              </div>
+
+              <div class="settings-card" style="background:#F9FAFB;">
+                <div class="card-header" style="background:transparent;">
+                  <div>
+                    <div class="card-title" style="font-size:13px;">Catalog Sync Settings</div>
+                    <div class="card-desc">Control what syncs from Square to your Drink-UX menu</div>
+                  </div>
+                  <button style="height:30px;padding:0 12px;background:linear-gradient(135deg,#6B4226,#a0622f);border:none;border-radius:8px;font-size:11px;font-weight:700;color:white;cursor:pointer;font-family:'Outfit',sans-serif;">Sync Now</button>
+                </div>
+                <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;">
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:#111827;">Auto-sync catalog changes</div>
+                      <div style="font-size:11px;color:#9CA3AF;">Automatically update menu when Square catalog changes</div>
+                    </div>
+                    <div class="toggle-switch on" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+                      <div class="toggle-knob"></div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid #E5E7EB;">
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:#111827;">Sync prices from Square</div>
+                      <div style="font-size:11px;color:#9CA3AF;">Use Square prices or override per item in Menu Manager</div>
+                    </div>
+                    <div class="toggle-switch on" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+                      <div class="toggle-knob"></div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid #E5E7EB;">
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:#111827;">Sync item availability (86 items)</div>
+                      <div style="font-size:11px;color:#9CA3AF;">Auto-hide items marked unavailable in Square</div>
+                    </div>
+                    <div class="toggle-switch off" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+                      <div class="toggle-knob"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Locations -->
+              <div class="settings-card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title" style="font-size:13px;">Square Locations</div>
+                    <div class="card-desc">Select which location to use for your Drink-UX storefront</div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="loc-row">
+                    <div class="loc-icon">📍</div>
+                    <div>
+                      <div class="loc-name">Main St. (active)</div>
+                      <div class="loc-addr">142 Main Street, Springfield · ID: LX9Z4K</div>
+                    </div>
+                    <span class="loc-badge loc-active">Active</span>
+                  </div>
+                  <div class="loc-row">
+                    <div class="loc-icon">📍</div>
+                    <div>
+                      <div class="loc-name">Downtown Kiosk</div>
+                      <div class="loc-addr">55 Commerce Ave, Springfield · ID: LX8P2M</div>
+                    </div>
+                    <span class="loc-badge loc-inactive">Inactive</span>
+                    <button style="margin-left:10px;height:26px;padding:0 10px;border:1.5px solid #D1D5DB;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:white;font-family:'Outfit',sans-serif;">Use This</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ACCOUNT ── -->
+        <div class="settings-section" id="section-account">
+          <div class="settings-card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Account Information</div>
+                <div class="card-desc">Update your login and contact details</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="acct-grid">
+                <div class="field-group">
+                  <div class="field-label">Full Name</div>
+                  <input class="field-input" type="text" value="Alex Chen">
+                </div>
+                <div class="field-group">
+                  <div class="field-label">Email Address</div>
+                  <input class="field-input" type="email" value="alex@brewandco.com">
+                </div>
+                <div class="field-group">
+                  <div class="field-label">Phone Number</div>
+                  <input class="field-input" type="tel" placeholder="+1 (555) 000-0000">
+                </div>
+                <div class="field-group">
+                  <div class="field-label">Role</div>
+                  <input class="field-input" type="text" value="Owner" disabled style="background:#F9FAFB;color:#9CA3AF;">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Change Password</div>
+                <div class="card-desc">Update your login credentials</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="acct-grid">
+                <div class="field-group" style="grid-column:1/-1;">
+                  <div class="field-label">Current Password</div>
+                  <input class="field-input" type="password" placeholder="••••••••">
+                </div>
+                <div class="field-group">
+                  <div class="field-label">New Password</div>
+                  <input class="field-input" type="password" placeholder="8+ characters">
+                </div>
+                <div class="field-group">
+                  <div class="field-label">Confirm Password</div>
+                  <input class="field-input" type="password" placeholder="Repeat new password">
+                </div>
+              </div>
+              <button style="margin-top:14px;height:36px;padding:0 18px;background:linear-gradient(135deg,#6B4226,#a0622f);border:none;border-radius:8px;font-size:13px;font-weight:700;color:white;cursor:pointer;font-family:'Outfit',sans-serif;">Update Password</button>
+            </div>
+          </div>
+
+          <!-- Danger zone -->
+          <div class="settings-card" style="border-color:#FCA5A5;">
+            <div class="card-header" style="border-color:#FEE2E2;background:#FFF5F5;">
+              <div>
+                <div class="card-title" style="color:#DC2626;">Danger Zone</div>
+                <div class="card-desc">These actions cannot be undone</div>
+              </div>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+              <div class="danger-zone">
+                <div>
+                  <div class="danger-title">Cancel Subscription</div>
+                  <div class="danger-desc">Your account will remain active until the end of the billing period</div>
+                </div>
+                <button class="danger-btn">Cancel Subscription</button>
+              </div>
+              <div class="danger-zone" style="background:#FFF5F5;">
+                <div>
+                  <div class="danger-title">Delete Account</div>
+                  <div class="danger-desc">Permanently delete your account and all data. This cannot be reversed.</div>
+                </div>
+                <button class="danger-btn">Delete Account</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── NOTIFICATIONS ── -->
+        <div class="settings-section" id="section-notifications">
+          <div class="settings-card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Notification Preferences</div>
+                <div class="card-desc">Choose which updates you receive</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="notif-row">
+                <div>
+                  <div class="notif-label">New Order</div>
+                  <div class="notif-desc">Alert when a customer places an order</div>
+                </div>
+                <div class="toggle-switch on" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="notif-row">
+                <div>
+                  <div class="notif-label">Order Ready Timeout</div>
+                  <div class="notif-desc">Alert if an order isn't picked up within 30 minutes</div>
+                </div>
+                <div class="toggle-switch on" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="notif-row">
+                <div>
+                  <div class="notif-label">Daily Summary Email</div>
+                  <div class="notif-desc">End-of-day order count and revenue summary</div>
+                </div>
+                <div class="toggle-switch off" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="notif-row">
+                <div>
+                  <div class="notif-label">Catalog Sync Alerts</div>
+                  <div class="notif-desc">Alert when Square catalog sync completes or fails</div>
+                </div>
+                <div class="toggle-switch on" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="notif-row">
+                <div>
+                  <div class="notif-label">Billing Reminders</div>
+                  <div class="notif-desc">Reminder 3 days before trial ends and each billing date</div>
+                </div>
+                <div class="toggle-switch on" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+              <div class="notif-row">
+                <div>
+                  <div class="notif-label">Product Updates</div>
+                  <div class="notif-desc">News about new Drink-UX features and improvements</div>
+                </div>
+                <div class="toggle-switch off" onclick="this.classList.toggle('on');this.classList.toggle('off')">
+                  <div class="toggle-knob"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /content-area -->
+    </div><!-- /main -->
+  </div><!-- /app-shell -->
+
+  <script>
+    function showTab(name, topBtn, tabEl) {
+      // Hide all sections
+      document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+      document.getElementById('section-' + name).classList.add('active');
+
+      // Update tab highlights
+      document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+      if (tabEl) tabEl.classList.add('active');
+
+      // Update toggle bar
+      if (topBtn) {
+        document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+        topBtn.classList.add('active');
+      }
+
+      // Show save button for editable sections
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.style.display = ['branding','account','notifications'].includes(name) ? 'block' : 'none';
+    }
+
+    // Tab click from toggle bar
+    const topBtns = document.querySelectorAll('.toggle-btn');
+    topBtns.forEach((btn, i) => {
+      const tabs = ['subscription','branding','pos','account'];
+      btn.onclick = function() {
+        // Find matching stab
+        const stabs = document.querySelectorAll('.stab');
+        showTab(tabs[i], btn, stabs[i]);
+      };
+    });
+
+    function setBrandColor(hex, swatchEl) {
+      // Update preview phone
+      const els = ['prevStatusBar','prevNav','prevPill','prevBtn1','prevBtn2','prevBtn3','prevCart'];
+      els.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.backgroundColor = hex;
+      });
+      // Update swatch selected state
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+      if (swatchEl) swatchEl.classList.add('selected');
+      // Update hex input
+      document.getElementById('colorHexInput').value = hex;
+      // Update app icon gradient start
+      const appIcon = document.getElementById('previewAppIcon');
+      if (appIcon) appIcon.style.background = `linear-gradient(135deg, ${hex}, ${hex}aa)`;
+    }
+  </script>
+</body>
+</html>

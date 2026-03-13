@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install)",
+      "Bash(npx prisma:*)",
+      "Bash(npm test:*)",
+      "Bash(node --version:*)",
+      "Bash(set \"NODE_OPTIONS=--no-experimental-global-navigator\")",
+      "Skill(superpowers:brainstorming)",
+      "Bash(bd --help:*)",
+      "Bash(bd list:*)",
+      "Bash(bd create:*)",
+      "Bash(bd dep add:*)",
+      "Bash(bd update:*)",
+      "Bash(bd epic --help:*)",
+      "Bash(bd graph:*)",
+      "Bash(bd ready:*)",
+      "Bash(set \"PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=yes\")",
+      "Bash(dir:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(bd close:*)",
+      "Bash(bd sync:*)"
+    ]
+  }
+}

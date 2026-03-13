@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Status – Drink-UX Prototype v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --theme-primary:#6B4226; --theme-primaryDark:#4A2C1A; --theme-secondary:#8B5A3C;
+      --theme-background:#FAF8F5; --theme-surface:#FFFFFF; --theme-text:#1A1A1A;
+      --theme-textSecondary:#6B6B6B; --theme-accent:#D4A574; --theme-border:#E8E0D8;
+      --theme-shadow:rgba(107,66,38,0.12);
+      --theme-gradient-primary:linear-gradient(135deg,#6B4226 0%,#4A2C1A 100%);
+      --theme-gradient-secondary:linear-gradient(135deg,#8B5A3C 0%,#6B4226 100%);
+      --theme-primary-light:rgba(107,66,38,0.08); --theme-primary-border:rgba(107,66,38,0.25);
+    }
+    [data-theme="ocean"] {
+      --theme-primary:#0077BE; --theme-primaryDark:#005A8E; --theme-secondary:#00A8CC;
+      --theme-background:#F0F7FF; --theme-surface:#FFFFFF; --theme-text:#0A1628;
+      --theme-textSecondary:#4A6080; --theme-accent:#00D4FF; --theme-border:#C8DCF0;
+      --theme-shadow:rgba(0,119,190,0.12);
+      --theme-gradient-primary:linear-gradient(135deg,#0077BE 0%,#005A8E 100%);
+      --theme-gradient-secondary:linear-gradient(135deg,#00A8CC 0%,#0077BE 100%);
+      --theme-primary-light:rgba(0,119,190,0.08); --theme-primary-border:rgba(0,119,190,0.25);
+    }
+    [data-theme="bloom"] {
+      --theme-primary:#C0392B; --theme-primaryDark:#922B21; --theme-secondary:#E74C3C;
+      --theme-background:#FFF5F5; --theme-surface:#FFFFFF; --theme-text:#1A0A0A;
+      --theme-textSecondary:#6B3A3A; --theme-accent:#FF8A80; --theme-border:#F5C6C6;
+      --theme-shadow:rgba(192,57,43,0.12);
+      --theme-gradient-primary:linear-gradient(135deg,#C0392B 0%,#922B21 100%);
+      --theme-gradient-secondary:linear-gradient(135deg,#E74C3C 0%,#C0392B 100%);
+      --theme-primary-light:rgba(192,57,43,0.08); --theme-primary-border:rgba(192,57,43,0.25);
+    }
+    [data-theme="forest"] {
+      --theme-primary:#1B6840; --theme-primaryDark:#134D2E; --theme-secondary:#27AE60;
+      --theme-background:#F0FAF4; --theme-surface:#FFFFFF; --theme-text:#0A1F14;
+      --theme-textSecondary:#3A6050; --theme-accent:#5CDB95; --theme-border:#C0E0CC;
+      --theme-shadow:rgba(27,104,64,0.12);
+      --theme-gradient-primary:linear-gradient(135deg,#1B6840 0%,#134D2E 100%);
+      --theme-gradient-secondary:linear-gradient(135deg,#27AE60 0%,#1B6840 100%);
+      --theme-primary-light:rgba(27,104,64,0.08); --theme-primary-border:rgba(27,104,64,0.25);
+    }
+
+    * { font-family:'Outfit',sans-serif; box-sizing:border-box; margin:0; padding:0; }
+    body { background:#1A1A2E; display:flex; flex-direction:column; align-items:center; padding:24px 16px; gap:16px; min-height:100vh; }
+
+    .controls { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+    .controls-label { color:rgba(255,255,255,0.5); font-size:12px; }
+    .theme-dot { width:28px; height:28px; border-radius:50%; cursor:pointer; border:3px solid transparent; transition:all 0.2s; }
+    .theme-dot:hover, .theme-dot.active { border-color:white; transform:scale(1.15); }
+    .state-btn { background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:4px 12px; font-size:11px; font-family:'Outfit',sans-serif; cursor:pointer; transition:all 0.15s; }
+    .state-btn:hover { background:rgba(255,255,255,0.2); }
+    .state-btn.active { background:rgba(255,255,255,0.3); border-color:white; }
+
+    .phone { width:390px; height:844px; background:var(--theme-background); border-radius:48px;
+      box-shadow:0 40px 100px rgba(0,0,0,0.7), 0 0 0 12px #16162A, 0 0 0 14px #2D2D44;
+      overflow:hidden; position:relative; display:flex; flex-direction:column; transition:background 0.3s; }
+    .notch { height:44px; background:var(--theme-background); display:flex; align-items:center; justify-content:space-between; padding:0 28px; transition:background 0.3s; }
+    .notch-time { font-size:12px; font-weight:700; color:var(--theme-text); }
+
+    /* ── Gradient hero header ── */
+    .hero { background:var(--theme-gradient-primary); padding:20px 20px 28px; position:relative; overflow:hidden; }
+    .hero::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:24px; background:var(--theme-background); border-radius:20px 20px 0 0; }
+    .hero-label { font-size:12px; font-weight:600; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+    .hero-order { font-size:14px; color:rgba(255,255,255,0.85); }
+    .hero-order strong { color:white; }
+
+    /* ── PICKUP CODE HERO ── */
+    .code-block { background:var(--theme-surface); border-radius:24px; margin:16px 20px 8px;
+      padding:24px 20px; text-align:center; box-shadow:0 8px 32px var(--theme-shadow);
+      border:2px solid var(--theme-primary-border); position:relative; overflow:hidden; }
+    .code-block::before { content:''; position:absolute; inset:0; background:var(--theme-gradient-primary); opacity:0.04; }
+    .code-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--theme-textSecondary); margin-bottom:6px; display:flex; align-items:center; justify-content:center; gap:6px; }
+    .code-digits { font-size:72px; font-weight:900; color:var(--theme-primary); letter-spacing:8px; line-height:1; margin:4px 0 8px; position:relative; }
+    .code-digits.pulse { animation:codepulse 0.6s ease; }
+    @keyframes codepulse { 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
+    .code-hint { font-size:12px; color:var(--theme-textSecondary); }
+    .code-hint strong { color:var(--theme-text); }
+
+    /* ── Status indicator ── */
+    .status-track { margin:0 16px; padding:16px; background:var(--theme-surface); border-radius:20px; border:1px solid var(--theme-border); box-shadow:0 2px 10px var(--theme-shadow); }
+    .status-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .status-title { font-size:13px; font-weight:700; color:var(--theme-text); }
+    .eta-badge { background:var(--theme-primary-light); color:var(--theme-primary); font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; display:flex; align-items:center; gap:5px; }
+
+    /* Steps */
+    .steps { display:flex; align-items:flex-start; gap:0; }
+    .step { flex:1; display:flex; flex-direction:column; align-items:center; position:relative; }
+    .step:not(:last-child)::after { content:''; position:absolute; top:16px; left:calc(50% + 18px); right:calc(-50% + 18px); height:2px; background:var(--theme-border); z-index:0; transition:background 0.4s; }
+    .step.done:not(:last-child)::after { background:var(--theme-primary); }
+    .step-dot { width:32px; height:32px; border-radius:50%; border:2px solid var(--theme-border);
+      background:var(--theme-surface); display:flex; align-items:center; justify-content:center;
+      z-index:1; transition:all 0.4s; position:relative; }
+    .step.done .step-dot { background:var(--theme-primary); border-color:var(--theme-primary); }
+    .step.active .step-dot { background:var(--theme-surface); border-color:var(--theme-primary); border-width:3px; animation:stepring 1.5s ease-in-out infinite; }
+    @keyframes stepring { 0%,100%{box-shadow:0 0 0 0 var(--theme-primary-border)} 50%{box-shadow:0 0 0 5px var(--theme-primary-light)} }
+    .step-icon { color:white; }
+    .step.active .step-icon { color:var(--theme-primary); }
+    .step.pending .step-icon { color:var(--theme-textSecondary); opacity:0.4; }
+    .step-label { font-size:10px; font-weight:600; color:var(--theme-textSecondary); margin-top:7px; text-align:center; line-height:1.3; }
+    .step.done .step-label, .step.active .step-label { color:var(--theme-primary); font-weight:700; }
+
+    /* Current status message */
+    .status-msg { margin-top:14px; padding:10px 12px; background:var(--theme-primary-light); border-radius:12px; display:flex; align-items:center; gap:10px; }
+    .status-msg-icon { width:28px; height:28px; background:var(--theme-gradient-primary); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .status-msg p { font-size:13px; font-weight:600; color:var(--theme-text); }
+    .status-msg span { display:block; font-size:11px; color:var(--theme-textSecondary); font-weight:400; margin-top:1px; }
+
+    /* Polling indicator */
+    .poll-row { display:flex; align-items:center; gap:6px; justify-content:center; margin-top:10px; }
+    .poll-dot { width:6px; height:6px; border-radius:50%; background:var(--theme-primary); animation:pulledot 1.5s ease-in-out infinite; }
+    .poll-dot:nth-child(2) { animation-delay:0.2s; }
+    .poll-dot:nth-child(3) { animation-delay:0.4s; }
+    @keyframes pulledot { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1)} }
+    .poll-text { font-size:10px; color:var(--theme-textSecondary); }
+
+    /* ── Order summary ── */
+    .order-summary { margin:10px 16px; background:var(--theme-surface); border-radius:20px; border:1px solid var(--theme-border); box-shadow:0 2px 10px var(--theme-shadow); overflow:hidden; }
+    .os-hdr { padding:13px 16px 10px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+    .os-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--theme-textSecondary); }
+    .os-toggle { color:var(--theme-primary); font-size:12px; font-weight:600; }
+    .os-body { padding:0 16px 12px; }
+    .os-item { display:flex; justify-content:space-between; padding:5px 0; border-top:1px solid var(--theme-border); }
+    .os-item:first-child { border-top:none; }
+    .os-item-name { font-size:13px; color:var(--theme-text); font-weight:600; }
+    .os-item-detail { font-size:11px; color:var(--theme-textSecondary); margin-top:1px; }
+    .os-item-price { font-size:13px; font-weight:700; color:var(--theme-text); white-space:nowrap; }
+
+    /* READY state overlay */
+    .ready-banner { display:none; margin:10px 16px; background:linear-gradient(135deg,#16A34A,#15803D); border-radius:20px; padding:20px; text-align:center; box-shadow:0 8px 24px rgba(22,163,74,0.3); }
+    .ready-banner.show { display:block; animation:readyin 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes readyin { from{opacity:0;transform:scale(0.9) translateY(8px)} to{opacity:1;transform:scale(1) translateY(0)} }
+    .ready-emoji { font-size:40px; margin-bottom:8px; }
+    .ready-title { font-size:20px; font-weight:800; color:white; }
+    .ready-sub { font-size:13px; color:rgba(255,255,255,0.8); margin-top:4px; }
+
+    /* Scroll wrapper */
+    .screen { flex:1; overflow-y:auto; padding-bottom:20px; }
+    .screen::-webkit-scrollbar { display:none; }
+
+    /* Bottom home bar */
+    .home-bar { height:28px; display:flex; align-items:center; justify-content:center; padding-bottom:6px; }
+    .home-bar div { width:120px; height:5px; background:var(--theme-text); border-radius:3px; opacity:0.2; }
+  </style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="controls">
+  <span class="controls-label">Theme:</span>
+  <div class="theme-dot active" style="background:linear-gradient(135deg,#6B4226,#4A2C1A)" onclick="setTheme('',this)"></div>
+  <div class="theme-dot" style="background:linear-gradient(135deg,#0077BE,#005A8E)" onclick="setTheme('ocean',this)"></div>
+  <div class="theme-dot" style="background:linear-gradient(135deg,#C0392B,#922B21)" onclick="setTheme('bloom',this)"></div>
+  <div class="theme-dot" style="background:linear-gradient(135deg,#1B6840,#134D2E)" onclick="setTheme('forest',this)"></div>
+  <span class="controls-label" style="margin-left:8px">Status:</span>
+  <button class="state-btn" id="btn-pending" onclick="setStatus('pending')">Pending</button>
+  <button class="state-btn active" id="btn-confirmed" onclick="setStatus('confirmed')">Confirmed</button>
+  <button class="state-btn" id="btn-preparing" onclick="setStatus('preparing')">Preparing</button>
+  <button class="state-btn" id="btn-ready" onclick="setStatus('ready')">Ready ✓</button>
+</div>
+
+<div class="phone" id="phone">
+  <div class="notch">
+    <span class="notch-time">9:47</span>
+    <div style="display:flex;gap:6px;align-items:center;color:var(--theme-text)">
+      <svg width="16" height="12" fill="none" viewBox="0 0 16 12"><rect x="0" y="3" width="3" height="9" rx="1" fill="currentColor" opacity="0.4"/><rect x="4.5" y="2" width="3" height="10" rx="1" fill="currentColor" opacity="0.6"/><rect x="9" y="0" width="3" height="12" rx="1" fill="currentColor" opacity="0.8"/><rect x="13.5" y="0" width="2.5" height="12" rx="1" fill="currentColor"/></svg>
+      <svg width="25" height="12" fill="none" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" stroke-opacity="0.35"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><path d="M23 4v4a2 2 0 000-4z" fill="currentColor" opacity="0.4"/></svg>
+    </div>
+  </div>
+
+  <div class="screen">
+
+    <!-- Hero gradient header -->
+    <div class="hero">
+      <div class="hero-label">Order Placed</div>
+      <div class="hero-order">Order <strong>#DRK-7420</strong> · Mar 12, 9:41 AM</div>
+    </div>
+
+    <!-- PICKUP CODE — THE HERO -->
+    <div class="code-block" id="code-block">
+      <div class="code-label">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" stroke="currentColor" stroke-width="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Your Pickup Code
+      </div>
+      <div class="code-digits" id="pickup-code">J4K7</div>
+      <div class="code-hint">Show this code at the counter when called · <strong>Alex</strong></div>
+    </div>
+
+    <!-- Status tracker -->
+    <div class="status-track">
+      <div class="status-header">
+        <div class="status-title">Order Status</div>
+        <div class="eta-badge" id="eta-badge">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span id="eta-text">~5 min</span>
+        </div>
+      </div>
+
+      <!-- Step track -->
+      <div class="steps">
+        <!-- Received -->
+        <div class="step done" id="step-pending">
+          <div class="step-dot">
+            <svg class="step-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="step-label">Received</div>
+        </div>
+        <!-- Confirmed -->
+        <div class="step done" id="step-confirmed">
+          <div class="step-dot">
+            <svg class="step-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="step-label">Confirmed</div>
+        </div>
+        <!-- Preparing -->
+        <div class="step active" id="step-preparing">
+          <div class="step-dot">
+            <svg class="step-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M12 2a7 7 0 00-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 002 2h4a2 2 0 002-2v-2.26C17.81 13.47 19 11.38 19 9a7 7 0 00-7-7z" stroke="currentColor" stroke-width="2"/><path d="M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="step-label">Preparing</div>
+        </div>
+        <!-- Ready -->
+        <div class="step pending" id="step-ready">
+          <div class="step-dot">
+            <svg class="step-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="step-label">Ready!</div>
+        </div>
+      </div>
+
+      <!-- Live status message -->
+      <div class="status-msg" id="status-msg">
+        <div class="status-msg-icon">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M12 2a7 7 0 00-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 002 2h4a2 2 0 002-2v-2.26C17.81 13.47 19 11.38 19 9a7 7 0 00-7-7z" stroke="white" stroke-width="2"/></svg>
+        </div>
+        <div>
+          <p id="status-msg-text">Your barista is working on it</p>
+          <span id="status-msg-sub">Usually ready in about 5 minutes</span>
+        </div>
+      </div>
+
+      <!-- Polling dots -->
+      <div class="poll-row" id="poll-row">
+        <div class="poll-dot"></div>
+        <div class="poll-dot"></div>
+        <div class="poll-dot"></div>
+        <span class="poll-text">Checking for updates…</span>
+      </div>
+    </div>
+
+    <!-- READY banner (hidden until ready state) -->
+    <div class="ready-banner" id="ready-banner">
+      <div class="ready-emoji">🎉</div>
+      <div class="ready-title">Your order is ready!</div>
+      <div class="ready-sub">Head to the counter and show code <strong style="color:white">J4K7</strong></div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="order-summary">
+      <div class="os-hdr" onclick="toggleOrderSummary()">
+        <div class="os-label">Your Order</div>
+        <div class="os-toggle" id="os-toggle-text">Show ↓</div>
+      </div>
+      <div class="os-body" id="os-body" style="display:none">
+        <div class="os-item">
+          <div>
+            <div class="os-item-name">Oat Milk Latte</div>
+            <div class="os-item-detail">L · Hot · Vanilla · Extra shot</div>
+          </div>
+          <div class="os-item-price">$7.25</div>
+        </div>
+        <div class="os-item">
+          <div>
+            <div class="os-item-name">Matcha Latte ×2</div>
+            <div class="os-item-detail">M · Iced · Oat milk · Honey</div>
+          </div>
+          <div class="os-item-price">$13.00</div>
+        </div>
+        <div style="border-top:1.5px solid var(--theme-border);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between">
+          <span style="font-size:14px;font-weight:700;color:var(--theme-text)">Total</span>
+          <span style="font-size:14px;font-weight:800;color:var(--theme-primary)">$21.97</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="home-bar"><div></div></div>
+</div>
+
+<script>
+  let osSummaryOpen = false;
+
+  const STATUS_CONFIG = {
+    pending: {
+      steps: { pending:'active', confirmed:'pending', preparing:'pending', ready:'pending' },
+      msg: 'Order received', sub: 'Waiting to be confirmed by the shop', eta: 'placing…',
+      poll: true, ready: false
+    },
+    confirmed: {
+      steps: { pending:'done', confirmed:'active', preparing:'pending', ready:'pending' },
+      msg: 'Order confirmed!', sub: 'Your barista will start soon', eta: '~7 min',
+      poll: true, ready: false
+    },
+    preparing: {
+      steps: { pending:'done', confirmed:'done', preparing:'active', ready:'pending' },
+      msg: 'Your barista is working on it', sub: 'Usually ready in about 5 minutes', eta: '~5 min',
+      poll: true, ready: false
+    },
+    ready: {
+      steps: { pending:'done', confirmed:'done', preparing:'done', ready:'done' },
+      msg: 'Order is ready for pickup!', sub: 'Head to the counter with your code', eta: 'Ready!',
+      poll: false, ready: true
+    }
+  };
+
+  const STATUS_ICONS = {
+    done: `<svg class="step-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    active_preparing: `<svg class="step-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M12 2a7 7 0 00-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 002 2h4a2 2 0 002-2v-2.26C17.81 13.47 19 11.38 19 9a7 7 0 00-7-7z" stroke="currentColor" stroke-width="2"/><path d="M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+    active_pending: `<svg class="step-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+    pending_icon: `<svg class="step-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+    ready_done: `<svg class="step-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+  };
+
+  function setTheme(t, el) {
+    document.getElementById('phone').setAttribute('data-theme', t);
+    document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function setStatus(s) {
+    const cfg = STATUS_CONFIG[s];
+    document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + s).classList.add('active');
+
+    // Update steps
+    ['pending','confirmed','preparing','ready'].forEach(key => {
+      const el = document.getElementById('step-' + key);
+      el.className = 'step ' + cfg.steps[key];
+      const dot = el.querySelector('.step-dot');
+      if (cfg.steps[key] === 'done') {
+        dot.innerHTML = STATUS_ICONS.done;
+      } else if (cfg.steps[key] === 'active') {
+        if (key === 'preparing') dot.innerHTML = STATUS_ICONS.active_preparing;
+        else if (key === 'confirmed') dot.innerHTML = STATUS_ICONS.active_preparing;
+        else dot.innerHTML = STATUS_ICONS.active_pending;
+      } else {
+        if (key === 'ready') dot.innerHTML = STATUS_ICONS.pending_icon;
+        else dot.innerHTML = STATUS_ICONS.active_pending;
+      }
+    });
+
+    document.getElementById('status-msg-text').textContent = cfg.msg;
+    document.getElementById('status-msg-sub').textContent = cfg.sub;
+    document.getElementById('eta-text').textContent = cfg.eta;
+    document.getElementById('poll-row').style.display = cfg.poll ? '' : 'none';
+    document.getElementById('ready-banner').className = 'ready-banner' + (cfg.ready ? ' show' : '');
+
+    // Pulse the code on transition
+    const codeEl = document.getElementById('pickup-code');
+    codeEl.classList.remove('pulse');
+    void codeEl.offsetWidth;
+    codeEl.classList.add('pulse');
+
+    // Update ETA badge color for ready
+    if (s === 'ready') {
+      document.getElementById('eta-badge').style.background = 'rgba(22,163,74,0.12)';
+      document.getElementById('eta-badge').style.color = '#16A34A';
+    } else {
+      document.getElementById('eta-badge').style.background = '';
+      document.getElementById('eta-badge').style.color = '';
+    }
+  }
+
+  function toggleOrderSummary() {
+    osSummaryOpen = !osSummaryOpen;
+    document.getElementById('os-body').style.display = osSummaryOpen ? '' : 'none';
+    document.getElementById('os-toggle-text').textContent = osSummaryOpen ? 'Hide ↑' : 'Show ↓';
+  }
+
+  // Auto-cycle demo
+  let autoCycle = null;
+  document.addEventListener('DOMContentLoaded', () => {
+    setStatus('confirmed');
+  });
+</script>
+</body>
+</html>

@@ -1,97 +1,141 @@
-/* Theme CSS Variables */
-:root {
-  /* FALLBACK VALUES - These provide defaults before API theme loads */
-  /* When ThemeProvider loads theme from API, these will be overridden */
-  
-  --theme-primary: #667eea;
-  --theme-primaryDark: #764ba2;
-  --theme-secondary: #6B4226;
-  --theme-background: #ffffff;
-  --theme-surface: rgba(255, 255, 255, 0.95);
-  --theme-text: #2c3e50;
-  --theme-textSecondary: #7f8c8d;
-  --theme-accent: #667eea;
-  --theme-border: #e0e0e0;
-  --theme-shadow: rgba(0, 0, 0, 0.1);
-  --theme-success: #4caf50;
-  --theme-warning: #ff9800;
-  --theme-error: #f44336;
+/* =============================================================================
+   THEME CSS VARIABLES - Espresso default (overridden by ThemeProvider)
+   ============================================================================= */
 
-  /* Fallback gradients */
-  --theme-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --theme-gradient-secondary: linear-gradient(135deg, #6B4226 0%, #8B5A3C 100%);
-  
-  /* Derived colors - will be calculated by ThemeProvider from API theme */
-  --theme-primary-light: rgba(102, 126, 234, 0.1);
-  --theme-secondary-shadow: rgba(107, 66, 38, 0.3);
-  --theme-secondary-shadow-hover: rgba(107, 66, 38, 0.4);
+:root {
+  /* Core Colors (espresso default — JS ThemeProvider overrides at runtime) */
+  --theme-primary: #6B4226;
+  --theme-primaryDark: #4a2e1a;
+  --theme-secondary: #D4A574;
+  --theme-background: #FDF8F5;
+  --theme-surface: #FFFFFF;
+  --theme-text: #2C1810;
+  --theme-textSecondary: #8B7E74;
+  --theme-accent: #E67E22;
+  --theme-border: rgba(107, 66, 38, 0.12);
+  --theme-shadow: rgba(107, 66, 38, 0.15);
+  --theme-success: #2D9B6F;
+  --theme-warning: #F59E0B;
+  --theme-error: #E53E3E;
+
+  /* Gradients */
+  --theme-gradient-primary: linear-gradient(135deg, #6B4226, #a0622f);
+  --theme-gradient-secondary: linear-gradient(135deg, #D4A574, #e8c18a);
+
+  /* Derived */
+  --theme-primary-light: rgba(107, 66, 38, 0.1);
+  --theme-primary-border: rgba(107, 66, 38, 0.3);
+  --theme-primary-shadow: rgba(107, 66, 38, 0.4);
+  --theme-primary-shadow-hover: rgba(107, 66, 38, 0.6);
+  --theme-secondary-shadow: rgba(212, 165, 116, 0.3);
+  --theme-secondary-shadow-hover: rgba(212, 165, 116, 0.4);
 }
 
-/* Header Styles */
+/* =============================================================================
+   GLOBAL TYPOGRAPHY — Outfit font
+   ============================================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+body,
+ion-content,
+ion-item,
+ion-label,
+ion-button,
+ion-title {
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+}
+
+/* =============================================================================
+   APP HEADER
+   ============================================================================= */
+
 .app-header {
   --background: #ffffff;
   --color: var(--theme-text);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 8px rgba(44, 24, 16, 0.06);
+  border-bottom: 1px solid var(--theme-border);
   position: relative;
   z-index: 10;
 }
 
-.app-header::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
-}
-
 .app-header ion-title {
-  font-weight: 600;
-  font-size: 1.1rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
 }
 
 .app-header ion-button {
   --color: var(--theme-primary);
 }
 
-/* Progress Steps for DrinkBuilder */
+/* =============================================================================
+   PROGRESS STEPS
+   ============================================================================= */
+
 .progress-steps {
   display: flex;
-  justify-content: space-around;
-  padding: 12px 24px;
+  justify-content: center;
+  gap: 32px;
+  padding: 10px 24px;
   background: #ffffff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--theme-border);
 }
 
 .progress-steps .step {
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--theme-textSecondary);
-  opacity: 0.6;
+  opacity: 0.5;
   transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.progress-steps .step::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  border-radius: 1px;
+  transition: background 0.3s ease;
 }
 
 .progress-steps .step.active {
   color: var(--theme-primary);
   opacity: 1;
-  font-weight: 600;
+}
+
+.progress-steps .step.active::after {
+  background: var(--theme-primary);
 }
 
 .progress-steps .step.completed {
   color: var(--theme-success);
-  opacity: 0.8;
+  opacity: 0.75;
 }
 
-/* Base Layout Classes */
+.progress-steps .step.completed::after {
+  background: var(--theme-success);
+}
+
+/* =============================================================================
+   LAYOUT UTILITIES
+   ============================================================================= */
+
 .container {
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  padding: 24px;
-  gap: 24px;
+  padding: 20px;
+  gap: 20px;
 }
 
 .container-compact {
@@ -103,8 +147,8 @@
   background: var(--theme-surface);
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 4px 16px var(--theme-shadow);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px var(--theme-shadow);
+  border: 1px solid var(--theme-border);
 }
 
 .section-compact {
@@ -112,58 +156,64 @@
   border-radius: 12px;
 }
 
-/* Common Interactive Item Styles */
+/* =============================================================================
+   INTERACTIVE ITEMS
+   ============================================================================= */
+
 .interactive-item {
   --background: var(--theme-surface);
-  --border-radius: 12px;
+  --border-radius: 14px;
   --padding-start: 16px;
   --padding-end: 16px;
-  --padding-top: 12px;
-  --padding-bottom: 12px;
-  --min-height: 60px;
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  --min-height: 64px;
   --ripple-color: var(--theme-primary);
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.25s ease;
 
   margin: 6px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 2px solid transparent;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 4px rgba(44, 24, 16, 0.06);
+  border: 1px solid var(--theme-border);
+  transition: all 0.25s ease;
 }
 
 .interactive-item:hover {
   --background: var(--theme-primary-light);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  border-color: var(--theme-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(44, 24, 16, 0.1);
+  border-color: var(--theme-primary-border);
 }
 
 .interactive-item:active {
-  transform: translateY(0px) scale(0.98);
+  transform: scale(0.985);
 }
 
 .interactive-item-large {
   --border-radius: 16px;
   --padding-start: 20px;
   --padding-end: 20px;
-  --padding-top: 16px;
-  --padding-bottom: 16px;
+  --padding-top: 18px;
+  --padding-bottom: 18px;
   --min-height: 80px;
   margin: 8px 0;
 }
 
-/* Animation Classes */
+/* =============================================================================
+   ANIMATION CLASSES
+   ============================================================================= */
+
 .slide-in-up {
-  animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   animation-delay: var(--animation-delay, 0s);
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(16px);
 }
 
 .slide-in-up-fast {
-  animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideInUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   animation-delay: var(--animation-delay, 0s);
   opacity: 0;
-  transform: translateY(15px);
+  transform: translateY(12px);
 }
 
 @keyframes slideInUp {
@@ -173,81 +223,435 @@
   }
 }
 
-/* Button Enhancement Classes */
+/* =============================================================================
+   BUTTONS
+   ============================================================================= */
+
 .button-elevated {
-  --box-shadow: 0 8px 24px var(--theme-secondary-shadow);
-  height: 64px;
-  font-size: 1.2rem;
+  --box-shadow: 0 6px 20px var(--theme-secondary-shadow);
+  --border-radius: 14px;
+  height: 56px;
+  font-size: 1.05rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border-radius: 12px;
 }
 
 .button-elevated:hover {
-  --box-shadow: 0 12px 32px var(--theme-secondary-shadow-hover);
-  transform: translateY(-2px);
+  --box-shadow: 0 8px 28px var(--theme-secondary-shadow-hover);
+  transform: translateY(-1px);
 }
 
 .button-elevated:active {
   transform: scale(0.98);
 }
 
-/* Card Enhancement Classes */
+/* =============================================================================
+   CARDS
+   ============================================================================= */
+
 .card-elevated {
   box-shadow: 0 2px 8px var(--theme-shadow);
+  border: 1px solid var(--theme-border);
+  border-radius: 14px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
 }
 
 .card-elevated:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(44, 24, 16, 0.12);
 }
 
-/* Typography Classes */
+/* =============================================================================
+   TYPOGRAPHY
+   ============================================================================= */
+
 .section-title {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--theme-text);
-  margin: 0 0 20px 0;
+  margin: 0 0 16px 0;
   text-align: center;
+  letter-spacing: -0.02em;
 }
 
 .page-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0 0 16px 0;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 12px 0;
+  color: var(--theme-text);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
 .page-subtitle {
-  font-size: 1.1rem;
-  opacity: 0.95;
+  font-size: 1rem;
+  color: var(--theme-textSecondary);
   margin: 0;
+  line-height: 1.5;
 }
 
-/* Helper classes for quick theming */
-.theme-bg-primary {
-  background: var(--theme-gradient-primary);
-}
+/* =============================================================================
+   THEMING HELPERS
+   ============================================================================= */
 
-.theme-bg-secondary {
-  background: var(--theme-gradient-secondary);
-  box-shadow: 0 2px 8px var(--theme-secondary-shadow);
-}
+.theme-bg-primary { background: var(--theme-gradient-primary); }
+.theme-bg-secondary { background: var(--theme-gradient-secondary); }
+.theme-bg-surface { background: var(--theme-surface); }
+.theme-text-primary { color: var(--theme-primary); }
+.theme-text { color: var(--theme-text); }
+.theme-text-secondary { color: var(--theme-textSecondary); }
 
-.theme-bg-surface {
+/* =============================================================================
+   CATEGORY PILLS (horizontal scroll strip)
+   ============================================================================= */
+
+.category-strip {
+  padding: 16px 0 12px;
   background: var(--theme-surface);
+  border-bottom: 1px solid var(--theme-border);
 }
 
-.theme-text-primary {
+.category-scroll {
+  display: flex;
+  gap: 8px;
+  padding: 0 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.category-scroll::-webkit-scrollbar { display: none; }
+
+.cat-pill {
+  flex-shrink: 0;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-family: 'Outfit', sans-serif;
+  border: 1.5px solid transparent;
+  background: none;
+}
+
+.cat-pill.active {
+  background: var(--theme-primary);
+  color: white;
+  border-color: var(--theme-primary);
+}
+
+.cat-pill:not(.active) {
+  background: transparent;
+  color: var(--theme-textSecondary);
+  border-color: var(--theme-border);
+}
+
+.cat-pill:not(.active):hover {
+  border-color: var(--theme-primary);
   color: var(--theme-primary);
 }
 
-.theme-text {
-  color: var(--theme-text);
+/* =============================================================================
+   DRINK / PRESET CARDS
+   ============================================================================= */
+
+.drink-card {
+  flex-shrink: 0;
+  border-radius: 20px;
+  background: var(--theme-surface);
+  box-shadow: 0 2px 12px var(--theme-shadow);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--theme-border);
 }
 
-.theme-text-secondary {
+.drink-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--theme-shadow);
+}
+
+.drink-card-visual {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.drink-card-info {
+  padding: 12px 14px;
+}
+
+.drink-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--theme-text);
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+
+.drink-card-detail {
+  font-size: 12px;
+  color: var(--theme-textSecondary);
+  margin-top: 4px;
+}
+
+.drink-card-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--theme-primary);
+  margin-top: 6px;
+}
+
+.drink-card-add-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--theme-primary);
+  border: none;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.drink-card-add-btn:hover {
+  transform: scale(1.1);
+}
+
+/* =============================================================================
+   SEARCH BAR
+   ============================================================================= */
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  padding: 10px 14px;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+.search-bar svg {
+  fill: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.search-bar-placeholder {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Surface variant (for use on light backgrounds) */
+.search-bar-surface {
+  background: var(--theme-background);
+  border: 1px solid var(--theme-border);
+  backdrop-filter: none;
+}
+
+.search-bar-surface svg {
+  fill: var(--theme-textSecondary);
+}
+
+.search-bar-surface .search-bar-placeholder {
   color: var(--theme-textSecondary);
 }
+
+/* =============================================================================
+   MOBILE BOTTOM NAV
+   ============================================================================= */
+
+.mobile-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--theme-surface);
+  border-top: 1px solid var(--theme-border);
+  flex-shrink: 0;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 16px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: color 0.2s;
+}
+
+.mobile-nav-item svg {
+  width: 22px;
+  height: 22px;
+  transition: fill 0.2s;
+}
+
+.mobile-nav-item span {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+}
+
+.mobile-nav-item.active svg {
+  fill: var(--theme-primary);
+}
+
+.mobile-nav-item.active span {
+  color: var(--theme-primary);
+}
+
+.mobile-nav-item:not(.active) svg {
+  fill: var(--theme-textSecondary);
+}
+
+.mobile-nav-item:not(.active) span {
+  color: var(--theme-textSecondary);
+}
+
+/* =============================================================================
+   THEME SWITCHER
+   ============================================================================= */
+
+.theme-switcher {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.theme-switcher-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--theme-textSecondary);
+}
+
+.theme-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.theme-swatch:hover {
+  transform: scale(1.1);
+}
+
+.theme-swatch.active {
+  border-color: var(--theme-text);
+  outline: 2px solid var(--theme-surface);
+  outline-offset: -4px;
+}
+
+/* =============================================================================
+   SECTION HEADERS (prototype pattern)
+   ============================================================================= */
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 20px 14px;
+}
+
+.section-label {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--theme-text);
+  letter-spacing: -0.3px;
+}
+
+.section-sublabel {
+  font-size: 13px;
+  color: var(--theme-textSecondary);
+  margin-top: 2px;
+}
+
+.see-all {
+  font-size: 13px;
+  color: var(--theme-primary);
+  font-weight: 600;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* =============================================================================
+   ICON BUTTON (header actions)
+   ============================================================================= */
+
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  backdrop-filter: blur(4px);
+}
+
+.icon-btn svg {
+  fill: white;
+}
+
+.icon-btn-surface {
+  background: var(--theme-primary-light);
+  border-color: var(--theme-border);
+}
+
+.icon-btn-surface svg {
+  fill: var(--theme-primary);
+}
+
+/* =============================================================================
+   CART BADGE
+   ============================================================================= */
+
+.cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--theme-secondary);
+  color: var(--theme-primaryDark);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--theme-primary);
+}
+
+/* =============================================================================
+   HORIZONTAL SCROLL CONTAINERS
+   ============================================================================= */
+
+.h-scroll {
+  display: flex;
+  gap: 14px;
+  padding: 0 20px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.h-scroll::-webkit-scrollbar { display: none; }

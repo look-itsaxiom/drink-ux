@@ -14,6 +14,21 @@ jobs:
       matrix:
         node-version: [20.x]
 
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: drinkux
+          POSTGRES_PASSWORD: drinkux_test
+          POSTGRES_DB: drinkux_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -60,7 +75,15 @@ jobs:
         run: npx prisma migrate deploy
         working-directory: packages/api
         env:
-          DATABASE_URL: "file:./prisma/test.db"
+          DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"
+
+      - name: Type check all packages
+        run: npm run typecheck
+        env:
+          DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"
+
+      - name: Lint all packages
+        run: npm run lint
 
       - name: Run API tests with coverage
         run: npm run test:ci
@@ -77,53 +100,18 @@ jobs:
       - name: Build shared package first
         run: npm run build --workspace=@drink-ux/shared
 
-      - name: Verify shared package build output
-        run: |
-          if [ ! -f "packages/shared/dist/index.js" ]; then
-            echo "❌ Shared package build failed - missing dist/index.js"
-            exit 1
-          fi
-          echo "✅ Shared package built successfully"
-
       - name: Build API package
         run: npm run build --workspace=@drink-ux/api
         env:
-          DATABASE_URL: "file:./prisma/test.db"
-
-      - name: Verify API package build
-        run: |
-          if [ ! -f "packages/api/dist/index.js" ]; then
-            echo "❌ API package build failed - missing dist/index.js"
-            exit 1
-          fi
-          echo "✅ API package built successfully"
+          DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"
 
       - name: Build Admin package
         run: npm run build --workspace=@drink-ux/admin
 
-      - name: Verify Admin package build
-        run: |
-          if [ ! -d "packages/admin/dist" ]; then
-            echo "❌ Admin package build failed - missing dist directory"
-            exit 1
-          fi
-          echo "✅ Admin package built successfully"
-
       - name: Build Mobile package
         run: npm run build --workspace=@drink-ux/mobile
 
-      - name: Verify Mobile package build
-        run: |
-          if [ ! -d "packages/mobile/dist" ]; then
-            echo "❌ Mobile package build failed - missing dist directory"
-            exit 1
-          fi
-          echo "✅ Mobile package built successfully"
-
-      - name: Build summary
-        run: |
-          echo "🎉 All checks passed!"
-          echo "  ✅ Type checking — all packages"
-          echo "  ✅ Lint — 0 errors"
-          echo "  ✅ Tests — api + all packages"
-          echo "  ✅ Build — all packages"
+      - name: Run all tests
+        run: npm run test --workspaces --if-present
+        env:
+          DATABASE_URL: "postgresql://drinkux:drinkux_test@localhost:5432/drinkux_test"

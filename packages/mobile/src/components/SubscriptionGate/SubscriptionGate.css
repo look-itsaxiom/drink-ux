@@ -1,0 +1,60 @@
+/**
+ * SubscriptionGate Component Styles
+ */
+
+.subscription-gate {
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading state */
+.subscription-gate-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 16px;
+}
+
+.subscription-gate-loading ion-spinner {
+  width: 48px;
+  height: 48px;
+  color: var(--ion-color-primary);
+}
+
+.subscription-gate-loading-text {
+  margin: 0;
+  color: var(--ion-color-medium);
+  font-size: 1rem;
+}
+
+/* Preview mode */
+.subscription-gate-preview {
+  position: relative;
+}
+
+.subscription-gate-preview-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: linear-gradient(90deg, #ff9800, #f57c00);
+  color: white;
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Add padding to content when preview banner is shown */
+.subscription-gate-preview > *:not(.subscription-gate-preview-banner) {
+  padding-top: 40px;
+}
+
+/* Grace period state */
+.subscription-gate-grace-period {
+  position: relative;
+}

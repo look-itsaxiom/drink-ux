@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drink Customizer | Drink-UX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #FDF8F5; color: #2C1810; }
+        .coffee-shadow { box-shadow: 0 4px 20px rgba(107, 66, 38, 0.1); }
+        .drink-image-container { background: linear-gradient(135deg, #D4A574 0%, #E6BE8A 100%); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="p-6 flex items-center justify-between">
+        <button class="p-2 rounded-full bg-white coffee-shadow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <h1 class="text-xl font-semibold">Customize Drink</h1>
+        <div class="w-10"></div> <!-- Spacer -->
+    </header>
+
+    <main class="flex-1 px-6 pb-24">
+        <!-- Hero Image -->
+        <div class="drink-image-container w-full aspect-square rounded-3xl mb-8 flex items-center justify-center coffee-shadow relative overflow-hidden">
+            <div class="absolute inset-0 bg-black/5"></div>
+            <!-- Mock Coffee Cup SVG -->
+            <svg width="200" height="240" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M40 20H160L150 220H50L40 20Z" fill="white" stroke="#6B4226" stroke-width="4"/>
+                <path d="M45 40H155" stroke="#6B4226" stroke-width="4" stroke-linecap="round"/>
+                <rect x="60" y="80" width="80" height="40" rx="4" fill="#FDF8F5" stroke="#D4A574" stroke-width="2"/>
+                <text x="100" y="105" text-anchor="middle" fill="#6B4226" font-size="12" font-weight="600">ESPRESSO</text>
+            </svg>
+        </div>
+
+        <!-- Drink Info -->
+        <div class="mb-8">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-3xl font-bold">Oat Milk Latte</h2>
+                <span class="text-xl font-semibold text-[#6B4226]">$5.50</span>
+            </div>
+            <p class="text-[#8B7E74]">Double shot espresso with creamy oat milk and a touch of vanilla.</p>
+        </div>
+
+        <!-- Options: Size -->
+        <div class="mb-8">
+            <h3 class="font-semibold mb-4 text-lg">Size</h3>
+            <div class="flex gap-4">
+                <button class="flex-1 py-3 rounded-2xl border-2 border-[#6B4226] bg-[#6B4226] text-white font-medium">Small</button>
+                <button class="flex-1 py-3 rounded-2xl border-2 border-[#D4A574] text-[#6B4226] font-medium">Medium</button>
+                <button class="flex-1 py-3 rounded-2xl border-2 border-[#D4A574] text-[#6B4226] font-medium">Large</button>
+            </div>
+        </div>
+
+        <!-- Options: Milk -->
+        <div class="mb-8">
+            <h3 class="font-semibold mb-4 text-lg">Milk Alternative</h3>
+            <div class="space-y-3">
+                <label class="flex items-center justify-between p-4 rounded-2xl bg-white border border-[#F3E9E2] coffee-shadow">
+                    <span class="font-medium">Oat Milk</span>
+                    <input type="radio" name="milk" checked class="accent-[#6B4226] w-5 h-5">
+                </label>
+                <label class="flex items-center justify-between p-4 rounded-2xl bg-white border border-[#F3E9E2]">
+                    <span class="font-medium">Almond Milk</span>
+                    <input type="radio" name="milk" class="accent-[#6B4226] w-5 h-5">
+                </label>
+                <label class="flex items-center justify-between p-4 rounded-2xl bg-white border border-[#F3E9E2]">
+                    <span class="font-medium">Soy Milk</span>
+                    <input type="radio" name="milk" class="accent-[#6B4226] w-5 h-5">
+                </label>
+            </div>
+        </div>
+
+        <!-- Options: Extras -->
+        <div class="mb-8">
+            <h3 class="font-semibold mb-4 text-lg">Extras</h3>
+            <div class="grid grid-cols-2 gap-3">
+                <button class="p-4 rounded-2xl bg-white border border-[#F3E9E2] text-center">
+                    <span class="block text-sm font-medium">Extra Shot</span>
+                    <span class="text-xs text-[#8B7E74]">+$1.00</span>
+                </button>
+                <button class="p-4 rounded-2xl border-2 border-[#6B4226] bg-[#FDF8F5] text-center">
+                    <span class="block text-sm font-medium">Vanilla Syrup</span>
+                    <span class="text-xs text-[#6B4226]">+$0.50</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Action Bar -->
+    <div class="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-lg border-t border-[#F3E9E2]">
+        <button class="w-full py-4 bg-[#6B4226] text-white rounded-2xl font-bold text-lg coffee-shadow active:scale-95 transition-transform">
+            Add to Order • $6.00
+        </button>
+    </div>
+</body>
+</html>

@@ -1,22 +1,23 @@
 {
-  "name": "default",
+  "name": "espresso",
+  "label": "Espresso",
   "colors": {
-    "primary": "#667eea",
-    "primaryDark": "#764ba2",
-    "secondary": "#6B4226",
-    "background": "#ffffff",
-    "surface": "rgba(255, 255, 255, 0.95)",
-    "text": "#2c3e50",
-    "textSecondary": "#7f8c8d",
-    "accent": "#667eea",
-    "border": "#e0e0e0",
-    "shadow": "rgba(0, 0, 0, 0.1)",
-    "success": "#4caf50",
-    "warning": "#ff9800",
-    "error": "#f44336"
+    "primary": "#6B4226",
+    "primaryDark": "#4a2e1a",
+    "secondary": "#D4A574",
+    "background": "#FDF8F5",
+    "surface": "#FFFFFF",
+    "text": "#2C1810",
+    "textSecondary": "#8B7E74",
+    "accent": "#E67E22",
+    "border": "rgba(107, 66, 38, 0.12)",
+    "shadow": "rgba(107, 66, 38, 0.15)",
+    "success": "#2D9B6F",
+    "warning": "#F59E0B",
+    "error": "#E53E3E"
   },
   "gradients": {
-    "primary": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    "secondary": "linear-gradient(135deg, #6B4226 0%, #8B5A3C 100%)"
+    "primary": "linear-gradient(135deg, #6B4226, #a0622f)",
+    "secondary": "linear-gradient(135deg, #D4A574, #e8c18a)"
   }
 }

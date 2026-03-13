@@ -1,0 +1,148 @@
+/**
+ * GracePeriodBanner Component Styles
+ */
+
+.grace-period-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Warning state (more than 1 day) */
+.grace-period-banner-warning {
+  background: linear-gradient(90deg, #ff9800, #f57c00);
+  color: white;
+}
+
+/* Urgent state (1 day or less) */
+.grace-period-banner-urgent {
+  background: linear-gradient(90deg, #f44336, #d32f2f);
+  color: white;
+}
+
+/* Content section */
+.grace-period-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.grace-period-banner-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.grace-period-banner-message {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Actions section */
+.grace-period-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.grace-period-banner-actions ion-button {
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Dismiss button */
+.grace-period-banner-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.grace-period-banner-dismiss:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.grace-period-banner-dismiss:focus {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.grace-period-banner-dismiss ion-icon {
+  font-size: 18px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .grace-period-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .grace-period-banner-content {
+    text-align: center;
+    justify-content: center;
+  }
+
+  .grace-period-banner-actions {
+    justify-content: center;
+  }
+
+  .grace-period-banner-message {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Animation */
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.grace-period-banner {
+  animation: slideDown 0.3s ease-out;
+}
+
+/* Pulse animation for urgent state */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.grace-period-banner-urgent .grace-period-banner-icon {
+  animation: pulse 1.5s ease-in-out infinite;
+}

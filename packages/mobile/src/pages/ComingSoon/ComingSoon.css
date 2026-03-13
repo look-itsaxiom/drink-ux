@@ -1,0 +1,238 @@
+/**
+ * ComingSoon Page Styles
+ */
+
+.coming-soon {
+  --coming-soon-primary: var(--ion-color-primary);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 32px 24px;
+  text-align: center;
+  background: linear-gradient(
+    135deg,
+    var(--ion-background-color) 0%,
+    var(--ion-color-light) 100%
+  );
+}
+
+/* Logo */
+.coming-soon-logo {
+  margin-bottom: 16px;
+}
+
+.coming-soon-logo-image {
+  max-width: 150px;
+  max-height: 150px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+/* Business Name */
+.coming-soon-business-name {
+  margin: 0 0 24px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ion-text-color);
+}
+
+/* Icon */
+.coming-soon-icon {
+  margin-bottom: 16px;
+}
+
+.coming-soon-icon ion-icon {
+  font-size: 80px;
+  color: var(--coming-soon-primary);
+  opacity: 0.8;
+}
+
+/* Title */
+.coming-soon-title {
+  margin: 0 0 16px 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--coming-soon-primary);
+  line-height: 1.2;
+}
+
+/* Description */
+.coming-soon-description {
+  margin: 0 0 24px 0;
+  font-size: 1.125rem;
+  color: var(--ion-color-medium);
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+/* Suspended message */
+.coming-soon-suspended-message {
+  margin: 0 0 24px 0;
+  font-size: 0.875rem;
+  color: var(--ion-color-danger);
+  max-width: 320px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* Section titles */
+.coming-soon-section-title {
+  margin: 0 0 12px 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Contact section */
+.coming-soon-contact {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--ion-border-color);
+  width: 100%;
+  max-width: 320px;
+}
+
+.coming-soon-contact-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-bottom: 8px;
+  color: var(--ion-text-color);
+  text-decoration: none;
+  font-size: 1rem;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.coming-soon-contact-item:hover {
+  background-color: var(--ion-color-light);
+}
+
+.coming-soon-contact-item ion-icon {
+  font-size: 1.25rem;
+  color: var(--coming-soon-primary);
+}
+
+/* Social section */
+.coming-soon-social {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--ion-border-color);
+  width: 100%;
+  max-width: 320px;
+}
+
+.coming-soon-social-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.coming-soon-social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--ion-color-light);
+  color: var(--ion-text-color);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.coming-soon-social-link:hover {
+  background-color: var(--coming-soon-primary);
+  color: white;
+  transform: scale(1.1);
+}
+
+.coming-soon-social-link ion-icon {
+  font-size: 1.5rem;
+}
+
+/* Children content */
+.coming-soon-children {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--ion-border-color);
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .coming-soon-logo-image {
+    max-width: 180px;
+    max-height: 180px;
+  }
+
+  .coming-soon-business-name {
+    font-size: 2rem;
+  }
+
+  .coming-soon-icon ion-icon {
+    font-size: 100px;
+  }
+
+  .coming-soon-title {
+    font-size: 3.5rem;
+  }
+
+  .coming-soon-description {
+    font-size: 1.25rem;
+    max-width: 500px;
+  }
+
+  .coming-soon-contact,
+  .coming-soon-social {
+    max-width: 400px;
+  }
+}
+
+/* Animation for icon */
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+.coming-soon-icon ion-icon {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .coming-soon {
+    background: linear-gradient(
+      135deg,
+      var(--ion-background-color) 0%,
+      var(--ion-color-dark-tint) 100%
+    );
+  }
+
+  .coming-soon-title {
+    color: var(--ion-color-primary-tint);
+  }
+
+  .coming-soon-social-link {
+    background-color: var(--ion-color-dark-tint);
+  }
+
+  .coming-soon-contact-item:hover {
+    background-color: var(--ion-color-dark-tint);
+  }
+}
