@@ -8,6 +8,7 @@ import MenuManagement from './pages/MenuManagement';
 import OrderManagement from './pages/OrderManagement';
 import POSIntegration from './pages/POSIntegration';
 import Subscription from './pages/Subscription';
+import AdminSettings from './pages/AdminSettings';
 import Onboarding from './pages/Onboarding';
 import './App.css';
 
@@ -43,6 +44,9 @@ function AppLayout() {
           <li>
             <Link to="/subscription">Subscription</Link>
           </li>
+          <li>
+            <Link to="/settings">Settings</Link>
+          </li>
         </ul>
         <div className="sidebar-footer">
           {user && (
@@ -62,6 +66,7 @@ function AppLayout() {
           <Route path="/orders" element={<OrderManagement />} />
           <Route path="/pos" element={<POSIntegration />} />
           <Route path="/subscription" element={<Subscription />} />
+          <Route path="/settings" element={<AdminSettings />} />
         </Routes>
       </main>
     </div>
