@@ -1,12 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-interface POSStatus {
-  configured: boolean;
-  environment: string;
-}
+import React from 'react';
 
 const ACT_ICONS = {
   check: <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,7 5.5,10.5 12,4"/></svg>,
@@ -16,42 +8,10 @@ const ACT_ICONS = {
 };
 
 const Dashboard: React.FC = () => {
-  const { user, business } = useAuth();
-  const businessId = user?.businessId;
-  const [loading, setLoading] = useState(true);
-  const [, setPosStatus] = useState<POSStatus | null>(null);
+  // Static prototype data — will be replaced with real API data later
+  const isPosConnected = true;
 
-  useEffect(() => {
-    if (businessId) {
-      fetchDashboardData();
-    } else {
-      setLoading(false);
-    }
-  }, [businessId]);
-
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      const posStatusRes = await fetch(`${API_BASE_URL}/api/pos/oauth/status`, {
-        credentials: 'include',
-      }).catch(() => null);
-
-      if (posStatusRes?.ok) {
-        const posData = await posStatusRes.json();
-        if (posData.success) {
-          setPosStatus(posData.data);
-        }
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const isPosConnected = !!business?.posMerchantId;
-
-  const subscriptionStatus = (business?.subscriptionStatus || 'trial').toLowerCase();
+  const subscriptionStatus: string = 'trial';
   
   // Static data from prototype
   const queue = [
@@ -75,21 +35,13 @@ const Dashboard: React.FC = () => {
   const STATUS_LABEL: Record<string, string> = { pending: 'Pending', preparing: 'Preparing', ready: 'Ready' };
   const ADVANCE_LABEL: Record<string, string> = { pending: 'Start →', preparing: 'Ready →', ready: 'Complete ✓' };
 
-  if (loading) {
-    return (
-      <div className="admin-body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p>Loading dashboard...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="admin-body">
       {/* Topbar */}
       <div className="topbar">
         <div className="topbar-left">
           <div className="topbar-title">Dashboard</div>
-          <div className="topbar-sub">Good morning, {business?.name || 'Morgan'} ☕</div>
+          <div className="topbar-sub">Good morning, Morgan ☕</div>
         </div>
         <div className="pos-indicator">
           {isPosConnected ? (

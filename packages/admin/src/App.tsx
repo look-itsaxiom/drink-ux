@@ -69,16 +69,28 @@ function Sidebar() {
   );
 }
 
+function OrdersPlaceholder() {
+  return (
+    <div className="page-header">
+      <h1>Orders</h1>
+      <p>Order management coming soon.</p>
+    </div>
+  );
+}
+
 function App() {
   return (
     <Router>
       <div className="app">
         <Sidebar />
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/menu" element={<MenuManagement />} />
-          <Route path="/pos" element={<POSIntegration />} />
-        </Routes>
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/orders" element={<OrdersPlaceholder />} />
+            <Route path="/menu" element={<MenuManagement />} />
+            <Route path="/pos" element={<POSIntegration />} />
+          </Routes>
+        </main>
       </div>
     </Router>
   );
