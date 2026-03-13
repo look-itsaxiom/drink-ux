@@ -348,7 +348,7 @@ export class CatalogSyncService {
     let itemsUpdated = 0;
     let itemsDeactivated = 0;
     let modifiersCreated = 0;
-    let modifiersUpdated: number;
+    const modifiersUpdated = diff.modifiers.updated.length;
 
     // Create new items with retry
     for (const item of diff.items.created) {
@@ -389,10 +389,6 @@ export class CatalogSyncService {
       await this.updateModifierPosId(modifier, posModifierId);
       modifiersCreated++;
     }
-
-    // Update existing modifiers - Note: POSAdapter doesn't have updateModifier yet
-    // For now, updates to modifiers are tracked but not pushed
-    modifiersUpdated = diff.modifiers.updated.length;
 
     return {
       itemsCreated,
