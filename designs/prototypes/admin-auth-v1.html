@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200px, initial-scale=1.0">
+  <title>Drink-UX Admin — Auth</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #1A1A2E;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      gap: 14px;
+    }
+
+    /* ── CSS Variables ────────────────────────────────────────────── */
+    :root {
+      --blue: #2563EB;
+      --purple: #7C3AED;
+      --green: #059669;
+    }
+
+    /* ── Controls Bar ─────────────────────────────────────────────── */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ctrl-label {
+      color: rgba(255,255,255,0.45);
+      font-size: 12px;
+    }
+    .ctrl-btn {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ctrl-btn.active {
+      background: rgba(255,255,255,0.22);
+      border-color: rgba(255,255,255,0.35);
+      color: white;
+    }
+
+    /* ── App Frame ────────────────────────────────────────────────── */
+    .app-frame {
+      width: 1160px;
+      height: 680px;
+      border-radius: 20px;
+      box-shadow:
+        0 40px 100px rgba(0,0,0,0.7),
+        0 0 0 10px #16162A,
+        0 0 0 12px #2a2a3e;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+    }
+
+    /* ── Left Panel (Brand) ───────────────────────────────────────── */
+    .brand-panel {
+      background: linear-gradient(150deg, #1e3a5f 0%, #1d1b4b 50%, #2d1f69 100%);
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .brand-logomark {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #2563EB, #7C3AED);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .brand-wordmark { }
+    .brand-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: white;
+      line-height: 1.1;
+    }
+    .brand-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .brand-headline {
+      font-size: 28px;
+      font-weight: 800;
+      color: white;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+
+    /* ── Value Props ──────────────────────────────────────────────── */
+    .value-props {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .vp-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .vp-check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(52,211,153,0.15);
+      color: #34D399;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .vp-text {
+      font-size: 14px;
+      color: rgba(255,255,255,0.75);
+      line-height: 1.4;
+    }
+    .vp-text strong {
+      color: rgba(255,255,255,0.95);
+      font-weight: 700;
+    }
+
+    /* ── Social Proof: Testimonial ───────────────────────────────── */
+    .testimonial {
+      background: rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 16px;
+      border-left: 3px solid rgba(99,179,237,0.4);
+    }
+    .testimonial-stars {
+      color: #F59E0B;
+      font-size: 13px;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+    .testimonial-text {
+      font-size: 14px;
+      color: rgba(255,255,255,0.85);
+      font-style: italic;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .testimonial-author {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* ── Social Proof: Trust Row ─────────────────────────────────── */
+    .trust-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar-stack {
+      display: flex;
+    }
+    .av {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #1d1b4b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 800;
+      color: white;
+      margin-left: -6px;
+      flex-shrink: 0;
+    }
+    .av:first-child {
+      margin-left: 0;
+    }
+    .trust-text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.65);
+    }
+    .trust-text strong {
+      color: rgba(255,255,255,0.9);
+    }
+
+    /* ── Right Panel (Form) ───────────────────────────────────────── */
+    .form-panel {
+      background: #FFFFFF;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow-y: auto;
+    }
+
+    /* ── Form Elements ────────────────────────────────────────────── */
+    .form-heading {
+      font-size: 22px;
+      font-weight: 800;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+    .form-sub {
+      font-size: 14px;
+      color: #6B7280;
+      margin-bottom: 24px;
+    }
+    .trial-badge {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(5,150,105,0.1);
+      color: #059669;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      border: 1px solid rgba(5,150,105,0.2);
+    }
+    .form-group {
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .form-input {
+      width: 100%;
+      height: 44px;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 10px;
+      padding: 0 14px;
+      font-size: 14px;
+      font-family: 'Outfit', sans-serif;
+      outline: none;
+      color: #111827;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .form-input:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+    .form-hint {
+      font-size: 11px;
+      color: #9CA3AF;
+      margin-top: 4px;
+    }
+    .forgot-row {
+      text-align: right;
+      margin-bottom: 16px;
+      margin-top: -8px;
+    }
+    .forgot-link {
+      font-size: 12px;
+      color: #2563EB;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+    .pw-toggle {
+      position: absolute;
+      right: 12px;
+      top: 32px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: #9CA3AF;
+      line-height: 1;
+    }
+    .btn-primary {
+      width: 100%;
+      height: 44px;
+      background: #2563EB;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover {
+      background: #1D4ED8;
+    }
+    .btn-gradient {
+      width: 100%;
+      height: 44px;
+      background: linear-gradient(135deg, #2563EB, #7C3AED);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-gradient:hover {
+      opacity: 0.92;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #E5E7EB;
+    }
+    .divider span {
+      font-size: 12px;
+      color: #9CA3AF;
+      white-space: nowrap;
+    }
+    .btn-google {
+      width: 100%;
+      height: 44px;
+      background: white;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      color: #374151;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .btn-google:hover {
+      border-color: #9CA3AF;
+    }
+    .switch-text {
+      font-size: 13px;
+      color: #6B7280;
+      text-align: center;
+      margin-top: 16px;
+    }
+    .switch-text a {
+      color: #2563EB;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .switch-text a:hover {
+      text-decoration: underline;
+    }
+    .fine-print {
+      font-size: 11px;
+      color: #9CA3AF;
+      text-align: center;
+      margin-top: 8px;
+    }
+    .fine-print a {
+      color: #2563EB;
+      text-decoration: none;
+    }
+    .fine-print a:hover {
+      text-decoration: underline;
+    }
+
+    /* ── Password Strength Bar ───────────────────────────────────── */
+    .strength-bar {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .sb-seg {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: #E5E7EB;
+      transition: background 0.2s;
+    }
+    .sb-seg.s1 { background: #DC2626; }
+    .sb-seg.s2 { background: #F59E0B; }
+    .sb-seg.s3 { background: #2563EB; }
+    .sb-seg.s4 { background: #059669; }
+
+    /* ── Success View ─────────────────────────────────────────────── */
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #059669, #10B981);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      margin: 0 auto 16px;
+    }
+    .progress-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .ps-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      color: #374151;
+    }
+    .ps-item.pending {
+      color: #9CA3AF;
+    }
+    .ps-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #E5E7EB;
+      flex-shrink: 0;
+    }
+    .ps-dot.done {
+      background: #059669;
+    }
+    .ps-dot.spinning {
+      background: #2563EB;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .ps-check {
+      margin-left: auto;
+      color: #059669;
+      font-weight: 800;
+    }
+
+    /* ── Success centered layout ─────────────────────────────────── */
+    .success-panel-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 360px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .success-panel-inner .form-heading {
+      text-align: center;
+    }
+    .success-panel-inner .form-sub {
+      text-align: center;
+    }
+    .success-panel-inner .progress-steps {
+      width: 100%;
+      text-align: left;
+    }
+    .success-panel-inner .btn-primary {
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Controls Bar -->
+  <div class="controls-bar">
+    <span class="ctrl-label">View:</span>
+    <button class="ctrl-btn active" id="btn-login" onclick="setView('login', event)">Login</button>
+    <button class="ctrl-btn" id="btn-signup" onclick="setView('signup', event)">Sign Up</button>
+  </div>
+
+  <!-- App Frame -->
+  <div class="app-frame">
+
+    <!-- ── Left Panel: Brand ──────────────────────────────────────── -->
+    <div class="brand-panel">
+
+      <!-- Logo -->
+      <div class="brand-logo">
+        <div class="brand-logomark">
+          <!-- Coffee cup SVG -->
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 8h12l-1.5 9a1 1 0 01-.99.86H6.49A1 1 0 015.5 17L4 8z" fill="white" fill-opacity="0.9"/>
+            <path d="M16 9h2a2 2 0 010 4h-2" stroke="white" stroke-width="1.6" stroke-linecap="round" fill="none" stroke-opacity="0.85"/>
+            <path d="M3.5 8h13" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-opacity="0.7"/>
+            <path d="M8 5c0-1 .8-1.5 1-2.5" stroke="white" stroke-width="1.4" stroke-linecap="round" fill="none" stroke-opacity="0.6"/>
+            <path d="M11.5 5c0-1 .8-1.5 1-2.5" stroke="white" stroke-width="1.4" stroke-linecap="round" fill="none" stroke-opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="brand-wordmark">
+          <div class="brand-name">Drink-UX</div>
+          <div class="brand-sub">for Business</div>
+        </div>
+      </div>
+
+      <!-- Headline (dynamic) -->
+      <div id="brand-headline" class="brand-headline">The smart way to run your café.</div>
+
+      <!-- Value Props -->
+      <div class="value-props">
+        <div class="vp-item">
+          <div class="vp-check">✓</div>
+          <div class="vp-text"><strong>Live order queue</strong> — see every order as it comes in</div>
+        </div>
+        <div class="vp-item">
+          <div class="vp-check">✓</div>
+          <div class="vp-text"><strong>Menu management</strong> — edit prices and modifiers in minutes</div>
+        </div>
+        <div class="vp-item">
+          <div class="vp-check">✓</div>
+          <div class="vp-text"><strong>Square POS sync</strong> — your menu, always in sync</div>
+        </div>
+        <div class="vp-item">
+          <div class="vp-check">✓</div>
+          <div class="vp-text"><strong>Smart analytics</strong> — know your busiest hours</div>
+        </div>
+      </div>
+
+      <!-- Social Proof: Login (testimonial) -->
+      <div id="login-proof">
+        <div class="testimonial">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"Drink-UX cut our order confusion in half on day one."</p>
+          <div class="testimonial-author">— Maya R., Blue Bottle Roasters</div>
+        </div>
+      </div>
+
+      <!-- Social Proof: Signup (avatar trust row) -->
+      <div id="signup-proof" style="display:none">
+        <div class="trust-row">
+          <div class="avatar-stack">
+            <div class="av" style="background:linear-gradient(135deg,#F59E0B,#EF4444)">AR</div>
+            <div class="av" style="background:linear-gradient(135deg,#8B5CF6,#EC4899)">JK</div>
+            <div class="av" style="background:linear-gradient(135deg,#10B981,#3B82F6)">TS</div>
+            <div class="av" style="background:linear-gradient(135deg,#F97316,#EAB308)">MW</div>
+            <div class="av" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">+</div>
+          </div>
+          <div class="trust-text">Trusted by <strong>200+ independent cafés</strong></div>
+        </div>
+      </div>
+
+    </div>
+    <!-- / brand-panel -->
+
+    <!-- ── Right Panel: Forms ─────────────────────────────────────── -->
+    <div class="form-panel">
+
+      <!-- LOGIN VIEW -->
+      <div id="login-view">
+        <h2 class="form-heading">Welcome back</h2>
+        <p class="form-sub">Sign in to your Drink-UX dashboard.</p>
+
+        <form onsubmit="return false">
+          <div class="form-group">
+            <label class="form-label">Email address</label>
+            <input type="email" class="form-input" placeholder="you@yourbrand.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="login-pw" class="form-input" placeholder="••••••••">
+            <button type="button" class="pw-toggle" onclick="togglePassword('login-pw', this)">👁</button>
+          </div>
+          <div class="forgot-row">
+            <a href="#" class="forgot-link">Forgot password?</a>
+          </div>
+          <button type="button" class="btn-primary" onclick="this.textContent='Signing in…'">Sign In</button>
+        </form>
+
+        <div class="divider"><span>or continue with</span></div>
+
+        <button type="button" class="btn-google">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+          Continue with Google
+        </button>
+
+        <p class="switch-text">Don't have an account? <a href="#" onclick="setView('signup', event)">Start free trial →</a></p>
+      </div>
+      <!-- / login-view -->
+
+      <!-- SIGNUP VIEW -->
+      <div id="signup-view" style="display:none">
+        <h2 class="form-heading">Create your account</h2>
+        <div class="trial-badge">14 days free · No credit card required</div>
+
+        <form onsubmit="return false">
+          <div class="form-group">
+            <label class="form-label">Full name</label>
+            <input type="text" class="form-input" placeholder="Morgan Brown">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email address</label>
+            <input type="email" class="form-input" placeholder="you@yourbrand.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="signup-pw" class="form-input" placeholder="••••••••" oninput="updateStrength(this.value)">
+            <div class="strength-bar" id="strength-bar">
+              <div class="sb-seg" id="s1"></div>
+              <div class="sb-seg" id="s2"></div>
+              <div class="sb-seg" id="s3"></div>
+              <div class="sb-seg" id="s4"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Shop name</label>
+            <input type="text" class="form-input" placeholder="Brew &amp; Blossom">
+            <p class="form-hint">This is how customers will see your brand</p>
+          </div>
+          <button type="button" class="btn-gradient" onclick="simulateSignup()">Start Free Trial →</button>
+          <p class="fine-print">By signing up you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>
+        </form>
+
+        <div class="divider"><span>or continue with</span></div>
+
+        <button type="button" class="btn-google">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+          Continue with Google
+        </button>
+
+        <p class="switch-text">Already have an account? <a href="#" onclick="setView('login', event)">Sign in →</a></p>
+      </div>
+      <!-- / signup-view -->
+
+      <!-- SUCCESS VIEW -->
+      <div id="success-view" style="display:none">
+        <div class="success-panel-inner">
+          <div class="success-icon">✓</div>
+          <h2 class="form-heading">Account created! 🎉</h2>
+          <p class="form-sub">Setting up your workspace…</p>
+          <div class="progress-steps" id="progress-steps">
+            <div class="ps-item ps-done" id="ps1">
+              <div class="ps-dot done"></div>
+              <span>Creating account</span>
+              <span class="ps-check">✓</span>
+            </div>
+            <div class="ps-item" id="ps2">
+              <div class="ps-dot spinning"></div>
+              <span>Setting up menu</span>
+              <span class="ps-check" style="display:none">✓</span>
+            </div>
+            <div class="ps-item pending" id="ps3">
+              <div class="ps-dot"></div>
+              <span>Launching dashboard</span>
+              <span class="ps-check" style="display:none">✓</span>
+            </div>
+          </div>
+          <button type="button" id="go-btn" class="btn-primary" style="display:none" onclick="setView('login', event)">Go to Dashboard →</button>
+        </div>
+      </div>
+      <!-- / success-view -->
+
+    </div>
+    <!-- / form-panel -->
+
+  </div>
+  <!-- / app-frame -->
+
+  <script>
+    function setView(view, event) {
+      document.getElementById('login-view').style.display   = view === 'login'   ? '' : 'none';
+      document.getElementById('signup-view').style.display  = view === 'signup'  ? '' : 'none';
+      document.getElementById('success-view').style.display = 'none';
+
+      // Update left panel headline
+      document.getElementById('brand-headline').textContent =
+        view === 'login'
+          ? 'The smart way to run your café.'
+          : 'Start your 14-day free trial.';
+
+      // Toggle social proof
+      document.getElementById('login-proof').style.display  = view === 'login'  ? '' : 'none';
+      document.getElementById('signup-proof').style.display = view === 'signup' ? '' : 'none';
+
+      // Update control buttons
+      document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+      if (event && event.target && event.target.classList && event.target.classList.contains('ctrl-btn')) {
+        event.target.classList.add('active');
+      } else {
+        // Called from a link inside the panel — sync the top button
+        const targetBtn = view === 'login'
+          ? document.getElementById('btn-login')
+          : document.getElementById('btn-signup');
+        if (targetBtn) targetBtn.classList.add('active');
+      }
+
+      // Reset success view state for re-runs
+      if (view !== 'success') {
+        const ps2 = document.getElementById('ps2');
+        if (ps2) {
+          ps2.querySelector('.ps-dot').className = 'ps-dot spinning';
+          ps2.querySelector('.ps-check').style.display = 'none';
+        }
+        const ps3 = document.getElementById('ps3');
+        if (ps3) {
+          ps3.classList.add('pending');
+          ps3.querySelector('.ps-dot').className = 'ps-dot';
+          ps3.querySelector('.ps-check').style.display = 'none';
+        }
+        const goBtn = document.getElementById('go-btn');
+        if (goBtn) goBtn.style.display = 'none';
+      }
+    }
+
+    function togglePassword(fieldId, btn) {
+      const f = document.getElementById(fieldId);
+      f.type = f.type === 'password' ? 'text' : 'password';
+      btn.textContent = f.type === 'password' ? '👁' : '🙈';
+    }
+
+    function updateStrength(val) {
+      const score = val.length < 6 ? 1 : val.length < 8 ? 2 : val.length < 12 ? 3 : 4;
+      const classes = ['s1', 's2', 's3', 's4'];
+      for (let i = 0; i < 4; i++) {
+        const seg = document.getElementById('s' + (i + 1));
+        seg.className = 'sb-seg';
+        if (i < score) seg.classList.add(classes[score - 1]);
+      }
+    }
+
+    function simulateSignup() {
+      document.getElementById('signup-view').style.display = 'none';
+      document.getElementById('success-view').style.display = '';
+
+      // Step 2 completes at 1.5s, step 3 starts spinning
+      setTimeout(() => {
+        const ps2 = document.getElementById('ps2');
+        ps2.querySelector('.ps-dot').className = 'ps-dot done';
+        ps2.querySelector('.ps-check').style.display = '';
+
+        const ps3 = document.getElementById('ps3');
+        ps3.classList.remove('pending');
+        ps3.querySelector('.ps-dot').className = 'ps-dot spinning';
+      }, 1500);
+
+      // Step 3 completes at 3s, CTA appears
+      setTimeout(() => {
+        const ps3 = document.getElementById('ps3');
+        ps3.querySelector('.ps-dot').className = 'ps-dot done';
+        ps3.querySelector('.ps-check').style.display = '';
+        document.getElementById('go-btn').style.display = '';
+      }, 3000);
+    }
+
+    // Init on load
+    window.onload = () => {
+      document.getElementById('login-view').style.display = '';
+      document.getElementById('signup-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'none';
+      document.getElementById('brand-headline').textContent = 'The smart way to run your café.';
+      document.getElementById('login-proof').style.display = '';
+      document.getElementById('signup-proof').style.display = 'none';
+      document.getElementById('btn-login').classList.add('active');
+    };
+  </script>
+
+</body>
+</html>

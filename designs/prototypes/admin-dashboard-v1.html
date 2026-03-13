@@ -3,463 +3,1052 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1200px, initial-scale=1.0">
-  <title>Drink-UX — Admin Dashboard v1</title>
+  <title>Drink-UX — Admin Dashboard v1 (SKI-40)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Outfit', sans-serif; background: #EAECF0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px; }
 
-    /* Admin colors */
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: #1A1A2E;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      gap: 14px;
+    }
+
+    /* ── Controls bar ── */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ctrl-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-right: 2px;
+    }
+    .ctrl-btn {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.18);
+      border-radius: 8px;
+      padding: 5px 13px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.45);
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      transition: all 0.15s;
+    }
+    .ctrl-btn:hover {
+      border-color: rgba(255,255,255,0.4);
+      color: rgba(255,255,255,0.75);
+    }
+    .ctrl-btn.active {
+      border-color: rgba(147,197,253,0.6);
+      color: #93C5FD;
+      background: rgba(37,99,235,0.15);
+    }
+
+    /* ── App frame ── */
+    .frame {
+      width: 1160px;
+      height: 740px;
+      border-radius: 20px;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 10px #16162A, 0 0 0 12px #2a2a3e;
+      overflow: hidden;
+      display: flex;
+      flex-shrink: 0;
+    }
+
+    /* ── CSS Variables ── */
     :root {
-      --admin-bg: #F4F5F7;
-      --admin-sidebar: #111827;
+      --admin-bg: #F3F4F6;
       --admin-surface: #FFFFFF;
       --admin-border: #E5E7EB;
-      --admin-text: #111827;
-      --admin-text2: #6B7280;
-      --admin-shadow: rgba(0,0,0,0.06);
-      --brand-primary: #6B4226;
-      --brand-secondary: #D4A574;
-      --green: #059669;
-      --yellow: #D97706;
-      --red: #DC2626;
       --blue: #2563EB;
+      --green: #059669;
+      --amber: #D97706;
+      --red: #DC2626;
+      --purple: #7C3AED;
     }
 
-    .frame {
-      width: 100%; max-width: 1100px;
-      background: var(--admin-bg);
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.12);
-      display: flex;
-      min-height: 680px;
-    }
-
-    /* Sidebar */
+    /* ── Sidebar ── */
     .sidebar {
-      width: 220px; flex-shrink: 0;
-      background: var(--admin-sidebar);
-      padding: 24px 16px;
-      display: flex; flex-direction: column;
+      width: 220px;
+      flex-shrink: 0;
+      background: #111827;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 14px;
     }
-    .sidebar-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
-    .sidebar-logo-icon { width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, #6B4226, #a0622f); display: flex; align-items: center; justify-content: center; font-size: 16px; }
-    .sidebar-logo-text { font-size: 16px; font-weight: 800; color: white; letter-spacing: -0.3px; }
 
-    .nav-section-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 6px 8px; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; cursor: pointer; margin-bottom: 2px; transition: background 0.15s; }
-    .nav-item:hover { background: rgba(255,255,255,0.06); }
-    .nav-item.active { background: rgba(255,255,255,0.1); }
-    .nav-item-icon { font-size: 16px; width: 20px; text-align: center; }
-    .nav-item-label { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.5); }
-    .nav-item.active .nav-item-label { color: white; }
-    .nav-item-badge { margin-left: auto; background: var(--red); color: white; border-radius: 8px; padding: 2px 7px; font-size: 10px; font-weight: 700; }
-    .nav-item-badge.green { background: var(--green); }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+      padding: 0 4px;
+    }
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .logo-text-wrap { display: flex; flex-direction: column; }
+    .logo-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.2px;
+      line-height: 1.1;
+    }
+    .logo-sub {
+      font-size: 11px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.2;
+    }
 
-    .sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.06); }
-    .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 8px 12px; }
-    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6B4226, #D4A574); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; }
-    .user-name { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7); }
-    .user-role { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 1px; }
+    .nav-list { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 
-    /* Main */
-    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.05); }
+    .nav-item.active {
+      background: rgba(37,99,235,0.18);
+    }
+    .nav-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    .nav-item .nav-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+    }
+    .nav-item.active .nav-label { color: #93C5FD; }
+    .nav-item.active svg { color: #93C5FD; }
 
-    /* Top bar */
-    .topbar { background: var(--admin-surface); border-bottom: 1px solid var(--admin-border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-    .topbar-left { display: flex; flex-direction: column; }
-    .topbar-title { font-size: 18px; font-weight: 800; color: var(--admin-text); letter-spacing: -0.3px; }
-    .topbar-subtitle { font-size: 12px; color: var(--admin-text2); margin-top: 1px; }
-    .topbar-actions { display: flex; gap: 10px; align-items: center; }
-    .topbar-btn { height: 36px; padding: 0 16px; border-radius: 10px; border: 1.5px solid var(--admin-border); background: var(--admin-surface); font-size: 13px; font-weight: 600; color: var(--admin-text2); cursor: pointer; font-family: 'Outfit', sans-serif; }
-    .topbar-btn-primary { background: linear-gradient(135deg, #6B4226, #a0622f); border-color: transparent; color: white; box-shadow: 0 2px 8px rgba(107,66,38,0.2); }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; animation: blink 2s infinite; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .sidebar-footer {
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding-top: 14px;
+      margin-top: 10px;
+    }
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 4px;
+    }
+    .user-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+    .user-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.1;
+    }
+    .user-role {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      margin-top: 1px;
+    }
 
-    /* Scroll content */
-    .content { flex: 1; overflow-y: auto; padding: 20px 24px; scrollbar-width: thin; }
+    /* ── Admin body ── */
+    .admin-body {
+      flex: 1;
+      background: var(--admin-bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
-    /* Metrics row */
-    .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-    .metric-card { background: var(--admin-surface); border-radius: 14px; padding: 16px; border: 1px solid var(--admin-border); box-shadow: 0 1px 4px var(--admin-shadow); }
-    .metric-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .metric-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-    .metric-trend { font-size: 11px; font-weight: 600; }
-    .metric-trend.up { color: var(--green); }
-    .metric-trend.down { color: var(--red); }
-    .metric-value { font-size: 24px; font-weight: 800; color: var(--admin-text); letter-spacing: -0.5px; line-height: 1; }
-    .metric-label { font-size: 11px; color: var(--admin-text2); margin-top: 4px; font-weight: 500; }
+    /* ── Topbar ── */
+    .topbar {
+      height: 54px;
+      background: var(--admin-surface);
+      border-bottom: 1px solid var(--admin-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      flex-shrink: 0;
+    }
+    .topbar-left { display: flex; flex-direction: column; justify-content: center; }
+    .topbar-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #111827;
+      letter-spacing: -0.2px;
+      line-height: 1.1;
+    }
+    .topbar-sub {
+      font-size: 11px;
+      color: #9CA3AF;
+      font-weight: 400;
+      margin-top: 1px;
+    }
+    .pos-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+    .pos-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .pos-dot-green { background: #059669; }
+    .pos-dot-red { background: #DC2626; animation: blink 1.2s infinite; }
+    .pos-label-ok { color: #6B7280; }
+    .pos-label-err {
+      color: #DC2626;
+      background: #FEF2F2;
+      border-radius: 6px;
+      padding: 3px 8px;
+    }
 
-    /* Main 2-col layout */
-    .main-grid { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
+    /* ── Page body ── */
+    .page-body {
+      flex: 1;
+      padding: 18px 20px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #D1D5DB transparent;
+    }
 
-    /* Order queue */
-    .card { background: var(--admin-surface); border-radius: 16px; border: 1px solid var(--admin-border); box-shadow: 0 1px 4px var(--admin-shadow); overflow: hidden; }
-    .card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 12px; border-bottom: 1px solid var(--admin-border); }
-    .card-title { font-size: 14px; font-weight: 700; color: var(--admin-text); }
-    .card-action { font-size: 12px; font-weight: 600; color: var(--brand-primary); cursor: pointer; }
+    .page-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+      height: 100%;
+    }
 
-    /* Order kanban columns */
-    .order-board { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; }
-    .order-col { border-right: 1px solid var(--admin-border); padding: 12px; }
-    .order-col:last-child { border-right: none; }
-    .order-col-label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-text2); margin-bottom: 10px; }
-    .order-col-count { background: var(--admin-border); border-radius: 5px; padding: 1px 6px; font-size: 10px; font-weight: 700; }
+    /* ── Left column ── */
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+    }
 
-    .order-card { border: 1.5px solid var(--admin-border); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: box-shadow 0.15s; background: var(--admin-bg); }
-    .order-card:hover { box-shadow: 0 2px 8px var(--admin-shadow); }
-    .order-card.urgent { border-color: var(--red); background: #FFF5F5; }
-    .order-card.confirmed { border-color: var(--blue); background: #EFF6FF; }
-    .order-card.preparing { border-color: var(--yellow); background: #FFFBEB; }
+    /* ── KPI row ── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .kpi-card {
+      background: #fff;
+      border: 1px solid #E5E7EB;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #9CA3AF;
+      margin-bottom: 8px;
+    }
+    .kpi-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: #111827;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .kpi-trend {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .trend-up { color: #059669; }
+    .trend-down { color: #D97706; }
+    .trend-live { color: #2563EB; }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #059669;
+      display: inline-block;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
 
-    .order-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .order-num { font-size: 13px; font-weight: 800; color: var(--admin-text); }
-    .order-time { font-size: 10px; color: var(--admin-text2); font-weight: 500; }
-    .order-code { font-size: 16px; font-weight: 900; color: var(--brand-primary); letter-spacing: 2px; margin-bottom: 6px; }
-    .order-items-list { font-size: 11px; color: var(--admin-text2); line-height: 1.5; }
-    .order-total { font-size: 12px; font-weight: 700; color: var(--admin-text); margin-top: 6px; }
-    .order-action-row { display: flex; gap: 6px; margin-top: 8px; }
-    .order-action-btn { flex: 1; height: 28px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: 'Outfit', sans-serif; border: none; }
-    .order-action-confirm { background: linear-gradient(135deg, #2563EB, #3B82F6); color: white; }
-    .order-action-ready { background: linear-gradient(135deg, #059669, #10B981); color: white; }
-    .order-action-details { background: var(--admin-border); color: var(--admin-text2); }
+    /* ── Queue card ── */
+    .queue-card {
+      background: var(--admin-surface);
+      border: 1px solid var(--admin-border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .queue-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--admin-border);
+      flex-shrink: 0;
+    }
+    .queue-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
+    }
+    .queue-count-badge {
+      background: #2563EB;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 6px;
+      padding: 2px 8px;
+    }
+    .queue-refresh-hint {
+      margin-left: auto;
+      font-size: 11px;
+      color: #9CA3AF;
+      font-weight: 400;
+    }
+    .queue-body {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #E5E7EB transparent;
+    }
 
-    /* Right column */
-    .right-col { display: flex; flex-direction: column; gap: 14px; }
+    .queue-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .queue-row:last-child { border-bottom: none; }
 
-    /* System status */
-    .status-list { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
-    .status-row { display: flex; align-items: center; gap: 10px; }
-    .status-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-    .status-label { font-size: 12px; font-weight: 600; color: var(--admin-text); flex: 1; }
-    .status-val { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; }
-    .status-ok { background: rgba(5,150,105,0.1); color: var(--green); }
-    .status-warn { background: rgba(217,119,6,0.1); color: var(--yellow); }
+    .code-chip {
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 7px;
+      padding: 4px 8px;
+      color: white;
+      flex-shrink: 0;
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: 0.5px;
+    }
+    .chip-pending { background: #F59E0B; }
+    .chip-preparing { background: #2563EB; }
+    .chip-ready { background: #059669; }
 
-    /* Quick actions */
-    .quick-actions { padding: 12px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .quick-btn { background: var(--admin-bg); border: 1.5px solid var(--admin-border); border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.15s; }
-    .quick-btn:hover { border-color: var(--brand-primary); background: rgba(107,66,38,0.04); }
-    .quick-btn-icon { font-size: 20px; display: block; margin-bottom: 4px; }
-    .quick-btn-label { font-size: 11px; font-weight: 700; color: var(--admin-text2); }
+    .order-info { flex: 1; min-width: 0; }
+    .order-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111827;
+    }
+    .order-items {
+      font-size: 11px;
+      color: #6B7280;
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-    /* Revenue chart placeholder */
-    .chart-area { padding: 12px 14px 14px; }
-    .chart-bars { display: flex; gap: 6px; align-items: flex-end; height: 80px; }
-    .chart-bar { flex: 1; border-radius: 4px 4px 0 0; transition: opacity 0.2s; }
-    .chart-bar:hover { opacity: 0.8; }
-    .chart-labels { display: flex; gap: 6px; margin-top: 4px; }
-    .chart-label { flex: 1; text-align: center; font-size: 9px; color: var(--admin-text2); font-weight: 500; }
+    .status-badge {
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 6px;
+      padding: 2px 8px;
+      flex-shrink: 0;
+    }
+    .badge-pending { background: rgba(245,158,11,0.12); color: #D97706; }
+    .badge-preparing { background: rgba(37,99,235,0.12); color: #2563EB; }
+    .badge-ready { background: rgba(5,150,105,0.12); color: #059669; }
+
+    .order-time {
+      font-size: 11px;
+      color: #9CA3AF;
+      flex-shrink: 0;
+      width: 52px;
+      text-align: right;
+    }
+    .time-late {
+      color: #DC2626;
+      animation: blink 1.2s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .advance-btn {
+      background: transparent;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 7px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      color: #374151;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .advance-btn:hover {
+      border-color: #2563EB;
+      color: #2563EB;
+    }
+
+    .queue-empty {
+      padding: 32px 16px;
+      text-align: center;
+      color: #9CA3AF;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* ── Right column ── */
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #E5E7EB transparent;
+    }
+
+    /* ── Subscription card ── */
+    .sub-card {
+      border-radius: 12px;
+      padding: 18px;
+      color: white;
+      margin-bottom: 14px;
+      transition: background 0.4s;
+    }
+    .sub-card-trial { background: linear-gradient(135deg, #1e3a5f 0%, #1a2f6b 100%); }
+    .sub-card-grace { background: linear-gradient(135deg, #4a1010 0%, #6b1a1a 100%); }
+    .sub-card-active { background: linear-gradient(135deg, #054a30 0%, #0a5c3a 100%); }
+
+    .sub-header {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .sub-sub {
+      font-size: 12px;
+      opacity: 0.75;
+      margin-bottom: 12px;
+    }
+    .sub-bar-track {
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.15);
+      margin-bottom: 12px;
+    }
+    .sub-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+    .sub-bar-blue { background: #3B82F6; }
+    .sub-bar-red { background: #EF4444; }
+    .sub-bar-green { background: #10B981; }
+    .sub-bar-hidden { display: none; }
+
+    .sub-cta {
+      display: inline-block;
+      border: 1.5px solid rgba(255,255,255,0.5);
+      border-radius: 8px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      background: transparent;
+      transition: all 0.15s;
+    }
+    .sub-cta:hover { background: rgba(255,255,255,0.12); }
+    .sub-cta-red {
+      background: #DC2626;
+      border-color: #DC2626;
+    }
+    .sub-cta-red:hover { background: #b91c1c; border-color: #b91c1c; }
+    .sub-cta-green {
+      border-color: rgba(16,185,129,0.7);
+      color: #6EE7B7;
+    }
+    .sub-cta-green:hover { background: rgba(16,185,129,0.12); }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #9CA3AF;
+      margin-bottom: 8px;
+    }
+
+    /* ── Quick actions ── */
+    .quick-actions-wrap { margin-bottom: 14px; }
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .quick-btn {
+      background: #fff;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 10px;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+      height: 60px;
+      justify-content: center;
+    }
+    .quick-btn:hover {
+      border-color: #2563EB;
+      background: #F0F4FF;
+    }
+    .quick-btn svg {
+      width: 18px;
+      height: 18px;
+      color: #6B7280;
+      flex-shrink: 0;
+    }
+    .quick-btn:hover svg { color: #2563EB; }
+    .quick-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #374151;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    /* ── Activity feed ── */
+    .activity-wrap { flex: 1; }
+    .activity-list {
+      background: var(--admin-surface);
+      border: 1px solid var(--admin-border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .activity-inner { padding: 4px 0; }
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 14px;
+      border-bottom: 1px solid #F3F4F6;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .act-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .act-icon.check { background: rgba(5,150,105,0.1); color: #059669; }
+    .act-icon.dollar { background: rgba(37,99,235,0.1); color: #2563EB; }
+    .act-icon.sync { background: rgba(124,58,237,0.1); color: #7C3AED; }
+    .act-icon.warn { background: rgba(217,119,6,0.1); color: #D97706; }
+    .act-text {
+      font-size: 12px;
+      color: #374151;
+      flex: 1;
+      padding-top: 5px;
+      line-height: 1.3;
+    }
+    .act-time {
+      font-size: 11px;
+      color: #9CA3AF;
+      flex-shrink: 0;
+      padding-top: 5px;
+    }
   </style>
 </head>
 <body>
 
+  <!-- Controls bar -->
+  <div class="controls-bar">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Scenario:</span>
+      <button class="ctrl-btn active" id="btn-scenario-busy" onclick="setScenario('busy')">Busy</button>
+      <button class="ctrl-btn" id="btn-scenario-quiet" onclick="setScenario('quiet')">Quiet</button>
+      <button class="ctrl-btn" id="btn-scenario-rush" onclick="setScenario('rush')">Rush</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">POS:</span>
+      <button class="ctrl-btn active" id="btn-pos-synced" onclick="setPOS('synced')">Synced</button>
+      <button class="ctrl-btn" id="btn-pos-error" onclick="setPOS('error')">Error</button>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Sub:</span>
+      <button class="ctrl-btn active" id="btn-sub-trial" onclick="setSub('trial')">Trial</button>
+      <button class="ctrl-btn" id="btn-sub-grace" onclick="setSub('grace')">Grace</button>
+      <button class="ctrl-btn" id="btn-sub-active" onclick="setSub('active')">Active</button>
+    </div>
+  </div>
+
+  <!-- App frame -->
   <div class="frame">
 
     <!-- Sidebar -->
     <div class="sidebar">
       <div class="sidebar-logo">
-        <div class="sidebar-logo-icon">☕</div>
-        <div class="sidebar-logo-text">Drink-UX</div>
+        <div class="logo-mark">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M9 2C5.13 2 2 5.13 2 9s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7zm0 12.25A5.25 5.25 0 1 1 9 3.75a5.25 5.25 0 0 1 0 10.5z" fill="white" fill-opacity="0.9"/>
+            <circle cx="9" cy="9" r="2.5" fill="white"/>
+          </svg>
+        </div>
+        <div class="logo-text-wrap">
+          <div class="logo-name">Drink-UX</div>
+          <div class="logo-sub">Brew &amp; Blossom</div>
+        </div>
       </div>
 
-      <div class="nav-section-label">Menu</div>
-      <div class="nav-item active">
-        <span class="nav-item-icon">⬛</span>
-        <span class="nav-item-label">Dashboard</span>
-        <span class="nav-item-badge">3</span>
-      </div>
-      <div class="nav-item">
-        <span class="nav-item-icon">📋</span>
-        <span class="nav-item-label">Orders</span>
-      </div>
-      <div class="nav-item">
-        <span class="nav-item-icon">🍵</span>
-        <span class="nav-item-label">Menu Manager</span>
-      </div>
-      <div class="nav-item">
-        <span class="nav-item-icon">📦</span>
-        <span class="nav-item-label">Catalog Sync</span>
-        <span class="nav-item-badge green">✓</span>
-      </div>
-
-      <div class="nav-section-label">Account</div>
-      <div class="nav-item">
-        <span class="nav-item-icon">🎨</span>
-        <span class="nav-item-label">Branding</span>
-      </div>
-      <div class="nav-item">
-        <span class="nav-item-icon">💳</span>
-        <span class="nav-item-label">Subscription</span>
-      </div>
-      <div class="nav-item">
-        <span class="nav-item-icon">⚙️</span>
-        <span class="nav-item-label">Settings</span>
-      </div>
+      <nav class="nav-list">
+        <!-- Dashboard (active) -->
+        <div class="nav-item active">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="1" width="6" height="6" rx="1.5"/>
+            <rect x="9" y="1" width="6" height="6" rx="1.5"/>
+            <rect x="1" y="9" width="6" height="6" rx="1.5"/>
+            <rect x="9" y="9" width="6" height="6" rx="1.5"/>
+          </svg>
+          <span class="nav-label">Dashboard</span>
+        </div>
+        <!-- Orders -->
+        <div class="nav-item">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 4h12M2 8h8M2 12h5"/>
+          </svg>
+          <span class="nav-label">Orders</span>
+        </div>
+        <!-- Menu -->
+        <div class="nav-item">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 2v4M5 3.5C5 5.4 6.3 7 8 7s3-1.6 3-3.5"/>
+            <path d="M3 7c0 2.76 2.24 5 5 5s5-2.24 5-5"/>
+            <path d="M8 12v2M6 14h4"/>
+          </svg>
+          <span class="nav-label">Menu</span>
+        </div>
+        <!-- Settings -->
+        <div class="nav-item">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8" cy="8" r="2.5"/>
+            <path d="M8 1.5v1.3M8 13.2v1.3M1.5 8h1.3M13.2 8h1.3M3.2 3.2l.9.9M11.9 11.9l.9.9M3.2 12.8l.9-.9M11.9 4.1l.9-.9"/>
+          </svg>
+          <span class="nav-label">Settings</span>
+        </div>
+        <!-- Reports -->
+        <div class="nav-item">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="12" height="12" rx="2"/>
+            <path d="M5 10V8M8 10V6M11 10V7"/>
+          </svg>
+          <span class="nav-label">Reports</span>
+        </div>
+      </nav>
 
       <div class="sidebar-footer">
-        <div class="sidebar-user">
-          <div class="user-avatar">BC</div>
+        <div class="user-row">
+          <div class="user-avatar">MB</div>
           <div>
-            <div class="user-name">Brew &amp; Co.</div>
-            <div class="user-role">Trial · 12 days left</div>
+            <div class="user-name">Morgan B.</div>
+            <div class="user-role">Owner</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Main -->
-    <div class="main">
+    <!-- Admin body -->
+    <div class="admin-body">
 
-      <!-- Top bar -->
+      <!-- Topbar -->
       <div class="topbar">
         <div class="topbar-left">
-          <div class="topbar-title">
-            <span class="status-dot"></span>
-            Dashboard
-          </div>
-          <div class="topbar-subtitle">Thursday, March 12 · Brew &amp; Co. is open</div>
+          <div class="topbar-title">Dashboard</div>
+          <div class="topbar-sub">Good morning, Morgan ☕</div>
         </div>
-        <div class="topbar-actions">
-          <button class="topbar-btn">📤 Export</button>
-          <button class="topbar-btn topbar-btn-primary">+ New Order</button>
-        </div>
+        <div id="pos-indicator" class="pos-indicator"></div>
       </div>
 
-      <!-- Scrollable content -->
-      <div class="content">
+      <!-- Page body -->
+      <div class="page-body">
+        <div class="page-grid">
 
-        <!-- Metrics -->
-        <div class="metrics-row">
-          <div class="metric-card">
-            <div class="metric-header">
-              <div class="metric-icon" style="background:#FEF3C7;">📋</div>
-              <span class="metric-trend up">↑ 12%</span>
-            </div>
-            <div class="metric-value">24</div>
-            <div class="metric-label">Orders Today</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-header">
-              <div class="metric-icon" style="background:#D1FAE5;">💰</div>
-              <span class="metric-trend up">↑ 8%</span>
-            </div>
-            <div class="metric-value">$312</div>
-            <div class="metric-label">Revenue Today</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-header">
-              <div class="metric-icon" style="background:#DBEAFE;">⏱️</div>
-              <span class="metric-trend down">↑ 1m</span>
-            </div>
-            <div class="metric-value">8.2m</div>
-            <div class="metric-label">Avg. Wait Time</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-header">
-              <div class="metric-icon" style="background:#F3E8FF;">🛒</div>
-              <span class="metric-trend up">↑ 5%</span>
-            </div>
-            <div class="metric-value">$13.00</div>
-            <div class="metric-label">Avg. Order Value</div>
-          </div>
-        </div>
+          <!-- Left column -->
+          <div class="left-col">
 
-        <!-- Main grid -->
-        <div class="main-grid">
-
-          <!-- Order Queue -->
-          <div class="card">
-            <div class="card-header">
-              <div style="display:flex;align-items:center;gap:10px;">
-                <span class="card-title">Order Queue</span>
-                <span style="font-size:11px;background:#FEE2E2;color:#DC2626;border-radius:6px;padding:2px 8px;font-weight:700;">3 need attention</span>
+            <!-- KPI cards -->
+            <div class="kpi-row">
+              <div class="kpi-card">
+                <div class="kpi-label">Today's Revenue</div>
+                <div class="kpi-val" id="kpi-rev">—</div>
+                <div class="kpi-trend" id="kpi-rev-trend">—</div>
               </div>
-              <span class="card-action">Full view →</span>
+              <div class="kpi-card">
+                <div class="kpi-label">Orders Today</div>
+                <div class="kpi-val" id="kpi-ord">—</div>
+                <div class="kpi-trend" id="kpi-ord-trend">—</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Active Orders</div>
+                <div class="kpi-val" id="kpi-active">
+                  <span class="live-dot"></span>
+                  <span id="kpi-active-val">—</span>
+                </div>
+                <div class="kpi-trend trend-live">Live</div>
+              </div>
+              <div class="kpi-card">
+                <div class="kpi-label">Avg Order Value</div>
+                <div class="kpi-val" id="kpi-avg">—</div>
+                <div class="kpi-trend" id="kpi-avg-trend">—</div>
+              </div>
             </div>
-            <div class="order-board">
 
-              <!-- Pending -->
-              <div class="order-col">
-                <div class="order-col-label">
-                  <span style="width:8px;height:8px;border-radius:50%;background:#DC2626;display:inline-block;"></span>
-                  Pending
-                  <span class="order-col-count">2</span>
-                </div>
-
-                <div class="order-card urgent">
-                  <div class="order-card-top">
-                    <span class="order-num">#A47</span>
-                    <span class="order-time">2 min ago</span>
-                  </div>
-                  <div class="order-code">9K4M</div>
-                  <div class="order-items-list">
-                    Vanilla Oat Latte × 1<br>Nitro Cold Brew × 1
-                  </div>
-                  <div class="order-total">$13.25 · Cash</div>
-                  <div class="order-action-row">
-                    <button class="order-action-btn order-action-confirm">Accept</button>
-                    <button class="order-action-btn order-action-details">Details</button>
-                  </div>
-                </div>
-
-                <div class="order-card urgent">
-                  <div class="order-card-top">
-                    <span class="order-num">#A46</span>
-                    <span class="order-time">4 min ago</span>
-                  </div>
-                  <div class="order-code">3H7X</div>
-                  <div class="order-items-list">Cappuccino × 2</div>
-                  <div class="order-total">$8.50</div>
-                  <div class="order-action-row">
-                    <button class="order-action-btn order-action-confirm">Accept</button>
-                    <button class="order-action-btn order-action-details">Details</button>
-                  </div>
-                </div>
+            <!-- Active order queue -->
+            <div class="queue-card">
+              <div class="queue-header">
+                <div class="live-dot"></div>
+                <span class="queue-title">Active Orders</span>
+                <span class="queue-count-badge" id="queue-badge">0</span>
+                <span class="queue-refresh-hint">Auto-refreshes every 30s</span>
               </div>
-
-              <!-- Confirmed / Preparing -->
-              <div class="order-col">
-                <div class="order-col-label">
-                  <span style="width:8px;height:8px;border-radius:50%;background:#2563EB;display:inline-block;"></span>
-                  Confirmed
-                  <span class="order-col-count">1</span>
-                </div>
-
-                <div class="order-card confirmed">
-                  <div class="order-card-top">
-                    <span class="order-num">#A45</span>
-                    <span class="order-time">6 min ago</span>
-                  </div>
-                  <div class="order-code">7X2K</div>
-                  <div class="order-items-list">
-                    Flat White × 1<br>Matcha Latte × 1
-                  </div>
-                  <div class="order-total">$11.00</div>
-                  <div class="order-action-row">
-                    <button class="order-action-btn" style="background:linear-gradient(135deg,#D97706,#F59E0B);color:white;flex:1;">Start Making</button>
-                  </div>
-                </div>
+              <div class="queue-body" id="queue-body">
+                <!-- Populated by JS -->
               </div>
-
-              <!-- Preparing / Ready -->
-              <div class="order-col">
-                <div class="order-col-label">
-                  <span style="width:8px;height:8px;border-radius:50%;background:#D97706;display:inline-block;"></span>
-                  Preparing
-                  <span class="order-col-count">1</span>
-                </div>
-
-                <div class="order-card preparing">
-                  <div class="order-card-top">
-                    <span class="order-num">#A44</span>
-                    <span class="order-time">11 min ago</span>
-                  </div>
-                  <div class="order-code">2B5R</div>
-                  <div class="order-items-list">
-                    Americano × 1
-                  </div>
-                  <div class="order-total">$3.75</div>
-                  <div class="order-action-row">
-                    <button class="order-action-btn order-action-ready">Mark Ready</button>
-                  </div>
-                </div>
-              </div>
-
             </div>
+
           </div>
 
           <!-- Right column -->
           <div class="right-col">
 
-            <!-- System status -->
-            <div class="card">
-              <div class="card-header">
-                <span class="card-title">System Status</span>
+            <!-- Subscription card -->
+            <div class="sub-card sub-card-trial" id="sub-card">
+              <div class="sub-header" id="sub-header">14-Day Free Trial</div>
+              <div class="sub-sub" id="sub-sub">8 days remaining</div>
+              <div class="sub-bar-track" id="sub-bar-track">
+                <div class="sub-bar-fill sub-bar-blue" id="sub-bar-fill" style="width:43%"></div>
               </div>
-              <div class="status-list">
-                <div class="status-row">
-                  <div class="status-icon" style="background:#D1FAE5;">🔌</div>
-                  <span class="status-label">Square POS</span>
-                  <span class="status-val status-ok">Connected</span>
-                </div>
-                <div class="status-row">
-                  <div class="status-icon" style="background:#D1FAE5;">📦</div>
-                  <span class="status-label">Catalog Sync</span>
-                  <span class="status-val status-ok">Up to date</span>
-                </div>
-                <div class="status-row">
-                  <div class="status-icon" style="background:#FEF3C7;">🌐</div>
-                  <span class="status-label">Storefront</span>
-                  <span class="status-val status-ok">Live</span>
-                </div>
-                <div class="status-row">
-                  <div class="status-icon" style="background:#FEF3C7;">💳</div>
-                  <span class="status-label">Trial</span>
-                  <span class="status-val status-warn">12 days left</span>
+              <button class="sub-cta" id="sub-cta">Upgrade to Pro →</button>
+            </div>
+
+            <!-- Quick actions -->
+            <div class="quick-actions-wrap">
+              <div class="section-label">Quick Actions</div>
+              <div class="quick-grid">
+                <button class="quick-btn">
+                  <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="12" height="10" rx="1.5"/>
+                    <path d="M6 13v2M12 13v2M5 15h8"/>
+                    <path d="M6 7h6M6 9.5h4"/>
+                  </svg>
+                  <span class="quick-label">Print Today's Report</span>
+                </button>
+                <button class="quick-btn">
+                  <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="9" r="7"/>
+                    <path d="M9 5.5V9M9 9l2.5 2.5"/>
+                    <path d="M6 9h3"/>
+                  </svg>
+                  <span class="quick-label">New Manual Order</span>
+                </button>
+                <button class="quick-btn">
+                  <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 9A6 6 0 1 1 9 3"/>
+                    <path d="M9 3l3-1.5M9 3l1.5 3"/>
+                  </svg>
+                  <span class="quick-label">Sync from Square</span>
+                </button>
+                <button class="quick-btn">
+                  <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="4" width="14" height="10" rx="2"/>
+                    <path d="M5 8h8M5 11h5"/>
+                  </svg>
+                  <span class="quick-label">View All Orders</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Recent activity -->
+            <div class="activity-wrap">
+              <div class="section-label">Recent Activity</div>
+              <div class="activity-list">
+                <div class="activity-inner" id="activity-list">
+                  <!-- Populated by JS -->
                 </div>
               </div>
             </div>
 
-            <!-- Quick Actions -->
-            <div class="card">
-              <div class="card-header">
-                <span class="card-title">Quick Actions</span>
-              </div>
-              <div class="quick-actions">
-                <div class="quick-btn">
-                  <span class="quick-btn-icon">🍵</span>
-                  <span class="quick-btn-label">Edit Menu</span>
-                </div>
-                <div class="quick-btn">
-                  <span class="quick-btn-icon">🔄</span>
-                  <span class="quick-btn-label">Sync Catalog</span>
-                </div>
-                <div class="quick-btn">
-                  <span class="quick-btn-icon">🎨</span>
-                  <span class="quick-btn-label">Edit Brand</span>
-                </div>
-                <div class="quick-btn">
-                  <span class="quick-btn-icon">📊</span>
-                  <span class="quick-btn-label">Reports</span>
-                </div>
-              </div>
-            </div>
+          </div>
 
-            <!-- Revenue sparkline -->
-            <div class="card">
-              <div class="card-header">
-                <span class="card-title">Revenue This Week</span>
-                <span style="font-size:13px;font-weight:700;color:var(--admin-text);">$1,840</span>
-              </div>
-              <div class="chart-area">
-                <div class="chart-bars">
-                  <div class="chart-bar" style="height:45%;background:var(--admin-border);"></div>
-                  <div class="chart-bar" style="height:65%;background:var(--admin-border);"></div>
-                  <div class="chart-bar" style="height:52%;background:var(--admin-border);"></div>
-                  <div class="chart-bar" style="height:80%;background:var(--admin-border);"></div>
-                  <div class="chart-bar" style="height:70%;background:var(--admin-border);"></div>
-                  <div class="chart-bar" style="height:90%;background:var(--admin-border);"></div>
-                  <div class="chart-bar" style="height:75%;background:linear-gradient(180deg,#6B4226,#D4A574);"></div>
-                </div>
-                <div class="chart-labels">
-                  <div class="chart-label">Mon</div>
-                  <div class="chart-label">Tue</div>
-                  <div class="chart-label">Wed</div>
-                  <div class="chart-label">Thu</div>
-                  <div class="chart-label">Fri</div>
-                  <div class="chart-label">Sat</div>
-                  <div class="chart-label" style="font-weight:700;color:var(--admin-text);">Today</div>
-                </div>
-              </div>
-            </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-          </div><!-- /right-col -->
-        </div><!-- /main-grid -->
-      </div><!-- /content -->
-    </div><!-- /main -->
-  </div><!-- /frame -->
+  <script>
+    /* ── Scenario data ── */
+    const SCENARIOS = {
+      busy: {
+        rev: '$284', ord: 38, active: 6, avg: '$7.47',
+        revTrend: '↑ 12% vs yesterday', ordTrend: '↑ 4 orders', avgTrend: '↓ $0.22',
+        revTrendClass: 'trend-up', ordTrendClass: 'trend-up', avgTrendClass: 'trend-down',
+        queue: [
+          { code: 'A3F8', name: 'Alex M.', items: 'Oat Milk Latte · Cold Brew', status: 'pending', time: '1m ago', late: false },
+          { code: 'D4J5', name: 'Casey L.', items: 'Chai Latte · Iced Matcha', status: 'preparing', time: '9m ago', late: true },
+          { code: 'B2K9', name: 'Jordan', items: 'Cold Brew × 2', status: 'preparing', time: '6m ago', late: false },
+          { code: 'C7M1', name: 'Sam W.', items: 'Matcha Latte · Oat Milk', status: 'ready', time: '3m ago', late: false },
+          { code: 'E9P3', name: 'Riley', items: 'Vanilla Latte', status: 'pending', time: '2m ago', late: false },
+          { code: 'F1Q6', name: 'Taylor', items: 'Espresso × 2 · Croissant', status: 'preparing', time: '12m ago', late: true }
+        ],
+        activity: [
+          { type: 'check', text: 'Order F1Q6 marked preparing', time: '2m ago' },
+          { type: 'dollar', text: 'Payment received · $14.50', time: '4m ago' },
+          { type: 'sync', text: 'Menu synced from Square', time: '11m ago' },
+          { type: 'check', text: 'Order Z9W2 completed', time: '14m ago' }
+        ]
+      },
+      quiet: {
+        rev: '$47', ord: 6, active: 1, avg: '$7.83',
+        revTrend: '↓ 63% vs yesterday', ordTrend: '↓ 5 orders', avgTrend: '↑ $0.14',
+        revTrendClass: 'trend-down', ordTrendClass: 'trend-down', avgTrendClass: 'trend-up',
+        queue: [
+          { code: 'A1B2', name: 'Dana K.', items: 'Espresso · Croissant', status: 'preparing', time: '4m ago', late: false }
+        ],
+        activity: [
+          { type: 'check', text: 'Order P3X1 completed', time: '18m ago' },
+          { type: 'dollar', text: 'Payment received · $8.75', time: '22m ago' }
+        ]
+      },
+      rush: {
+        rev: '$631', ord: 84, active: 12, avg: '$7.51',
+        revTrend: '↑ 34% vs yesterday', ordTrend: '↑ 18 orders', avgTrend: '↑ $0.26',
+        revTrendClass: 'trend-up', ordTrendClass: 'trend-up', avgTrendClass: 'trend-up',
+        queue: [
+          { code: 'R1A3', name: 'Chris B.', items: 'Oat Latte × 2', status: 'pending', time: '1m ago', late: false },
+          { code: 'R2C4', name: 'Kim T.', items: 'Cold Brew · Matcha', status: 'pending', time: '2m ago', late: false },
+          { code: 'R3D5', name: 'Pat H.', items: 'Chai × 3', status: 'preparing', time: '8m ago', late: false },
+          { code: 'R4E6', name: 'Lou P.', items: 'Vanilla Latte × 2', status: 'preparing', time: '11m ago', late: true },
+          { code: 'R5F7', name: 'Alex W.', items: 'Espresso · Cold Brew × 2', status: 'ready', time: '5m ago', late: false },
+          { code: 'R6G8', name: 'Sam J.', items: 'Matcha × 4', status: 'pending', time: '1m ago', late: false },
+          { code: 'R7H9', name: 'Jordan M.', items: 'Oat Milk Latte', status: 'preparing', time: '14m ago', late: true }
+        ],
+        activity: [
+          { type: 'warn', text: 'POS connection restored', time: 'Just now' },
+          { type: 'check', text: 'Order A9B3 completed', time: '1m ago' },
+          { type: 'dollar', text: 'Payment received · $31.25', time: '2m ago' },
+          { type: 'check', text: 'Order Z4C8 completed', time: '3m ago' }
+        ]
+      }
+    };
+
+    /* ── Status label maps ── */
+    const STATUS_CHIP_CLASS = { pending: 'chip-pending', preparing: 'chip-preparing', ready: 'chip-ready' };
+    const STATUS_BADGE_CLASS = { pending: 'badge-pending', preparing: 'badge-preparing', ready: 'badge-ready' };
+    const STATUS_LABEL = { pending: 'Pending', preparing: 'Preparing', ready: 'Ready' };
+    const ADVANCE_LABEL = { pending: 'Start →', preparing: 'Ready →', ready: 'Complete ✓' };
+
+    /* ── Activity icon SVGs ── */
+    const ACT_ICONS = {
+      check: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,7 5.5,10.5 12,4"/></svg>`,
+      dollar: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 1v12M4.5 3.5h4a2 2 0 0 1 0 4h-3a2 2 0 0 0 0 4H9"/></svg>`,
+      sync: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7A5 5 0 1 1 7 2"/><path d="M7 2l2.5-1.3M7 2l1.3 2.5"/></svg>`,
+      warn: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1L1 12h12L7 1z"/><path d="M7 5.5v3M7 10.5v.5"/></svg>`
+    };
+
+    /* ── setScenario ── */
+    function setScenario(name) {
+      const s = SCENARIOS[name];
+      if (!s) return;
+
+      // Update KPI values
+      document.getElementById('kpi-rev').innerHTML = s.rev;
+      document.getElementById('kpi-rev-trend').textContent = s.revTrend;
+      document.getElementById('kpi-rev-trend').className = 'kpi-trend ' + s.revTrendClass;
+
+      document.getElementById('kpi-ord').textContent = s.ord;
+      document.getElementById('kpi-ord-trend').textContent = s.ordTrend;
+      document.getElementById('kpi-ord-trend').className = 'kpi-trend ' + s.ordTrendClass;
+
+      document.getElementById('kpi-active-val').textContent = s.active;
+
+      document.getElementById('kpi-avg').textContent = s.avg;
+      document.getElementById('kpi-avg-trend').textContent = s.avgTrend;
+      document.getElementById('kpi-avg-trend').className = 'kpi-trend ' + s.avgTrendClass;
+
+      // Update queue count badge
+      document.getElementById('queue-badge').textContent = s.queue.length;
+
+      // Rebuild queue rows
+      const qBody = document.getElementById('queue-body');
+      if (s.queue.length === 0) {
+        qBody.innerHTML = '<div class="queue-empty">No active orders right now</div>';
+      } else {
+        qBody.innerHTML = s.queue.map(order => {
+          const chipCls = STATUS_CHIP_CLASS[order.status] || 'chip-pending';
+          const badgeCls = STATUS_BADGE_CLASS[order.status] || 'badge-pending';
+          const label = STATUS_LABEL[order.status] || order.status;
+          const advLabel = ADVANCE_LABEL[order.status] || '→';
+          const timeCls = order.late ? 'order-time time-late' : 'order-time';
+          return `<div class="queue-row">
+            <span class="code-chip ${chipCls}">${order.code}</span>
+            <div class="order-info">
+              <div class="order-name">${order.name}</div>
+              <div class="order-items">${order.items}</div>
+            </div>
+            <span class="status-badge ${badgeCls}">${label}</span>
+            <span class="${timeCls}">${order.time}</span>
+            <button class="advance-btn">${advLabel}</button>
+          </div>`;
+        }).join('');
+      }
+
+      // Rebuild activity feed
+      const aList = document.getElementById('activity-list');
+      aList.innerHTML = s.activity.map(evt => {
+        return `<div class="activity-item">
+          <div class="act-icon ${evt.type}">${ACT_ICONS[evt.type] || ''}</div>
+          <span class="act-text">${evt.text}</span>
+          <span class="act-time">${evt.time}</span>
+        </div>`;
+      }).join('');
+
+      // Mark scenario button active
+      ['busy', 'quiet', 'rush'].forEach(n => {
+        const btn = document.getElementById('btn-scenario-' + n);
+        if (btn) btn.classList.toggle('active', n === name);
+      });
+    }
+
+    /* ── setPOS ── */
+    function setPOS(state) {
+      const indicator = document.getElementById('pos-indicator');
+      if (state === 'synced') {
+        indicator.innerHTML = `<span class="pos-dot pos-dot-green"></span><span class="pos-label-ok">POS Synced</span>`;
+      } else {
+        indicator.innerHTML = `<span class="pos-dot pos-dot-red"></span><span class="pos-label-err">POS Error</span>`;
+      }
+      // Mark POS button active
+      ['synced', 'error'].forEach(n => {
+        const btn = document.getElementById('btn-pos-' + n);
+        if (btn) btn.classList.toggle('active', n === state);
+      });
+    }
+
+    /* ── setSub ── */
+    function setSub(state) {
+      const card = document.getElementById('sub-card');
+      const header = document.getElementById('sub-header');
+      const sub = document.getElementById('sub-sub');
+      const track = document.getElementById('sub-bar-track');
+      const fill = document.getElementById('sub-bar-fill');
+      const cta = document.getElementById('sub-cta');
+
+      // Remove all state classes
+      card.classList.remove('sub-card-trial', 'sub-card-grace', 'sub-card-active');
+      fill.classList.remove('sub-bar-blue', 'sub-bar-red', 'sub-bar-green', 'sub-bar-hidden');
+      cta.classList.remove('sub-cta-red', 'sub-cta-green');
+      track.style.display = '';
+
+      if (state === 'trial') {
+        card.classList.add('sub-card-trial');
+        header.textContent = '14-Day Free Trial';
+        sub.textContent = '8 days remaining';
+        fill.classList.add('sub-bar-blue');
+        fill.style.width = '43%';
+        cta.textContent = 'Upgrade to Pro →';
+      } else if (state === 'grace') {
+        card.classList.add('sub-card-grace');
+        header.textContent = 'Payment Failed ⚠';
+        sub.textContent = 'Re-activate in 3 days or lose access';
+        fill.classList.add('sub-bar-red');
+        fill.style.width = '100%';
+        cta.textContent = 'Update Payment →';
+        cta.classList.add('sub-cta-red');
+      } else if (state === 'active') {
+        card.classList.add('sub-card-active');
+        header.textContent = 'Pro Plan · Active ✓';
+        sub.textContent = 'Next billing: Apr 3, 2026';
+        track.style.display = 'none';
+        cta.textContent = 'Manage Plan';
+        cta.classList.add('sub-cta-green');
+      }
+
+      // Mark sub button active
+      ['trial', 'grace', 'active'].forEach(n => {
+        const btn = document.getElementById('btn-sub-' + n);
+        if (btn) btn.classList.toggle('active', n === state);
+      });
+    }
+
+    /* ── Initialize ── */
+    window.onload = function() {
+      setScenario('busy');
+      setPOS('synced');
+      setSub('trial');
+    };
+  </script>
 </body>
 </html>
