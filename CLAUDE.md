@@ -91,3 +91,20 @@ When modifying types in `@drink-ux/shared`, rebuild it before other packages can
 | mobile  | 3000     |
 | api     | 3001     |
 | admin   | 3002     |
+
+## Project Rules
+
+- **Work only on features/issue branches.** Branch name: `{agent-name}/{issue-id}-description`
+- **Never push to `develop` or `main`.** Always merge via PR.
+- **Run tests before pushing.** `npm test` in the relevant package.
+
+## gstack Skills (Structured Thinking)
+
+We have ported [gstack](https://github.com/garrytan/gstack) skills to this environment. Use them to improve plan quality and execution rigor:
+
+- `activate_skill("plan-ceo-review")`: Use BEFORE starting a large task to pressure-test the scope and product vision.
+- `activate_skill("plan-eng-review")`: Use BEFORE writing code to lock in architecture, data flows, and edge cases.
+- `activate_skill("review")`: Use BEFORE landing a PR to hunt for race conditions, security issues, and structural bugs.
+- `activate_skill("ship")`: Use to automate the sync-test-push-PR workflow.
+- `activate_skill("browse")`: Use for QA, documentation reading, or verifying deployments (leverages `mcp_chrome-devtools`).
+- `activate_skill("retro")`: Use to generate weekly engineering retrospectives.
