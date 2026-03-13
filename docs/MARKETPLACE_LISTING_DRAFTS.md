@@ -18,7 +18,7 @@ This document contains draft content for the Square App Marketplace listing for 
 ## 2. Key Features (Exactly Three)
 
 1.  **Visual Builder Experience:** Transform your Square menu into a beautiful, visual drink builder. Customers "see" their drink come together in real-time.
-2.  **Zero-Configuration Sync:** Connect your Square account and we'll import your categories, items, and modifiers automatically. No double-entry required.
+2.  **Quick-Setup Sync:** Connect Square, categorize your items with our guided wizard, and go live in under 30 minutes. No double-entry required.
 3.  **Barista-Native Ordering:** Orders flow directly into your Square POS with the correct item IDs, taxes, and modifiers. Fast, accurate, and staff-friendly.
 
 ---
@@ -30,7 +30,7 @@ Give your coffee shop the premium digital experience your craft deserves. **Drin
 Stop forcing your customers to scroll through long, text-heavy lists of modifiers. With our **Visual Drink Builder**, customers can select their base, customize milk, choose syrups, and see their drink being "built" on-screen. It's an intuitive, luxury experience that reflects the quality of your brand.
 
 *   **Premium UX:** Increase order values with a beautiful, high-conversion interface.
-*   **Simple Setup:** Connect Square, categorize your items, and you're live in under 30 minutes.
+*   **Simple Setup:** Connect Square, categorize your items with our guided wizard, and you're live in under 30 minutes.
 *   **Mobile-First:** A smooth, fast experience for customers on any mobile device.
 *   **Accurate Orders:** Every customization is mapped directly to your Square catalog, reducing staff errors and ensuring price accuracy.
 
@@ -47,9 +47,9 @@ Stop forcing your customers to scroll through long, text-heavy lists of modifier
 
 ## 5. Pricing Details
 
-*   **Founding Member Rate:** **$49/month** (Limited to first 50 customers).
-*   **Standard Rate:** $79/month.
-*   **Free Trial:** 30 days.
+*   **Founding Member Rate:** **$29/month** (Limited to first 10 shops).
+*   **Standard Rate:** $59/month ($590/year annual plan available).
+*   **Free Trial:** 14 days (up to 200 orders).
 *   **No Setup Fee.**
 *   **No per-transaction fees** (Standard Square processing fees still apply).
 
