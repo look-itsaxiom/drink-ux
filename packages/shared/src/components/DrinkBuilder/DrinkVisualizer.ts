@@ -639,7 +639,7 @@ export class DrinkVisualizer {
         color: '#FFFFF4',
         opacity: 0.96,
         height: whippedHeight,
-        order: order++,
+        order,
         animated: true,
         animationType: 'foam',
       });

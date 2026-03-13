@@ -177,7 +177,7 @@ export function useOrderStatus(options: UseOrderStatusOptions): UseOrderStatusRe
       isMountedRef.current = false;
       clearPolling();
     };
-  }, [orderId, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [orderId, enabled]);
 
   // Setup polling after initial fetch
   useEffect(() => {
@@ -195,7 +195,7 @@ export function useOrderStatus(options: UseOrderStatusOptions): UseOrderStatusRe
     return () => {
       clearPolling();
     };
-  }, [enabled, orderId, order?.status, startPolling, clearPolling]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled, orderId, order?.status, startPolling, clearPolling]);
 
   return {
     order,

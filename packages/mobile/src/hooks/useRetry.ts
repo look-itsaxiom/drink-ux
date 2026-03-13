@@ -181,7 +181,6 @@ export function useRetry<T>(options: UseRetryOptions<T>): UseRetryResult<T> {
         clearTimeout(retryTimeoutRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
 
   return {
