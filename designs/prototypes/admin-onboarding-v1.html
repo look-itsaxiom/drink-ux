@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200px, initial-scale=1.0">
+  <title>Drink-UX — Admin Onboarding Wizard v1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Neutral admin theme — adapts branding in the preview panel only */
+    :root {
+      --theme-primary: #6B4226;
+      --theme-secondary: #D4A574;
+      --theme-background: #FDF8F5;
+      --theme-surface: #FFFFFF;
+      --theme-text: #2C1810;
+      --theme-textSecondary: #8B7E74;
+      --theme-border: rgba(107, 66, 38, 0.15);
+      --theme-shadow: rgba(107, 66, 38, 0.12);
+      --theme-gradient-primary: linear-gradient(135deg, #6B4226, #a0622f);
+
+      /* Admin chrome colors — neutral gray */
+      --admin-bg: #F7F8FA;
+      --admin-surface: #FFFFFF;
+      --admin-border: #E5E7EB;
+      --admin-text: #111827;
+      --admin-text-secondary: #6B7280;
+      --admin-shadow: rgba(0,0,0,0.06);
+      --accent-blue: #2563EB;
+      --accent-green: #059669;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: #EAECF0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 24px; }
+
+    /* Top bar */
+    .top-bar {
+      width: 100%; max-width: 1000px;
+      display: flex; gap: 8px; align-items: center;
+      margin-bottom: 16px; background: white;
+      padding: 10px 16px; border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      flex-wrap: wrap; justify-content: center;
+    }
+    .top-bar span { font-size: 12px; font-weight: 600; color: #666; }
+    .step-btn { border: none; border-radius: 8px; padding: 5px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; background: #E5E7EB; color: #555; transition: all 0.2s; }
+    .step-btn.active { background: #111827; color: white; }
+    .step-btn.done { background: #059669; color: white; }
+
+    /* Main wizard frame */
+    .wizard-frame {
+      width: 100%; max-width: 1000px;
+      background: var(--admin-surface);
+      border-radius: 24px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      min-height: 620px;
+    }
+
+    /* Left sidebar */
+    .wizard-sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      background: var(--admin-text);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-logo {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 40px;
+    }
+    .sidebar-logo-icon {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: var(--theme-gradient-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .sidebar-logo-name {
+      font-size: 17px; font-weight: 800; color: white; letter-spacing: -0.3px;
+    }
+
+    .sidebar-steps { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+
+    .sidebar-step {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .sidebar-step:hover { background: rgba(255,255,255,0.06); }
+    .sidebar-step.active { background: rgba(255,255,255,0.12); }
+
+    .step-number {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.5);
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .sidebar-step.active .step-number {
+      background: var(--theme-gradient-primary);
+      border-color: transparent;
+      color: white;
+    }
+    .sidebar-step.done .step-number {
+      background: var(--accent-green);
+      border-color: transparent;
+      color: white;
+    }
+    .step-label {
+      font-size: 13px; font-weight: 600;
+      color: rgba(255,255,255,0.45);
+    }
+    .sidebar-step.active .step-label { color: white; }
+    .sidebar-step.done .step-label { color: rgba(255,255,255,0.7); }
+
+    .sidebar-footer {
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-footer-text {
+      font-size: 11px; color: rgba(255,255,255,0.3);
+      line-height: 1.5;
+    }
+    .sidebar-footer-link {
+      font-size: 12px; color: rgba(255,255,255,0.45);
+      margin-top: 8px; cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Main content area */
+    .wizard-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Progress bar */
+    .wizard-progress {
+      height: 3px;
+      background: var(--admin-border);
+      flex-shrink: 0;
+    }
+    .wizard-progress-fill {
+      height: 100%;
+      background: var(--theme-gradient-primary);
+      transition: width 0.4s ease;
+    }
+
+    /* Step content */
+    .step-content {
+      flex: 1;
+      padding: 40px 48px;
+      overflow-y: auto;
+      display: none;
+    }
+    .step-content.active { display: flex; flex-direction: column; }
+
+    .step-eyebrow {
+      font-size: 12px; font-weight: 700;
+      color: var(--theme-primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .step-title {
+      font-size: 28px; font-weight: 800;
+      color: var(--admin-text);
+      letter-spacing: -0.8px; line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .step-subtitle {
+      font-size: 14px; color: var(--admin-text-secondary);
+      line-height: 1.5; margin-bottom: 32px;
+    }
+
+    /* Step footer */
+    .step-footer {
+      margin-top: auto;
+      padding-top: 24px;
+      border-top: 1px solid var(--admin-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      padding-bottom: 4px;
+    }
+
+    .btn-back {
+      height: 44px; padding: 0 20px;
+      border-radius: 12px;
+      background: transparent;
+      border: 1.5px solid var(--admin-border);
+      font-size: 14px; font-weight: 600;
+      color: var(--admin-text-secondary);
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+    }
+    .btn-next {
+      height: 44px; padding: 0 28px;
+      border-radius: 12px;
+      background: var(--theme-gradient-primary);
+      border: none;
+      font-size: 14px; font-weight: 700;
+      color: white;
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+      box-shadow: 0 3px 12px var(--theme-shadow);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-next-secondary {
+      font-size: 13px; font-weight: 600;
+      color: var(--admin-text-secondary);
+      cursor: pointer; background: none; border: none;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* ── Step 1: Square Connect ────────────────────────────── */
+    .square-connect-card {
+      background: #1A1A2E;
+      border-radius: 20px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .square-logo {
+      width: 56px; height: 56px;
+      background: black;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 28px; font-weight: 900; color: white;
+      font-family: 'Outfit', sans-serif;
+    }
+    .square-title { font-size: 18px; font-weight: 700; color: white; margin-bottom: 8px; }
+    .square-subtitle { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 24px; line-height: 1.5; }
+    .square-btn {
+      background: #3ebf1f;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 28px;
+      font-size: 15px; font-weight: 700; color: white;
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+
+    .permissions-list {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .permission-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      background: #F9FAFB;
+      border-radius: 12px;
+      border: 1px solid var(--admin-border);
+    }
+    .perm-icon { font-size: 18px; }
+    .perm-text { font-size: 13px; color: var(--admin-text); font-weight: 500; }
+    .perm-desc { font-size: 11px; color: var(--admin-text-secondary); margin-top: 1px; }
+    .perm-check { margin-left: auto; color: var(--accent-green); font-size: 16px; }
+
+    /* ── Step 2: Path Selection ───────────────────────────── */
+    .path-cards { display: flex; flex-direction: column; gap: 12px; }
+    .path-card {
+      border: 2px solid var(--admin-border);
+      border-radius: 16px;
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .path-card.selected {
+      border-color: var(--theme-primary);
+      background: rgba(107,66,38,0.04);
+    }
+    .path-icon {
+      width: 44px; height: 44px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .path-title { font-size: 15px; font-weight: 700; color: var(--admin-text); }
+    .path-desc { font-size: 12px; color: var(--admin-text-secondary); margin-top: 2px; }
+    .path-badge {
+      margin-left: auto; padding: 3px 10px;
+      border-radius: 8px;
+      font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .path-radio {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--admin-border);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.2s;
+    }
+    .path-card.selected .path-radio {
+      background: var(--theme-primary);
+      border-color: var(--theme-primary);
+    }
+    .path-card.selected .path-radio::after {
+      content: '';
+      width: 8px; height: 8px;
+      background: white; border-radius: 50%;
+    }
+
+    /* ── Step 3: Catalog Preview ──────────────────────────── */
+    .catalog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .catalog-item {
+      border: 1.5px solid var(--admin-border);
+      border-radius: 14px; padding: 14px;
+      background: #FAFAFA;
+    }
+    .catalog-item.mapped { border-color: var(--accent-green); background: rgba(5,150,105,0.04); }
+    .catalog-item.review { border-color: #F59E0B; background: rgba(245,158,11,0.04); }
+    .cat-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .cat-icon { font-size: 18px; }
+    .cat-name { font-size: 13px; font-weight: 700; color: var(--admin-text); }
+    .cat-badge {
+      margin-left: auto; font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 5px;
+    }
+    .badge-green { background: rgba(5,150,105,0.12); color: var(--accent-green); }
+    .badge-yellow { background: rgba(245,158,11,0.12); color: #D97706; }
+    .item-list { display: flex; flex-direction: column; gap: 4px; }
+    .item-row { display: flex; justify-content: space-between; font-size: 12px; }
+    .item-row-name { color: var(--admin-text); font-weight: 500; }
+    .item-row-price { color: var(--admin-text-secondary); }
+
+    .catalog-summary {
+      display: flex; gap: 12px; margin-bottom: 16px;
+    }
+    .summary-stat {
+      flex: 1; background: #F9FAFB;
+      border-radius: 12px; padding: 12px 14px;
+      border: 1px solid var(--admin-border);
+    }
+    .stat-value { font-size: 22px; font-weight: 800; color: var(--admin-text); letter-spacing: -0.5px; }
+    .stat-label { font-size: 11px; color: var(--admin-text-secondary); margin-top: 2px; font-weight: 500; }
+
+    /* ── Step 4: Branding ─────────────────────────────────── */
+    .branding-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    .branding-controls { display: flex; flex-direction: column; gap: 16px; }
+    .control-label { font-size: 13px; font-weight: 700; color: var(--admin-text); margin-bottom: 6px; }
+    .color-row { display: flex; gap: 8px; align-items: center; }
+    .color-swatch {
+      width: 36px; height: 36px; border-radius: 10px;
+      border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      flex-shrink: 0; cursor: pointer;
+    }
+    .color-input {
+      flex: 1; height: 36px;
+      border: 1.5px solid var(--admin-border);
+      border-radius: 10px; padding: 0 12px;
+      font-size: 13px; font-weight: 600;
+      font-family: 'Outfit', monospace; color: var(--admin-text);
+      background: #FAFAFA;
+    }
+    .logo-upload {
+      height: 80px; border: 2px dashed var(--admin-border);
+      border-radius: 14px; display: flex; align-items: center;
+      justify-content: center; gap: 10px; cursor: pointer;
+      transition: border-color 0.2s; background: #FAFAFA;
+    }
+    .logo-upload:hover { border-color: var(--theme-primary); }
+    .upload-icon { font-size: 22px; }
+    .upload-text { font-size: 13px; font-weight: 600; color: var(--admin-text-secondary); }
+
+    /* Preview phone */
+    .preview-phone {
+      background: var(--theme-background);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+      border: 2px solid rgba(255,255,255,0.8);
+    }
+    .preview-header {
+      background: var(--theme-primary);
+      padding: 12px 16px 14px;
+    }
+    .preview-shop-name { font-size: 14px; font-weight: 700; color: white; }
+    .preview-tagline { font-size: 10px; color: rgba(255,255,255,0.6); margin-top: 1px; }
+    .preview-search {
+      background: rgba(255,255,255,0.15); border-radius: 8px;
+      padding: 6px 10px; margin-top: 8px;
+      font-size: 11px; color: rgba(255,255,255,0.5);
+    }
+    .preview-body { padding: 12px; }
+    .preview-cat-row { display: flex; gap: 6px; margin-bottom: 10px; }
+    .preview-cat-pill {
+      padding: 4px 10px; border-radius: 10px;
+      font-size: 10px; font-weight: 600;
+    }
+    .preview-cat-pill.active { background: var(--theme-primary); color: white; }
+    .preview-cat-pill.inactive { background: rgba(0,0,0,0.06); color: var(--admin-text-secondary); }
+    .preview-item {
+      background: white; border-radius: 10px; padding: 10px;
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .preview-item-dot {
+      width: 32px; height: 32px; border-radius: 8px;
+      flex-shrink: 0; background: rgba(107,66,38,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    .preview-item-name { font-size: 11px; font-weight: 700; flex: 1; color: var(--admin-text); }
+    .preview-item-price { font-size: 11px; font-weight: 700; color: var(--theme-primary); }
+    .preview-item-add {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: var(--theme-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: white; font-weight: 700;
+    }
+
+    /* ── Step 5: Review ───────────────────────────────────── */
+    .review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .review-card {
+      background: #F9FAFB;
+      border-radius: 16px; padding: 16px;
+      border: 1px solid var(--admin-border);
+    }
+    .review-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .review-card-icon {
+      width: 32px; height: 32px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .review-card-title { font-size: 13px; font-weight: 700; color: var(--admin-text); }
+    .review-item { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .review-key { font-size: 12px; color: var(--admin-text-secondary); }
+    .review-val { font-size: 12px; font-weight: 600; color: var(--admin-text); }
+
+    .launch-card {
+      grid-column: 1 / -1;
+      background: var(--theme-gradient-primary);
+      border-radius: 16px; padding: 20px;
+      display: flex; align-items: center; gap: 20px;
+      color: white;
+    }
+    .launch-icon { font-size: 36px; }
+    .launch-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+    .launch-sub { font-size: 12px; opacity: 0.75; }
+    .launch-cta {
+      margin-left: auto;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 10px; padding: 10px 20px;
+      font-size: 14px; font-weight: 700; color: white;
+      cursor: pointer; font-family: 'Outfit', sans-serif;
+      white-space: nowrap; backdrop-filter: blur(4px);
+    }
+
+    .trial-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(5,150,105,0.1); color: var(--accent-green);
+      border-radius: 8px; padding: 6px 12px;
+      font-size: 13px; font-weight: 700; margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <span>Step:</span>
+    <button class="step-btn done" onclick="goStep(1,this)">1 · Square</button>
+    <button class="step-btn done" onclick="goStep(2,this)">2 · Path</button>
+    <button class="step-btn done" onclick="goStep(3,this)">3 · Catalog</button>
+    <button class="step-btn active" onclick="goStep(4,this)">4 · Branding</button>
+    <button class="step-btn" onclick="goStep(5,this)">5 · Review</button>
+  </div>
+
+  <!-- Wizard Frame -->
+  <div class="wizard-frame">
+
+    <!-- Sidebar -->
+    <div class="wizard-sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">☕</div>
+        <div class="sidebar-logo-name">Drink-UX</div>
+      </div>
+
+      <div class="sidebar-steps" id="sidebarSteps">
+        <div class="sidebar-step done" id="sStep1" onclick="goStep(1, null)">
+          <div class="step-number">✓</div>
+          <div class="step-label">Connect Square POS</div>
+        </div>
+        <div class="sidebar-step done" id="sStep2" onclick="goStep(2, null)">
+          <div class="step-number">✓</div>
+          <div class="step-label">Choose Setup Path</div>
+        </div>
+        <div class="sidebar-step done" id="sStep3" onclick="goStep(3, null)">
+          <div class="step-number">✓</div>
+          <div class="step-label">Review Catalog</div>
+        </div>
+        <div class="sidebar-step active" id="sStep4" onclick="goStep(4, null)">
+          <div class="step-number" style="background:var(--theme-gradient-primary);border-color:transparent;color:white;">4</div>
+          <div class="step-label" style="color:white;">Brand Your Storefront</div>
+        </div>
+        <div class="sidebar-step" id="sStep5" onclick="goStep(5, null)">
+          <div class="step-number">5</div>
+          <div class="step-label">Review & Launch</div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-text">All data is encrypted and never shared with third parties.</div>
+        <div class="sidebar-footer-link">Need help? Chat with us</div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="wizard-content">
+      <div class="wizard-progress">
+        <div class="wizard-progress-fill" id="progressFill" style="width: 80%;"></div>
+      </div>
+
+      <!-- ── Step 1: Connect Square ─────────────────────── -->
+      <div class="step-content" id="step1">
+        <div class="step-eyebrow">Step 1 of 5</div>
+        <div class="step-title">Connect your Square POS</div>
+        <div class="step-subtitle">We'll import your existing catalog so you don't have to rebuild from scratch. This takes about 30 seconds.</div>
+
+        <div class="square-connect-card">
+          <div class="square-logo">■</div>
+          <div class="square-title">Connect to Square</div>
+          <div class="square-subtitle">You'll be redirected to Square to authorize Drink-UX to access your catalog and process orders.</div>
+          <button class="square-btn">
+            <span style="font-size:18px;">■</span>
+            Connect with Square
+          </button>
+        </div>
+
+        <div class="permissions-list">
+          <div class="permission-row">
+            <span class="perm-icon">📦</span>
+            <div>
+              <div class="perm-text">Read your catalog</div>
+              <div class="perm-desc">Import items, modifiers, and categories</div>
+            </div>
+            <span class="perm-check">✓</span>
+          </div>
+          <div class="permission-row">
+            <span class="perm-icon">🛒</span>
+            <div>
+              <div class="perm-text">Create orders</div>
+              <div class="perm-desc">Send mobile orders to your POS system</div>
+            </div>
+            <span class="perm-check">✓</span>
+          </div>
+          <div class="permission-row">
+            <span class="perm-icon">💳</span>
+            <div>
+              <div class="perm-text">Process payments</div>
+              <div class="perm-desc">Accept card payments through Square</div>
+            </div>
+            <span class="perm-check">✓</span>
+          </div>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn-back-secondary btn-next-secondary">Back</button>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <button class="btn-next-secondary">Skip — add POS later</button>
+            <button class="btn-next" onclick="goStep(2, null)">
+              Continue
+              <svg width="16" height="16" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Step 2: Choose Path ────────────────────────── -->
+      <div class="step-content" id="step2">
+        <div class="step-eyebrow">Step 2 of 5</div>
+        <div class="step-title">How do you want to set up your menu?</div>
+        <div class="step-subtitle">Choose the approach that best fits your situation. You can always change things later.</div>
+
+        <div class="path-cards">
+          <div class="path-card selected" onclick="selectPath(this)">
+            <div class="path-radio"></div>
+            <div class="path-icon" style="background:#DBEAFE;">📦</div>
+            <div>
+              <div class="path-title">Import from Square</div>
+              <div class="path-desc">Pull in your existing catalog — categories, items, and modifiers. We'll map them for you.</div>
+            </div>
+            <div class="path-badge" style="background:#DBEAFE;color:#1D4ED8;">Recommended</div>
+          </div>
+          <div class="path-card" onclick="selectPath(this)">
+            <div class="path-radio"></div>
+            <div class="path-icon" style="background:#D1FAE5;">🎨</div>
+            <div>
+              <div class="path-title">Start from a template</div>
+              <div class="path-desc">Choose a coffee shop template and customize it. Good if your Square catalog isn't set up yet.</div>
+            </div>
+            <div class="path-badge" style="background:#D1FAE5;color:#059669;">Fastest</div>
+          </div>
+          <div class="path-card" onclick="selectPath(this)">
+            <div class="path-radio"></div>
+            <div class="path-icon" style="background:#FEF3C7;">🛠️</div>
+            <div>
+              <div class="path-title">Build from scratch</div>
+              <div class="path-desc">Full control. Create your own categories, drinks, and modifiers from the ground up.</div>
+            </div>
+            <div></div>
+          </div>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn-back" onclick="goStep(1, null)">Back</button>
+          <button class="btn-next" onclick="goStep(3, null)">
+            Continue
+            <svg width="16" height="16" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Step 3: Catalog Review ─────────────────────── -->
+      <div class="step-content" id="step3">
+        <div class="step-eyebrow">Step 3 of 5</div>
+        <div class="step-title">Your catalog looks great 🎉</div>
+        <div class="step-subtitle">We imported your Square catalog. Everything mapped successfully. You can refine it later in Menu Manager.</div>
+
+        <div class="catalog-summary">
+          <div class="summary-stat">
+            <div class="stat-value">24</div>
+            <div class="stat-label">Menu items</div>
+          </div>
+          <div class="summary-stat">
+            <div class="stat-value">5</div>
+            <div class="stat-label">Categories</div>
+          </div>
+          <div class="summary-stat">
+            <div class="stat-value">18</div>
+            <div class="stat-label">Modifiers</div>
+          </div>
+          <div class="summary-stat">
+            <div class="stat-value" style="color:var(--accent-green);">100%</div>
+            <div class="stat-label">Mapped</div>
+          </div>
+        </div>
+
+        <div class="catalog-grid">
+          <div class="catalog-item mapped">
+            <div class="cat-header">
+              <span class="cat-icon">☕</span>
+              <span class="cat-name">Espresso Drinks</span>
+              <span class="cat-badge badge-green">8 items</span>
+            </div>
+            <div class="item-list">
+              <div class="item-row"><span class="item-row-name">Americano</span><span class="item-row-price">$3.75</span></div>
+              <div class="item-row"><span class="item-row-name">Cappuccino</span><span class="item-row-price">$4.25</span></div>
+              <div class="item-row"><span class="item-row-name">Flat White</span><span class="item-row-price">$4.50</span></div>
+              <div class="item-row" style="color:var(--admin-text-secondary);font-size:11px;"><span>+5 more…</span></div>
+            </div>
+          </div>
+          <div class="catalog-item mapped">
+            <div class="cat-header">
+              <span class="cat-icon">🧊</span>
+              <span class="cat-name">Iced Drinks</span>
+              <span class="cat-badge badge-green">6 items</span>
+            </div>
+            <div class="item-list">
+              <div class="item-row"><span class="item-row-name">Cold Brew</span><span class="item-row-price">$4.75</span></div>
+              <div class="item-row"><span class="item-row-name">Iced Latte</span><span class="item-row-price">$5.00</span></div>
+              <div class="item-row"><span class="item-row-name">Nitro Brew</span><span class="item-row-price">$5.25</span></div>
+            </div>
+          </div>
+          <div class="catalog-item mapped">
+            <div class="cat-header">
+              <span class="cat-icon">🍵</span>
+              <span class="cat-name">Teas</span>
+              <span class="cat-badge badge-green">5 items</span>
+            </div>
+            <div class="item-list">
+              <div class="item-row"><span class="item-row-name">Chai Latte</span><span class="item-row-price">$4.50</span></div>
+              <div class="item-row"><span class="item-row-name">Matcha Latte</span><span class="item-row-price">$5.50</span></div>
+            </div>
+          </div>
+          <div class="catalog-item review">
+            <div class="cat-header">
+              <span class="cat-icon">🥤</span>
+              <span class="cat-name">Seasonal</span>
+              <span class="cat-badge badge-yellow">2 need review</span>
+            </div>
+            <div class="item-list">
+              <div class="item-row"><span class="item-row-name" style="color:#D97706;">Pumpkin Latte ⚠</span><span class="item-row-price">$6.00</span></div>
+              <div class="item-row"><span class="item-row-name" style="color:#D97706;">Spiced Apple ⚠</span><span class="item-row-price">$5.50</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn-back" onclick="goStep(2, null)">Back</button>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <button class="btn-next-secondary">Edit in Menu Manager</button>
+            <button class="btn-next" onclick="goStep(4, null)">
+              Looks good!
+              <svg width="16" height="16" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Step 4: Branding ───────────────────────────── -->
+      <div class="step-content active" id="step4">
+        <div class="step-eyebrow">Step 4 of 5</div>
+        <div class="step-title">Make it yours</div>
+        <div class="step-subtitle">Set your brand colors and logo. Your customers will see this when they visit your ordering page.</div>
+
+        <div class="branding-layout">
+          <div class="branding-controls">
+
+            <div>
+              <div class="control-label">Shop Name</div>
+              <input style="width:100%;height:40px;border:1.5px solid var(--admin-border);border-radius:10px;padding:0 12px;font-size:14px;font-weight:600;font-family:'Outfit',sans-serif;color:var(--admin-text);background:#FAFAFA;" value="Brew &amp; Co." />
+            </div>
+
+            <div>
+              <div class="control-label">Primary Color</div>
+              <div class="color-row">
+                <div class="color-swatch" style="background:#6B4226;" onclick="changePrimary(this)"></div>
+                <input class="color-input" value="#6B4226" id="primaryInput" />
+              </div>
+              <div style="display:flex;gap:6px;margin-top:8px;">
+                <div class="color-swatch" style="background:#1A6B8A;width:26px;height:26px;border-radius:7px;border:1.5px solid #ddd;cursor:pointer;" onclick="setPrimary('#1A6B8A')"></div>
+                <div class="color-swatch" style="background:#C0392B;width:26px;height:26px;border-radius:7px;border:1.5px solid #ddd;cursor:pointer;" onclick="setPrimary('#C0392B')"></div>
+                <div class="color-swatch" style="background:#2D6A4F;width:26px;height:26px;border-radius:7px;border:1.5px solid #ddd;cursor:pointer;" onclick="setPrimary('#2D6A4F')"></div>
+                <div class="color-swatch" style="background:#6B21A8;width:26px;height:26px;border-radius:7px;border:1.5px solid #ddd;cursor:pointer;" onclick="setPrimary('#6B21A8')"></div>
+                <div class="color-swatch" style="background:#0F766E;width:26px;height:26px;border-radius:7px;border:1.5px solid #ddd;cursor:pointer;" onclick="setPrimary('#0F766E')"></div>
+                <div class="color-swatch" style="background:#1D4ED8;width:26px;height:26px;border-radius:7px;border:1.5px solid #ddd;cursor:pointer;" onclick="setPrimary('#1D4ED8')"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="control-label">Secondary Color</div>
+              <div class="color-row">
+                <div class="color-swatch" style="background:#D4A574;" id="secondarySwatch"></div>
+                <input class="color-input" value="#D4A574" id="secondaryInput" />
+              </div>
+            </div>
+
+            <div>
+              <div class="control-label">Logo</div>
+              <div class="logo-upload">
+                <span class="upload-icon">🖼️</span>
+                <span class="upload-text">Click to upload (PNG, SVG)</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="control-label">Your URL</div>
+              <div style="background:#F3F4F6;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:4px;">
+                <span style="font-size:13px;color:var(--admin-text-secondary);">drink-ux.com/</span>
+                <span style="font-size:13px;font-weight:700;color:var(--admin-text);">brew-and-co</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live preview phone -->
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--admin-text-secondary);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;text-align:center;">Live Preview</div>
+            <div class="preview-phone" id="previewPhone" style="--theme-primary:#6B4226;--theme-background:#FDF8F5;">
+              <div class="preview-header" id="previewHeader" style="background:#6B4226;">
+                <div class="preview-shop-name">☕ Brew &amp; Co.</div>
+                <div class="preview-tagline">Specialty Coffee · Open now</div>
+                <div class="preview-search">🔍 Search drinks…</div>
+              </div>
+              <div class="preview-body">
+                <div class="preview-cat-row">
+                  <div class="preview-cat-pill active" id="previewPillActive" style="background:#6B4226;">All</div>
+                  <div class="preview-cat-pill inactive">Espresso</div>
+                  <div class="preview-cat-pill inactive">Iced</div>
+                </div>
+                <div class="preview-item">
+                  <div class="preview-item-dot">☕</div>
+                  <div>
+                    <div class="preview-item-name">Vanilla Oat Latte</div>
+                    <div style="font-size:10px;color:#8B7E74;">Oat milk · Vanilla</div>
+                  </div>
+                  <div class="preview-item-price" id="previewPrice" style="color:#6B4226;">$6.75</div>
+                  <div class="preview-item-add" id="previewAdd" style="background:#6B4226;">+</div>
+                </div>
+                <div class="preview-item">
+                  <div class="preview-item-dot">🧊</div>
+                  <div>
+                    <div class="preview-item-name">Cold Brew</div>
+                    <div style="font-size:10px;color:#8B7E74;">Large · Iced</div>
+                  </div>
+                  <div class="preview-item-price" id="previewPrice2" style="color:#6B4226;">$5.25</div>
+                  <div class="preview-item-add" id="previewAdd2" style="background:#6B4226;">+</div>
+                </div>
+                <div style="background:#6B4226;border-radius:10px;padding:10px 14px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;" id="previewBar">
+                  <span style="font-size:11px;font-weight:700;color:white;">2 items · View Cart</span>
+                  <span style="font-size:11px;font-weight:700;color:white;">$12.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-footer" style="padding-top:16px;">
+          <button class="btn-back" onclick="goStep(3, null)">Back</button>
+          <button class="btn-next" onclick="goStep(5, null)">
+            Save & Continue
+            <svg width="16" height="16" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Step 5: Review & Launch ────────────────────── -->
+      <div class="step-content" id="step5">
+        <div class="step-eyebrow">Step 5 of 5</div>
+        <div class="step-title">Ready to go live 🚀</div>
+        <div class="step-subtitle">Everything looks set. Your 14-day free trial starts today — no credit card required yet.</div>
+
+        <div class="trial-badge">
+          <span>✓</span>
+          14-day free trial · No credit card required · $49/mo after
+        </div>
+
+        <div class="review-grid">
+          <div class="review-card">
+            <div class="review-card-header">
+              <div class="review-card-icon" style="background:#DBEAFE;">🔌</div>
+              <div class="review-card-title">Square POS</div>
+            </div>
+            <div class="review-item"><span class="review-key">Status</span><span class="review-val" style="color:var(--accent-green);">Connected ✓</span></div>
+            <div class="review-item"><span class="review-key">Location</span><span class="review-val">Main St. Café</span></div>
+            <div class="review-item"><span class="review-key">Merchant</span><span class="review-val">BRWCO2024</span></div>
+          </div>
+          <div class="review-card">
+            <div class="review-card-header">
+              <div class="review-card-icon" style="background:#D1FAE5;">📦</div>
+              <div class="review-card-title">Menu</div>
+            </div>
+            <div class="review-item"><span class="review-key">Items</span><span class="review-val">24 drinks</span></div>
+            <div class="review-item"><span class="review-key">Categories</span><span class="review-val">5</span></div>
+            <div class="review-item"><span class="review-key">Modifiers</span><span class="review-val">18</span></div>
+          </div>
+          <div class="review-card">
+            <div class="review-card-header">
+              <div class="review-card-icon" style="background:#FEE2E2;">🎨</div>
+              <div class="review-card-title">Branding</div>
+            </div>
+            <div class="review-item"><span class="review-key">Name</span><span class="review-val">Brew &amp; Co.</span></div>
+            <div class="review-item"><span class="review-key">Primary</span><span class="review-val">#6B4226</span></div>
+            <div class="review-item"><span class="review-key">URL</span><span class="review-val">brew-and-co</span></div>
+          </div>
+          <div class="review-card">
+            <div class="review-card-header">
+              <div class="review-card-icon" style="background:#F3E8FF;">💳</div>
+              <div class="review-card-title">Subscription</div>
+            </div>
+            <div class="review-item"><span class="review-key">Plan</span><span class="review-val">Monthly $49/mo</span></div>
+            <div class="review-item"><span class="review-key">Trial ends</span><span class="review-val">Mar 26, 2026</span></div>
+            <div class="review-item"><span class="review-key">Billing</span><span class="review-val">After trial</span></div>
+          </div>
+
+          <div class="launch-card">
+            <span class="launch-icon">🚀</span>
+            <div>
+              <div class="launch-title">Launch your storefront</div>
+              <div class="launch-sub">Your customers can start ordering at brew-and-co.drink-ux.com</div>
+            </div>
+            <button class="launch-cta">Go Live Now →</button>
+          </div>
+        </div>
+
+        <div class="step-footer">
+          <button class="btn-back" onclick="goStep(4, null)">Back</button>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--admin-text-secondary);">
+            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="var(--accent-green)" opacity="0.8"/></svg>
+            Your data is secure
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /wizard-content -->
+  </div><!-- /wizard-frame -->
+
+  <script>
+    let currentStep = 4;
+
+    const progressMap = { 1: '20%', 2: '40%', 3: '60%', 4: '80%', 5: '100%' };
+
+    function goStep(step, btn) {
+      // Update step buttons in top bar
+      if (btn) {
+        document.querySelectorAll('.step-btn').forEach((b, i) => {
+          b.classList.remove('active');
+          if (i + 1 < step) b.classList.add('done');
+          else b.classList.remove('done');
+        });
+        btn.classList.remove('done');
+        btn.classList.add('active');
+      }
+
+      // Show correct content
+      document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+      document.getElementById('step' + step).classList.add('active');
+
+      // Update progress bar
+      document.getElementById('progressFill').style.width = progressMap[step];
+
+      // Update sidebar
+      for (let i = 1; i <= 5; i++) {
+        const el = document.getElementById('sStep' + i);
+        el.className = 'sidebar-step';
+        const numEl = el.querySelector('.step-number');
+        const labelEl = el.querySelector('.step-label');
+        if (i < step) {
+          el.classList.add('done');
+          numEl.textContent = '✓';
+          numEl.style.cssText = 'background:var(--accent-green);border-color:transparent;color:white;';
+          labelEl.style.color = 'rgba(255,255,255,0.7)';
+        } else if (i === step) {
+          el.classList.add('active');
+          numEl.textContent = i;
+          numEl.style.cssText = 'background:var(--theme-gradient-primary);border-color:transparent;color:white;';
+          labelEl.style.color = 'white';
+        } else {
+          numEl.textContent = i;
+          numEl.style.cssText = '';
+          labelEl.style.color = '';
+        }
+      }
+      currentStep = step;
+    }
+
+    function selectPath(el) {
+      document.querySelectorAll('.path-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function setPrimary(hex) {
+      document.getElementById('primaryInput').value = hex;
+      document.getElementById('previewHeader').style.background = hex;
+      document.getElementById('previewPillActive').style.background = hex;
+      document.getElementById('previewPrice').style.color = hex;
+      document.getElementById('previewPrice2').style.color = hex;
+      document.getElementById('previewAdd').style.background = hex;
+      document.getElementById('previewAdd2').style.background = hex;
+      document.getElementById('previewBar').style.background = hex;
+    }
+
+    function changePrimary(swatch) {
+      // In prototype, clicking main swatch cycles through presets
+      const colors = ['#6B4226', '#1A6B8A', '#C0392B', '#2D6A4F', '#6B21A8'];
+      const current = document.getElementById('primaryInput').value;
+      const idx = colors.indexOf(current);
+      const next = colors[(idx + 1) % colors.length];
+      swatch.style.background = next;
+      setPrimary(next);
+    }
+  </script>
+</body>
+</html>
