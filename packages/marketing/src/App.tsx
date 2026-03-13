@@ -21,7 +21,7 @@ function App() {
       <nav className="nav">
         <div className="nav-container">
           <a href="/" className="logo">
-            <span className="logo-icon">☕</span>
+            <span className="logo-icon" aria-hidden="true">&#9749;</span>
             <span className="logo-text">drink-ux</span>
           </a>
           <div className="nav-links">
@@ -279,7 +279,7 @@ function App() {
         <div className="container">
           <div className="footer-content">
             <div className="footer-brand">
-              <span className="logo-icon">☕</span>
+              <span className="logo-icon" aria-hidden="true">&#9749;</span>
               <span className="logo-text">drink-ux</span>
               <p>Visual mobile ordering for coffee shops</p>
             </div>
