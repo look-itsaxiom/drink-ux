@@ -6,6 +6,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import MenuManagement from './pages/MenuManagement';
 import POSIntegration from './pages/POSIntegration';
+import AdminSettings from './pages/AdminSettings';
 import Onboarding from './pages/Onboarding';
 import './App.css';
 
@@ -35,6 +36,9 @@ function AppLayout() {
           <li>
             <Link to="/pos">POS Integration</Link>
           </li>
+          <li>
+            <Link to="/settings">Settings</Link>
+          </li>
         </ul>
         <div className="sidebar-footer">
           {user && (
@@ -52,6 +56,7 @@ function AppLayout() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/menu" element={<MenuManagement />} />
           <Route path="/pos" element={<POSIntegration />} />
+          <Route path="/settings" element={<AdminSettings />} />
         </Routes>
       </main>
     </div>
