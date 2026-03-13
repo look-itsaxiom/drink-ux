@@ -736,6 +736,7 @@ export class OnboardingService {
           name,
           basePrice: price / 100, // Convert cents to dollars
           posItemId: item.id,
+          posVariationId: item.variations?.[0]?.id || null, // Square requires variation ID for orders
           temperatureConstraint: TemperatureConstraint.BOTH,
         },
       });

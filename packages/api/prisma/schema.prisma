@@ -203,7 +203,8 @@ model Base {
   visualOpacity         Float                 @default(1.0)
 
   // POS mapping (set after sync)
-  posItemId             String?
+  posItemId             String?               // Square catalog ITEM ID (for catalog sync/update)
+  posVariationId        String?               // Square catalog VARIATION ID (required for order submission)
 
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
