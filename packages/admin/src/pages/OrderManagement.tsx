@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -46,6 +46,7 @@ const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
   { value: 'ALL', label: 'All' },
   { value: 'PENDING', label: 'Pending' },
   { value: 'CONFIRMED', label: 'Accepted' },
+  { value: 'PREPARING', label: 'Preparing' },
   { value: 'READY', label: 'Ready' },
   { value: 'COMPLETED', label: 'Completed' },
 ];
@@ -90,7 +91,7 @@ const OrderManagement: React.FC = () => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!businessId) {
       setLoading(false);
       return;
@@ -133,11 +134,25 @@ const OrderManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [businessId, statusFilter]);
 
   useEffect(() => {
     fetchOrders();
-  }, [businessId, statusFilter]);
+  }, [fetchOrders]);
+
+  useEffect(() => {
+    if (!businessId) {
+      return;
+    }
+
+    const pollingTimer = window.setInterval(() => {
+      void fetchOrders();
+    }, 30000);
+
+    return () => {
+      window.clearInterval(pollingTimer);
+    };
+  }, [businessId, fetchOrders]);
 
   const selectedOrder = useMemo(
     () => orders.find(order => order.id === selectedOrderId) || null,
