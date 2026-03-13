@@ -121,7 +121,7 @@ const accountStateService = new AccountStateService(prisma);
 const accountService = new AccountService(prisma);
 const itemMappingService = new ItemMappingService(prisma);
 const mappedCatalogService = new MappedCatalogService(prisma, posAdapter);
-const subscriptionExpiryService = new SubscriptionExpiryService(prisma);
+const subscriptionExpiryService = new SubscriptionExpiryService(prisma, accountStateService);
 
 // Services that need prisma + POS adapter
 const orderService = new OrderService(prisma, posAdapter);
@@ -191,8 +191,20 @@ app.use("/api/catalog", createMappedCatalogRouter(mappedCatalogService));
 // Payment routes (processes payment for existing orders)
 app.use("/api/orders", createPaymentRouter(prisma));
 
-// Admin: trigger subscription expiry sweep
-app.post("/api/admin/subscription-expiry", async (req, res) => {
+// Admin: trigger subscription expiry sweep (requires ADMIN_API_KEY)
+app.post("/api/admin/subscription-expiry", (req, res, next) => {
+  const adminKey = process.env.ADMIN_API_KEY;
+  if (!adminKey) {
+    res.status(503).json({ success: false, error: { code: "ADMIN_NOT_CONFIGURED", message: "Admin API key not configured" } });
+    return;
+  }
+  const authHeader = req.headers.authorization;
+  if (!authHeader || authHeader !== `Bearer ${adminKey}`) {
+    res.status(401).json({ success: false, error: { code: "UNAUTHORIZED", message: "Valid admin API key required" } });
+    return;
+  }
+  next();
+}, async (req, res) => {
   try {
     const result = await subscriptionExpiryService.runExpirySweep();
     res.json({ success: true, data: result });
@@ -225,7 +237,7 @@ app.use(errorHandler);
 // =============================================================================
 
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`API server running on port ${PORT}`);
     console.log(`CORS origins: ${corsOrigins.join(", ")}`);
     console.log(`POS adapter: ${posMode}`);
@@ -233,6 +245,18 @@ if (process.env.NODE_ENV !== "test") {
     // Start periodic subscription expiry checks (every hour)
     subscriptionExpiryService.start();
   });
+
+  // Graceful shutdown: stop background jobs before exiting
+  const shutdown = (signal: string) => {
+    console.log(`\n[${signal}] Shutting down...`);
+    subscriptionExpiryService.stop();
+    server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+  };
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 export default app;
