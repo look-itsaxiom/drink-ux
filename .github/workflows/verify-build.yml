@@ -30,6 +30,10 @@ jobs:
       - name: Generate Prisma client for API
         run: npx prisma generate --schema=packages/api/prisma/schema.prisma
 
+      # ── 0. Build shared (other packages depend on it for type resolution)
+      - name: Build shared package
+        run: npm run build --workspace=@drink-ux/shared
+
       # ── 1. Type checking ─────────────────────────────────────────────────────
       - name: Type check — shared
         run: npx tsc --noEmit
