@@ -77,6 +77,7 @@ const Subscription: React.FC = () => {
   };
 
   const handleStartTrial = async () => {
+    if (!businessId) return;
     setActionLoading(true);
     setError(null);
     setSuccessMessage(null);
@@ -105,6 +106,7 @@ const Subscription: React.FC = () => {
   };
 
   const handleCheckout = async (planId: string) => {
+    if (!businessId) return;
     setActionLoading(true);
     setError(null);
 
@@ -117,10 +119,14 @@ const Subscription: React.FC = () => {
       });
 
       const data = await res.json();
-      if (data.success) {
-        // In a real app, redirect to Stripe/Square checkout
-        // For now, simulate redirect
-        window.location.href = `${API_BASE_URL}${data.data.checkoutUrl}`;
+      if (data.success && data.data.checkoutUrl) {
+        const url = data.data.checkoutUrl;
+        // Validate redirect URL is a safe relative path
+        if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')) {
+          window.location.href = `${API_BASE_URL}${url}`;
+        } else {
+          setError('Invalid checkout URL received');
+        }
       } else {
         setError(data.error?.message || 'Failed to create checkout session');
       }
@@ -132,6 +138,7 @@ const Subscription: React.FC = () => {
   };
 
   const handleCancel = async () => {
+    if (!businessId) return;
     if (!window.confirm('Are you sure you want to cancel your subscription?')) {
       return;
     }
