@@ -38,7 +38,7 @@ describe('Mapped Catalog Routes', () => {
     app.use('/api/catalog', createMappedCatalogRouter(mockService));
   });
 
-  // Helper to create a valid mock catalog
+  // Helper to create a valid mock catalog matching MappedCatalog interface
   const createMockCatalog = () => ({
     bases: [
       {
@@ -46,33 +46,47 @@ describe('Mapped Catalog Routes', () => {
         name: 'Latte',
         price: 450,
         category: 'Coffee',
-        sizes: [
+        variations: [
           { variationId: 'var-1', name: 'Small', price: 400 },
           { variationId: 'var-2', name: 'Large', price: 500 },
         ],
         temperatures: ['hot', 'iced'],
+        modifierGroupIds: ['mg-1', 'mg-2'],
       },
       {
         squareItemId: 'sq-item-2',
         name: 'Cappuccino',
         price: 450,
         category: 'Coffee',
-        sizes: [],
+        variations: [],
         temperatures: ['hot'],
+        modifierGroupIds: ['mg-1'],
       },
     ],
-    modifiers: {
-      milks: [
-        { squareModifierId: 'mod-1', name: 'Oat Milk', price: 75 },
-        { squareModifierId: 'mod-2', name: 'Almond Milk', price: 75 },
-      ],
-      syrups: [
-        { squareModifierId: 'mod-3', name: 'Vanilla', price: 50 },
-      ],
-      toppings: [
-        { squareModifierId: 'mod-4', name: 'Whipped Cream', price: 0 },
-      ],
-    },
+    modifierGroups: [
+      {
+        id: 'mg-1',
+        name: 'Milk Options',
+        selectionMode: 'single' as const,
+        minSelections: 0,
+        maxSelections: 1,
+        modifiers: [
+          { squareModifierId: 'mod-1', name: 'Oat Milk', price: 75 },
+          { squareModifierId: 'mod-2', name: 'Almond Milk', price: 75 },
+        ],
+      },
+      {
+        id: 'mg-2',
+        name: 'Syrups',
+        selectionMode: 'multi' as const,
+        minSelections: 0,
+        maxSelections: 5,
+        modifiers: [
+          { squareModifierId: 'mod-3', name: 'Vanilla', price: 50 },
+        ],
+      },
+    ],
+    presets: [],
   });
 
   // ===========================================
@@ -89,13 +103,11 @@ describe('Mapped Catalog Routes', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data).toEqual(mockCatalog);
       expect(response.body.data.bases).toHaveLength(2);
-      expect(response.body.data.modifiers.milks).toHaveLength(2);
-      expect(response.body.data.modifiers.syrups).toHaveLength(1);
-      expect(response.body.data.modifiers.toppings).toHaveLength(1);
+      expect(response.body.data.modifierGroups).toHaveLength(2);
       expect(mockService.getCatalog).toHaveBeenCalledWith('biz-123', { allowStale: true });
     });
 
-    it('returns 200 with bases and modifiers correctly grouped', async () => {
+    it('returns 200 with bases and modifierGroups correctly structured', async () => {
       const mockCatalog = createMockCatalog();
       mockService.getCatalog.mockResolvedValue(mockCatalog);
 
@@ -108,20 +120,25 @@ describe('Mapped Catalog Routes', () => {
       expect(base).toHaveProperty('name');
       expect(base).toHaveProperty('price');
       expect(base).toHaveProperty('category');
-      expect(base).toHaveProperty('sizes');
+      expect(base).toHaveProperty('variations');
       expect(base).toHaveProperty('temperatures');
-      
-      // Verify modifier structure
-      const milk = response.body.data.modifiers.milks[0];
-      expect(milk).toHaveProperty('squareModifierId');
-      expect(milk).toHaveProperty('name');
-      expect(milk).toHaveProperty('price');
+
+      // Verify modifier group structure
+      const group = response.body.data.modifierGroups[0];
+      expect(group).toHaveProperty('id');
+      expect(group).toHaveProperty('name');
+      expect(group).toHaveProperty('modifiers');
+      const mod = group.modifiers[0];
+      expect(mod).toHaveProperty('squareModifierId');
+      expect(mod).toHaveProperty('name');
+      expect(mod).toHaveProperty('price');
     });
 
     it('returns 200 with empty catalog when no items exist', async () => {
       mockService.getCatalog.mockResolvedValue({
         bases: [],
-        modifiers: { milks: [], syrups: [], toppings: [] },
+        modifierGroups: [],
+        presets: [],
       });
 
       const response = await request(app).get('/api/catalog/biz-empty/mapped');
@@ -129,7 +146,7 @@ describe('Mapped Catalog Routes', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.bases).toEqual([]);
-      expect(response.body.data.modifiers.milks).toEqual([]);
+      expect(response.body.data.modifierGroups).toEqual([]);
     });
 
     it('returns 404 if business not found', async () => {

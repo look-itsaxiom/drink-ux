@@ -278,19 +278,15 @@ describe_live('Square Sandbox — MappedCatalogService + ItemMappings', () => {
 
     expect(catalog).toBeDefined();
     expect(Array.isArray(catalog.bases)).toBe(true);
-    expect(catalog.modifiers).toBeDefined();
-    expect(Array.isArray(catalog.modifiers.milks)).toBe(true);
-    expect(Array.isArray(catalog.modifiers.syrups)).toBe(true);
-    expect(Array.isArray(catalog.modifiers.toppings)).toBe(true);
+    expect(catalog.modifierGroups).toBeDefined();
+    expect(Array.isArray(catalog.modifierGroups)).toBe(true);
 
     // Only bases whose squareItemId matches an ItemMapping with itemType=BASE are included
     expect(catalog.bases.length).toBeLessThanOrEqual(seededItemCount);
 
     console.log('[E2E] MappedCatalog result:', {
       bases: catalog.bases.length,
-      milks: catalog.modifiers.milks.length,
-      syrups: catalog.modifiers.syrups.length,
-      toppings: catalog.modifiers.toppings.length,
+      modifierGroups: catalog.modifierGroups.length,
     });
   }, 20000);
 
@@ -301,7 +297,7 @@ describe_live('Square Sandbox — MappedCatalogService + ItemMappings', () => {
       expect(base.squareItemId).toBeTruthy();
       expect(base.name).toBeTruthy();
       expect(base.category).toBeTruthy();
-      expect(Array.isArray(base.sizes)).toBe(true);
+      expect(Array.isArray(base.variations)).toBe(true);
       expect(Array.isArray(base.temperatures)).toBe(true);
     }
   }, 20000);
@@ -316,7 +312,7 @@ describe_live('Square Sandbox — MappedCatalogService + ItemMappings', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.bases).toBeDefined();
-    expect(res.body.data.modifiers).toBeDefined();
+    expect(res.body.data.modifierGroups).toBeDefined();
 
     console.log('[E2E] GET /api/catalog/mapped HTTP response: 200 OK');
   }, 20000);
@@ -402,8 +398,6 @@ describe_live('Square Sandbox — OrderService full pipeline', () => {
     const rawCatalog = await squareAdapter.importCatalog();
     const firstItem = rawCatalog.items[0];
     const posItemId = firstItem?.id ?? 'sandbox-item-1';
-    const posVariationId = firstItem?.variations?.[0]?.id ?? null;
-
     const category = await prisma.category.create({
       data: { businessId, name: 'Espresso Drinks' },
     });
@@ -413,14 +407,13 @@ describe_live('Square Sandbox — OrderService full pipeline', () => {
         businessId,
         categoryId: category.id,
         name: 'Latte',
-        basePrice: firstItem?.variations?.[0]?.price ? firstItem.variations[0].price / 100 : 450,
+        priceCents: firstItem?.variations?.[0]?.price ? firstItem.variations[0].price : 450,
         posItemId,
-        posVariationId, // Store variation ID so submitToPOS can use it
       },
     });
     seededBaseId = base.id;
 
-    console.log('[E2E] Seeded base — posItemId:', posItemId, 'posVariationId:', posVariationId);
+    console.log('[E2E] Seeded base — posItemId:', posItemId);
   }, 30000);
 
   afterAll(async () => {

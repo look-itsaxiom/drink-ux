@@ -2,10 +2,7 @@ import { PrismaClient } from "../../generated/prisma";
 import {
   AccountState,
   POSProvider,
-  TemperatureConstraint,
-  ModifierType,
   OrderStatus,
-  CupSize,
 } from "../../generated/prisma";
 
 const prisma = new PrismaClient();
@@ -213,15 +210,14 @@ describe("Database Schema", () => {
           businessId,
           categoryId,
           name: "Espresso",
-          basePrice: 3.5,
-          temperatureConstraint: TemperatureConstraint.HOT_ONLY,
+          priceCents: 350,
           visualColor: "#3d2314",
           visualOpacity: 1.0,
         },
       });
 
       expect(base.name).toBe("Espresso");
-      expect(base.temperatureConstraint).toBe(TemperatureConstraint.HOT_ONLY);
+      // temperatureConstraint assertion removed (field no longer exists)
       expect(base.available).toBe(true);
       expect(base.posItemId).toBeNull();
     });
@@ -232,13 +228,12 @@ describe("Database Schema", () => {
           businessId,
           categoryId,
           name: "Latte Base",
-          basePrice: 4.0,
-          temperatureConstraint: TemperatureConstraint.BOTH,
+          priceCents: 400,
           visualColor: "#c4a484",
         },
       });
 
-      expect(base.temperatureConstraint).toBe(TemperatureConstraint.BOTH);
+      // temperatureConstraint assertion removed (field no longer exists)
     });
 
     it("should store POS item ID after sync", async () => {
@@ -267,47 +262,47 @@ describe("Database Schema", () => {
       const oatMilk = await prisma.modifier.create({
         data: {
           businessId,
-          type: ModifierType.MILK,
+          modifierGroupId: "test-mg-milk",
           name: "Oat Milk",
-          price: 0.7,
+          priceCents: 70,
           visualColor: "#f5f5dc",
           visualLayerOrder: 2,
         },
       });
 
-      expect(oatMilk.type).toBe(ModifierType.MILK);
-      expect(oatMilk.price).toBe(0.7);
+      expect(oatMilk.modifierGroupId).toBe("test-mg-milk");
+      expect(oatMilk.priceCents).toBe(70);
     });
 
     it("should create syrup modifiers", async () => {
       const vanilla = await prisma.modifier.create({
         data: {
           businessId,
-          type: ModifierType.SYRUP,
+          modifierGroupId: "test-mg-syrup",
           name: "Vanilla",
-          price: 0.5,
+          priceCents: 50,
           visualColor: "#f3e5ab",
           visualLayerOrder: 1,
         },
       });
 
-      expect(vanilla.type).toBe(ModifierType.SYRUP);
+      expect(vanilla.modifierGroupId).toBe("test-mg-syrup");
     });
 
     it("should create topping modifiers", async () => {
       const whippedCream = await prisma.modifier.create({
         data: {
           businessId,
-          type: ModifierType.TOPPING,
+          modifierGroupId: "test-mg-topping",
           name: "Whipped Cream",
-          price: 0.5,
+          priceCents: 50,
           visualColor: "#fffafa",
           visualLayerOrder: 5,
           visualAnimationType: "foam",
         },
       });
 
-      expect(whippedCream.type).toBe(ModifierType.TOPPING);
+      expect(whippedCream.modifierGroupId).toBe("test-mg-topping");
       expect(whippedCream.visualAnimationType).toBe("foam");
     });
   });
@@ -346,8 +341,8 @@ describe("Database Schema", () => {
           businessId,
           name: "Vanilla Oat Latte",
           baseId,
-          defaultSize: CupSize.MEDIUM,
-          price: 5.5,
+          defaultVariationId: 'test-variation-1',
+          priceCents: 550,
           modifiers: {
             create: [
               { modifierId: vanillaId },
@@ -359,7 +354,7 @@ describe("Database Schema", () => {
       });
 
       expect(preset.name).toBe("Vanilla Oat Latte");
-      expect(preset.defaultSize).toBe(CupSize.MEDIUM);
+      expect(preset.defaultVariationId).toBe('test-variation-1');
       expect(preset.modifiers).toHaveLength(2);
     });
 
@@ -395,9 +390,9 @@ describe("Database Schema", () => {
           customerEmail: "john@example.com",
           customerPhone: "555-1234",
           status: OrderStatus.PENDING,
-          subtotal: 12.50,
-          tax: 1.03,
-          total: 13.53,
+          subtotalCents: 1250,
+          taxCents: 103,
+          totalCents: 1353,
           items: {
             create: [
               {
@@ -406,8 +401,8 @@ describe("Database Schema", () => {
                 quantity: 1,
                 size: "MEDIUM",
                 temperature: "HOT",
-                unitPrice: 5.5,
-                totalPrice: 5.5,
+                unitPriceCents: 550,
+                totalPriceCents: 550,
                 modifiers: "[]",
               },
               {
@@ -416,8 +411,8 @@ describe("Database Schema", () => {
                 quantity: 2,
                 size: "SMALL",
                 temperature: "HOT",
-                unitPrice: 3.5,
-                totalPrice: 7.0,
+                unitPriceCents: 350,
+                totalPriceCents: 700,
                 modifiers: "[]",
               },
             ],

@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { ApiResponse } from '@drink-ux/shared';
 import { CatalogService, CatalogError } from '../services/CatalogService';
 import { requireAuth, AuthenticatedRequest } from '../middleware/session';
-import { PrismaClient, ModifierType } from '../../generated/prisma';
+import { PrismaClient } from '../../generated/prisma';
 
 const prisma = new PrismaClient();
 
@@ -454,8 +454,7 @@ export function createCatalogRouter(
       businessId,
       categoryId,
       name,
-      basePrice,
-      temperatureConstraint,
+      priceCents,
       available,
       visualColor,
       visualOpacity,
@@ -479,8 +478,7 @@ export function createCatalogRouter(
         businessId,
         categoryId,
         name,
-        basePrice,
-        temperatureConstraint,
+        priceCents,
         available,
         visualColor,
         visualOpacity,
@@ -625,8 +623,7 @@ export function createCatalogRouter(
     const { id } = req.params;
     const {
       name,
-      basePrice,
-      temperatureConstraint,
+      priceCents,
       available,
       visualColor,
       visualOpacity,
@@ -664,8 +661,7 @@ export function createCatalogRouter(
 
       const base = await catalogService.updateBase(id, {
         name,
-        basePrice,
-        temperatureConstraint,
+        priceCents,
         available,
         visualColor,
         visualOpacity,
@@ -788,8 +784,8 @@ export function createCatalogRouter(
     const {
       businessId,
       name,
-      type,
-      price,
+      modifierGroupId,
+      priceCents,
       available,
       visualColor,
       visualLayerOrder,
@@ -813,8 +809,8 @@ export function createCatalogRouter(
       const modifier = await catalogService.createModifier({
         businessId,
         name,
-        type: type as ModifierType,
-        price,
+        modifierGroupId,
+        priceCents,
         available,
         visualColor,
         visualLayerOrder,
@@ -857,7 +853,7 @@ export function createCatalogRouter(
    * List modifiers
    */
   router.get('/modifiers', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-    const { businessId, type, available } = req.query;
+    const { businessId, modifierGroupId, available } = req.query;
 
     try {
       // Verify business ownership
@@ -875,7 +871,7 @@ export function createCatalogRouter(
 
       const modifiers = await catalogService.listModifiers({
         businessId: businessId as string,
-        type: type as ModifierType | undefined,
+        modifierGroupId: modifierGroupId as string | undefined,
         available: available === 'true' ? true : available === 'false' ? false : undefined,
       });
 
@@ -960,7 +956,7 @@ export function createCatalogRouter(
     const { id } = req.params;
     const {
       name,
-      price,
+      priceCents,
       available,
       visualColor,
       visualLayerOrder,
@@ -998,7 +994,7 @@ export function createCatalogRouter(
 
       const modifier = await catalogService.updateModifier(id, {
         name,
-        price,
+        priceCents,
         available,
         visualColor,
         visualLayerOrder,
@@ -1200,8 +1196,8 @@ export function createCatalogRouter(
       name,
       baseId,
       modifierIds,
-      price,
-      defaultSize,
+      priceCents,
+      defaultVariationId,
       defaultHot,
       imageUrl,
     } = req.body;
@@ -1225,8 +1221,8 @@ export function createCatalogRouter(
         name,
         baseId,
         modifierIds,
-        price,
-        defaultSize,
+        priceCents,
+        defaultVariationId,
         defaultHot,
         imageUrl,
       });
@@ -1379,8 +1375,8 @@ export function createCatalogRouter(
       name,
       baseId,
       modifierIds,
-      price,
-      defaultSize,
+      priceCents,
+      defaultVariationId,
       defaultHot,
       imageUrl,
       available,
@@ -1419,8 +1415,8 @@ export function createCatalogRouter(
         name,
         baseId,
         modifierIds,
-        price,
-        defaultSize,
+        priceCents,
+        defaultVariationId,
         defaultHot,
         imageUrl,
         available,

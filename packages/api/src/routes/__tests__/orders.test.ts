@@ -63,7 +63,7 @@ async function setupBusinessWithCatalog(businessId: string) {
       businessId,
       categoryId: category.id,
       name: 'Espresso',
-      basePrice: 3.99,
+      priceCents: 399,
       posItemId: 'pos-item-1',
     },
   });
@@ -72,9 +72,9 @@ async function setupBusinessWithCatalog(businessId: string) {
   const modifier1 = await prisma.modifier.create({
     data: {
       businessId,
-      type: 'MILK',
+      modifierGroupId: 'test-mg-milk',
       name: 'Oat Milk',
-      price: 0.75,
+      priceCents: 75,
       posModifierId: 'pos-mod-1',
     },
   });
@@ -82,9 +82,9 @@ async function setupBusinessWithCatalog(businessId: string) {
   const modifier2 = await prisma.modifier.create({
     data: {
       businessId,
-      type: 'SYRUP',
+      modifierGroupId: 'test-mg-syrup',
       name: 'Vanilla',
-      price: 0.50,
+      priceCents: 50,
       posModifierId: 'pos-mod-2',
     },
   });
@@ -770,7 +770,7 @@ describe('Order Routes', () => {
           businessId: noPosBusinessId,
           categoryId: noPosCategory.id,
           name: 'No POS Espresso',
-          basePrice: 3.99,
+          priceCents: 399,
         },
       });
 
@@ -847,7 +847,7 @@ describe('Order Routes', () => {
           payment: {
             id: 'pay-flow-1',
             status: 'COMPLETED',
-            amount_money: { amount: 675, currency: 'USD' },
+            amount_money: { amountCents: 67500, currency: 'USD' },
           },
         }),
       });

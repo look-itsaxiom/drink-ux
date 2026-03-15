@@ -1,4 +1,4 @@
-import { PrismaClient, AccountState, TemperatureConstraint, ModifierType } from '../../../generated/prisma';
+import { PrismaClient, AccountState } from '../../../generated/prisma';
 import {
   OnboardingService,
   OnboardingError,
@@ -513,11 +513,11 @@ describe('OnboardingService', () => {
               id: 'item_1',
               name: 'Latte',
               categoryId: 'cat_1',
-              variations: [{ id: 'var_1', name: 'Regular', price: 500 }],
+              variations: [{ id: 'var_1', name: 'Regular', price: 50000 }],
             },
           ],
           modifiers: [
-            { id: 'mod_1', name: 'Oat Milk', price: 75, modifierListId: 'ml_1' },
+            { id: 'mod_1', name: 'Oat Milk', price: 7500, modifierListId: 'ml_1' },
           ],
         });
 
@@ -561,7 +561,7 @@ describe('OnboardingService', () => {
               id: 'item_1',
               name: 'Espresso',
               categoryId: 'cat_1',
-              variations: [{ id: 'var_1', name: 'Single', price: 300 }],
+              variations: [{ id: 'var_1', name: 'Single', price: 30000 }],
             },
           ],
           modifiers: [],
@@ -584,8 +584,8 @@ describe('OnboardingService', () => {
           categories: [],
           items: [],
           modifiers: [
-            { id: 'mod_1', name: 'Oat Milk', price: 75, modifierListId: 'ml_milk' },
-            { id: 'mod_2', name: 'Vanilla Syrup', price: 50, modifierListId: 'ml_syrup' },
+            { id: 'mod_1', name: 'Oat Milk', price: 7500, modifierListId: 'ml_milk' },
+            { id: 'mod_2', name: 'Vanilla Syrup', price: 5000, modifierListId: 'ml_syrup' },
           ],
         }));
 
@@ -608,7 +608,7 @@ describe('OnboardingService', () => {
               id: 'pos_item_1',
               name: 'Latte',
               categoryId: 'pos_cat_1',
-              variations: [{ id: 'var_1', name: 'Regular', price: 500 }],
+              variations: [{ id: 'var_1', name: 'Regular', price: 50000 }],
             },
           ],
           modifiers: [],
@@ -637,7 +637,7 @@ describe('OnboardingService', () => {
           id: `item_${i}`,
           name: `Item ${i}`,
           categoryId: 'cat_1',
-          variations: [{ id: `var_${i}`, name: 'Regular', price: 300 + i }],
+          variations: [{ id: `var_${i}`, name: 'Regular', price: 30000 + i }],
         }));
 
         mockPOSAdapter.importCatalog.mockReset();
@@ -661,8 +661,8 @@ describe('OnboardingService', () => {
         mockPOSAdapter.importCatalog.mockResolvedValue(catalogData({
           categories: [{ id: 'cat_1', name: 'Coffee', ordinal: 1 }],
           items: [
-            { id: 'item_1', name: 'Latte', categoryId: 'cat_1', variations: [{ id: 'v1', name: 'R', price: 500 }] },
-            { id: 'item_2', name: 'Latte', categoryId: 'cat_1', variations: [{ id: 'v2', name: 'R', price: 500 }] },
+            { id: 'item_1', name: 'Latte', categoryId: 'cat_1', variations: [{ id: 'v1', name: 'R', price: 50000 }] },
+            { id: 'item_2', name: 'Latte', categoryId: 'cat_1', variations: [{ id: 'v2', name: 'R', price: 50000 }] },
           ],
           modifiers: [],
         }));
@@ -750,7 +750,7 @@ describe('OnboardingService', () => {
         expect(modifiers.length).toBeGreaterThan(0);
       });
 
-      it('creates bases with valid temperature constraints', async () => {
+      it('creates bases with valid prices in cents', async () => {
         await service.completeStep(testBusiness.id, OnboardingStep.CATALOG_SETUP, {});
 
         const bases = await prisma.base.findMany({
@@ -758,15 +758,12 @@ describe('OnboardingService', () => {
         });
 
         for (const base of bases) {
-          expect([
-            TemperatureConstraint.HOT_ONLY,
-            TemperatureConstraint.ICED_ONLY,
-            TemperatureConstraint.BOTH,
-          ]).toContain(base.temperatureConstraint);
+          expect(base.priceCents).toBeGreaterThanOrEqual(0);
+          expect(Number.isInteger(base.priceCents)).toBe(true);
         }
       });
 
-      it('creates modifiers with valid types', async () => {
+      it('creates modifiers with valid modifier group IDs', async () => {
         await service.completeStep(testBusiness.id, OnboardingStep.CATALOG_SETUP, {});
 
         const modifiers = await prisma.modifier.findMany({
@@ -774,9 +771,8 @@ describe('OnboardingService', () => {
         });
 
         for (const modifier of modifiers) {
-          expect([ModifierType.MILK, ModifierType.SYRUP, ModifierType.TOPPING]).toContain(
-            modifier.type
-          );
+          expect(modifier.modifierGroupId).toBeDefined();
+          expect(typeof modifier.modifierGroupId).toBe('string');
         }
       });
 

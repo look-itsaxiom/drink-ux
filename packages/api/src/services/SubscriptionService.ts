@@ -277,13 +277,13 @@ export class SubscriptionService {
         where: { squarePlanId: squarePlan.id },
         update: {
           name: squarePlan.name,
-          price: squarePlan.price,
+          priceCents: Math.round(squarePlan.price * 100),
           interval: squarePlan.interval,
         },
         create: {
           squarePlanId: squarePlan.id,
           name: squarePlan.name,
-          price: squarePlan.price,
+          priceCents: Math.round(squarePlan.price * 100),
           interval: squarePlan.interval,
         },
       });
@@ -685,7 +685,7 @@ export class SubscriptionService {
     }
 
     try {
-      const priceInCents = Math.round(plan.price * 100);
+      const priceInCents = plan.priceCents;
 
       const response = await this.squareClient.checkoutApi.createPaymentLink({
         idempotencyKey: `checkout-${businessId}-${randomUUID()}`,

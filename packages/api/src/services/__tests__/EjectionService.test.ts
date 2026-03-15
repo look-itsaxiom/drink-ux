@@ -100,16 +100,16 @@ describe('EjectionService', () => {
         businessId,
         categoryId: category.id,
         name: 'Latte',
-        basePrice: 4.50,
+        priceCents: 450,
       },
     });
 
     await prisma.modifier.create({
       data: {
         businessId,
-        type: 'MILK',
+        modifierGroupId: 'test-mg-milk',
         name: 'Oat Milk',
-        price: 0.75,
+        priceCents: 75,
       },
     });
 
@@ -126,9 +126,9 @@ describe('EjectionService', () => {
         customerName: 'Test Customer',
         customerEmail: 'customer@test.com',
         status,
-        subtotal: 4.50,
-        tax: 0.37,
-        total: 4.87,
+        subtotalCents: 450,
+        taxCents: 37,
+        totalCents: 487,
         items: {
           create: {
             baseId: 'test-base-id',
@@ -136,8 +136,8 @@ describe('EjectionService', () => {
             quantity: 1,
             size: 'MEDIUM',
             temperature: 'HOT',
-            unitPrice: 4.50,
-            totalPrice: 4.50,
+            unitPriceCents: 450,
+            totalPriceCents: 450,
             modifiers: '[]',
           },
         },
