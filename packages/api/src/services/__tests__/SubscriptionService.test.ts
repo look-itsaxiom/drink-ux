@@ -95,7 +95,7 @@ async function createTestPlan(squarePlanId?: string): Promise<string> {
       squarePlanId: squarePlanId || `sq-plan-${uniqueSuffix}`,
       name: 'Pro Plan',
       description: 'Full access to all features',
-      price: 29.99,
+      priceCents: 2999,
       interval: 'MONTHLY',
       features: ['Unlimited orders', 'Custom branding', 'Analytics'],
       isActive: true,
@@ -851,7 +851,7 @@ describe('SubscriptionService', () => {
 
       expect(plan).toBeDefined();
       expect(plan?.name).toBe('New Plan');
-      expect(plan?.price).toBe(19.99);
+      expect(plan?.priceCents).toBe(1999);
     });
 
     it('updates existing plan on sync', async () => {
@@ -860,7 +860,7 @@ describe('SubscriptionService', () => {
         data: {
           squarePlanId: 'sq-plan-existing',
           name: 'Old Name',
-          price: 10.00,
+          priceCents: 1000,
           interval: 'MONTHLY',
         },
       });
@@ -892,7 +892,7 @@ describe('SubscriptionService', () => {
       });
 
       expect(plan?.name).toBe('Updated Name');
-      expect(plan?.price).toBe(15.00);
+      expect(plan?.priceCents).toBe(1500);
     });
   });
 });
