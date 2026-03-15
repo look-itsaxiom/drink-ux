@@ -9,6 +9,11 @@ import {
 import { POSAdapter, RawCatalogData } from '../../adapters/pos/POSAdapter';
 import { encryptToken } from '../../utils/encryption';
 
+/** Helper to create a RawCatalogData with required empty arrays for new fields */
+function catalogData(partial: Pick<RawCatalogData, 'items' | 'modifiers' | 'categories'>): RawCatalogData {
+  return { ...partial, images: [], taxes: [], modifierLists: [] };
+}
+
 // Use the same encryption key as the service
 const ENCRYPTION_KEY = process.env.POS_TOKEN_ENCRYPTION_KEY || 'test-key-must-be-32-chars-long!!';
 
@@ -333,11 +338,11 @@ describe('OnboardingService', () => {
 
       it('returns available locations when multiple Square locations exist', async () => {
         // This would be checked via the adapter
-        mockPOSAdapter.importCatalog.mockResolvedValueOnce({
+        mockPOSAdapter.importCatalog.mockResolvedValueOnce(catalogData({
           items: [],
           modifiers: [],
           categories: [],
-        });
+        }));
 
         const locations = await service.getAvailableLocations(testBusiness.id);
         // Would return locations from Square API
@@ -501,7 +506,7 @@ describe('OnboardingService', () => {
       });
 
       it('fetches catalog from POS via adapter', async () => {
-        const mockCatalog: RawCatalogData = {
+        const mockCatalog: RawCatalogData = catalogData({
           categories: [{ id: 'cat_1', name: 'Coffee', ordinal: 1 }],
           items: [
             {
@@ -514,7 +519,7 @@ describe('OnboardingService', () => {
           modifiers: [
             { id: 'mod_1', name: 'Oat Milk', price: 75, modifierListId: 'ml_1' },
           ],
-        };
+        });
 
         mockPOSAdapter.importCatalog.mockReset();
         mockPOSAdapter.importCatalog.mockResolvedValue(mockCatalog);
@@ -527,14 +532,14 @@ describe('OnboardingService', () => {
 
       it('creates categories from import', async () => {
         mockPOSAdapter.importCatalog.mockReset();
-        mockPOSAdapter.importCatalog.mockResolvedValue({
+        mockPOSAdapter.importCatalog.mockResolvedValue(catalogData({
           categories: [
             { id: 'cat_1', name: 'Coffee', ordinal: 1 },
             { id: 'cat_2', name: 'Tea', ordinal: 2 },
           ],
           items: [],
           modifiers: [],
-        });
+        }));
 
         await service.completeStep(testBusiness.id, OnboardingStep.CATALOG_SETUP, {});
 
@@ -549,7 +554,7 @@ describe('OnboardingService', () => {
 
       it('creates bases from imported items', async () => {
         mockPOSAdapter.importCatalog.mockReset();
-        mockPOSAdapter.importCatalog.mockResolvedValue({
+        mockPOSAdapter.importCatalog.mockResolvedValue(catalogData({
           categories: [{ id: 'cat_1', name: 'Coffee', ordinal: 1 }],
           items: [
             {
@@ -560,7 +565,7 @@ describe('OnboardingService', () => {
             },
           ],
           modifiers: [],
-        });
+        }));
 
         await service.completeStep(testBusiness.id, OnboardingStep.CATALOG_SETUP, {});
 
@@ -575,14 +580,14 @@ describe('OnboardingService', () => {
 
       it('creates modifiers from import', async () => {
         mockPOSAdapter.importCatalog.mockReset();
-        mockPOSAdapter.importCatalog.mockResolvedValue({
+        mockPOSAdapter.importCatalog.mockResolvedValue(catalogData({
           categories: [],
           items: [],
           modifiers: [
             { id: 'mod_1', name: 'Oat Milk', price: 75, modifierListId: 'ml_milk' },
             { id: 'mod_2', name: 'Vanilla Syrup', price: 50, modifierListId: 'ml_syrup' },
           ],
-        });
+        }));
 
         await service.completeStep(testBusiness.id, OnboardingStep.CATALOG_SETUP, {});
 
@@ -596,7 +601,7 @@ describe('OnboardingService', () => {
 
       it('maps POS IDs to local records', async () => {
         mockPOSAdapter.importCatalog.mockReset();
-        mockPOSAdapter.importCatalog.mockResolvedValue({
+        mockPOSAdapter.importCatalog.mockResolvedValue(catalogData({
           categories: [{ id: 'pos_cat_1', name: 'Coffee', ordinal: 1 }],
           items: [
             {
@@ -607,7 +612,7 @@ describe('OnboardingService', () => {
             },
           ],
           modifiers: [],
-        });
+        }));
 
         await service.completeStep(testBusiness.id, OnboardingStep.CATALOG_SETUP, {});
 
@@ -636,11 +641,11 @@ describe('OnboardingService', () => {
         }));
 
         mockPOSAdapter.importCatalog.mockReset();
-        mockPOSAdapter.importCatalog.mockResolvedValue({
+        mockPOSAdapter.importCatalog.mockResolvedValue(catalogData({
           categories: [{ id: 'cat_1', name: 'Coffee', ordinal: 1 }],
           items: largeItems,
           modifiers: [],
-        });
+        }));
 
         await service.completeStep(testBusiness.id, OnboardingStep.CATALOG_SETUP, {});
 
@@ -653,14 +658,14 @@ describe('OnboardingService', () => {
 
       it('handles duplicate item names in import by making unique', async () => {
         mockPOSAdapter.importCatalog.mockReset();
-        mockPOSAdapter.importCatalog.mockResolvedValue({
+        mockPOSAdapter.importCatalog.mockResolvedValue(catalogData({
           categories: [{ id: 'cat_1', name: 'Coffee', ordinal: 1 }],
           items: [
             { id: 'item_1', name: 'Latte', categoryId: 'cat_1', variations: [{ id: 'v1', name: 'R', price: 500 }] },
             { id: 'item_2', name: 'Latte', categoryId: 'cat_1', variations: [{ id: 'v2', name: 'R', price: 500 }] },
           ],
           modifiers: [],
-        });
+        }));
 
         await service.completeStep(testBusiness.id, OnboardingStep.CATALOG_SETUP, {});
 

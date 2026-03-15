@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { CupSize } from '../../types.js';
 import { DrinkLayer, TOPPING_PROPERTIES } from './DrinkVisualizer.js';
 
 export interface LayeredCupProps {
   layers: DrinkLayer[];
-  cupSize: CupSize;
+  cupSize: string;
   cupHeight: number;
   hasTopping: boolean;
   toppingType?: string;
@@ -42,14 +41,17 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
 
   // Cup geometry
   const cup = useMemo(() => {
-    const topWidth = cupSize === CupSize.LARGE ? 100 : cupSize === CupSize.MEDIUM ? 90 : 78;
-    const bottomWidth = cupSize === CupSize.LARGE ? 74 : cupSize === CupSize.MEDIUM ? 66 : 58;
+    const lower = cupSize.toLowerCase();
+    const isLarge = lower.includes('large') || lower.includes('20') || lower.includes('24') || lower === 'l';
+    const isSmall = lower.includes('small') || lower.includes('8') || lower.includes('12') || lower === 's';
+    const topWidth = isLarge ? 100 : isSmall ? 78 : 90;
+    const bottomWidth = isLarge ? 74 : isSmall ? 58 : 66;
     const lidY = STEAM_HEADROOM + 8;
     const bottomY = STEAM_HEADROOM + cupHeight;
     const bottomCurve = 14;
     const cx = 100;
 
-    return { cx, lidY, bottomY, topWidth, bottomWidth, bottomCurve,
+    return { cx, lidY, bottomY, topWidth, bottomWidth, bottomCurve, isLarge,
       leftTop: cx - topWidth / 2, rightTop: cx + topWidth / 2,
       leftBottom: cx - bottomWidth / 2, rightBottom: cx + bottomWidth / 2,
     };
@@ -300,7 +302,7 @@ const LayeredCup: React.FC<LayeredCupProps> = ({
       {/* Lid */}
       <ellipse cx={cup.cx} cy={cup.lidY} rx={cup.topWidth / 2} ry="8"
         className="cup-lid" fill="url(#lidGrad)" stroke="#d0d0d0" strokeWidth="1.5" />
-      {cupSize === CupSize.LARGE && (
+      {cup.isLarge && (
         <path d={`M ${cup.leftTop} ${cup.lidY} Q ${cup.cx} ${cup.lidY - 14} ${cup.rightTop} ${cup.lidY}`}
           className="large-cup-lid-top" />
       )}

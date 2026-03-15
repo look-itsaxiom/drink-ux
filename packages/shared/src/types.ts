@@ -45,15 +45,6 @@ export interface BusinessConfig {
 // CATALOG - CATEGORIES & BASES
 // =============================================================================
 
-export enum DrinkCategory {
-  COFFEE = "coffee",
-  TEA = "tea",
-  ITALIAN_SODA = "italian_soda",
-  JUICE = "juice",
-  BLENDED = "blended",
-  SPECIALTY = "specialty",
-}
-
 export interface Category {
   id: string;
   name: string;
@@ -62,38 +53,44 @@ export interface Category {
   icon?: string;
 }
 
-export enum TemperatureConstraint {
-  HOT_ONLY = "hot_only",
-  ICED_ONLY = "iced_only",
-  BOTH = "both",
+export interface Variation {
+  id: string;
+  baseId: string;
+  name: string;         // e.g., "Small", "Medium", "Large", "12oz", "Single"
+  priceCents: number;   // Price in cents
+  displayOrder: number;
+  available: boolean;
 }
 
 export interface Base {
   id: string;
   categoryId: string;
   name: string;
-  basePrice: number;
-  temperatureConstraint: TemperatureConstraint;
+  priceCents: number;   // Base price in cents
   available: boolean;
+  imageUrl?: string;
+  variations: Variation[];
   visualColor?: string;
   visualOpacity?: number;
 }
 
 // =============================================================================
-// CATALOG - MODIFIERS
+// CATALOG - MODIFIER GROUPS & MODIFIERS
 // =============================================================================
 
-export enum ModifierType {
-  MILK = "milk",
-  SYRUP = "syrup",
-  TOPPING = "topping",
+export interface ModifierGroup {
+  id: string;
+  name: string;         // e.g., "Milk Options", "Syrups", "Toppings"
+  displayOrder: number;
+  selectionMode: string; // "single" or "multiple"
+  modifiers: Modifier[];
 }
 
 export interface Modifier {
   id: string;
-  type: ModifierType;
+  modifierGroupId: string;
   name: string;
-  price: number;
+  priceCents: number;   // Price in cents
   available: boolean;
   visualColor?: string;
   visualLayerOrder?: number;
@@ -104,19 +101,13 @@ export interface Modifier {
 // CATALOG - PRESETS (Named Drinks)
 // =============================================================================
 
-export enum CupSize {
-  SMALL = "small",
-  MEDIUM = "medium",
-  LARGE = "large",
-}
-
 export interface Preset {
   id: string;
   name: string;
   baseId: string;
-  defaultSize: CupSize;
+  defaultVariationId?: string;
   defaultHot: boolean;
-  price: number;
+  priceCents: number;    // Price in cents
   available: boolean;
   imageUrl?: string;
   modifierIds: string[];
@@ -156,14 +147,14 @@ export interface DrinkComponent {
   name: string;
   type: ComponentType;
   category: string;
-  price: number;
+  priceCents: number;
   visual: VisualProperties;
   available: boolean;
 }
 
 export interface CupComponent extends DrinkComponent {
   type: ComponentType.CUP;
-  size: CupSize;
+  size: string; // Variation name
   cupType: CupType;
   lidType: LidType;
 }
@@ -180,30 +171,29 @@ export interface ModifierComponent extends DrinkComponent {
 
 export interface DrinkBuilderState {
   // Step 1: Category selection
-  category?: DrinkCategory;
+  category?: string;
 
   // Step 2: Type selection (base)
   drinkType?: DrinkType;
 
   // Step 3: Modifications
-  cupSize?: CupSize;
+  selectedVariation?: Variation;
   isHot?: boolean;
-  milk?: ModifierComponent;
-  syrups: ModifierComponent[];
-  toppings: ModifierComponent[];
+  selectedModifiers: ModifierComponent[]; // All selected modifiers (from any group)
 
-  totalPrice: number;
+  totalPriceCents: number;
 }
 
 // Legacy DrinkType interface (used in mobile UI)
 export interface DrinkType {
   id: string;
   name: string;
-  category: DrinkCategory;
+  category: string;
   description?: string;
-  basePrice: number;
+  priceCents: number;
   isHot?: boolean; // undefined means both hot/iced available
   imageUrl?: string;
+  variations?: Variation[];
 }
 
 // =============================================================================
@@ -238,8 +228,8 @@ export interface OrderItem {
   name: string;
   description?: string;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
+  unitPriceCents: number;
+  totalPriceCents: number;
 }
 
 // =============================================================================
@@ -266,7 +256,7 @@ export interface DrinkCustomization {
 export interface CustomizationOption {
   id: string;
   name: string;
-  price: number;
+  priceCents: number;
   available: boolean;
 }
 
@@ -274,7 +264,7 @@ export interface SelectedCustomization {
   customizationId: string;
   optionId: string;
   optionName: string;
-  price: number;
+  priceCents: number;
 }
 
 // Legacy Drink interface
@@ -282,8 +272,8 @@ export interface Drink {
   id: string;
   name: string;
   description: string;
-  basePrice: number;
-  category: DrinkCategory;
+  priceCents: number;
+  category: string;
   imageUrl?: string;
   customizations: DrinkCustomization[];
 }

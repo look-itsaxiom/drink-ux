@@ -57,7 +57,6 @@ export interface CatalogItem {
   id: string;
   name: string;
   basePrice: number;
-  temperatureConstraint: string;
   visualColor: string | null;
 }
 
@@ -225,9 +224,9 @@ export function createBusinessRouter(
             select: {
               id: true,
               name: true,
-              basePrice: true,
-              temperatureConstraint: true,
+              priceCents: true,
               visualColor: true,
+              imageUrl: true,
             },
           },
         },
@@ -243,8 +242,7 @@ export function createBusinessRouter(
         items: category.bases.map((base) => ({
           id: base.id,
           name: base.name,
-          basePrice: base.basePrice,
-          temperatureConstraint: base.temperatureConstraint,
+          basePrice: base.priceCents / 100,
           visualColor: base.visualColor,
         })),
       }));
@@ -318,12 +316,12 @@ export function createBusinessRouter(
           businessId: business.id,
           available: true,
         },
-        orderBy: [{ type: 'asc' }, { name: 'asc' }],
+        orderBy: [{ name: 'asc' }],
         select: {
           id: true,
           name: true,
-          type: true,
-          price: true,
+          modifierGroupId: true,
+          priceCents: true,
           available: true,
           visualColor: true,
           visualLayerOrder: true,
@@ -400,9 +398,9 @@ export function createBusinessRouter(
           id: true,
           name: true,
           baseId: true,
-          defaultSize: true,
+          defaultVariationId: true,
           defaultHot: true,
-          price: true,
+          priceCents: true,
           available: true,
           imageUrl: true,
           modifiers: {
@@ -418,9 +416,9 @@ export function createBusinessRouter(
         id: preset.id,
         name: preset.name,
         baseId: preset.baseId,
-        defaultSize: preset.defaultSize,
+        defaultVariationId: preset.defaultVariationId,
         defaultHot: preset.defaultHot,
-        price: preset.price,
+        price: preset.priceCents / 100,
         available: preset.available,
         imageUrl: preset.imageUrl,
         modifierIds: preset.modifiers.map(m => m.modifierId),

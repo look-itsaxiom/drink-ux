@@ -5,9 +5,7 @@ import {
   Modifier,
   Preset,
   PresetModifier,
-  TemperatureConstraint,
-  ModifierType,
-  CupSize,
+  ModifierGroup,
 } from '../../generated/prisma';
 
 /**
@@ -55,8 +53,7 @@ export interface CreateBaseInput {
   businessId: string;
   categoryId: string;
   name: string;
-  basePrice: number;
-  temperatureConstraint?: TemperatureConstraint;
+  priceCents: number;
   available?: boolean;
   visualColor?: string;
   visualOpacity?: number;
@@ -67,8 +64,7 @@ export interface CreateBaseInput {
  */
 export interface UpdateBaseInput {
   name?: string;
-  basePrice?: number;
-  temperatureConstraint?: TemperatureConstraint;
+  priceCents?: number;
   available?: boolean;
   visualColor?: string;
   visualOpacity?: number;
@@ -89,9 +85,9 @@ export interface ListBasesFilter {
  */
 export interface CreateModifierInput {
   businessId: string;
+  modifierGroupId: string;
   name: string;
-  type: ModifierType;
-  price: number;
+  priceCents: number;
   available?: boolean;
   visualColor?: string;
   visualLayerOrder?: number;
@@ -103,7 +99,7 @@ export interface CreateModifierInput {
  */
 export interface UpdateModifierInput {
   name?: string;
-  price?: number;
+  priceCents?: number;
   available?: boolean;
   visualColor?: string;
   visualLayerOrder?: number;
@@ -115,7 +111,7 @@ export interface UpdateModifierInput {
  */
 export interface ListModifiersFilter {
   businessId: string;
-  type?: ModifierType;
+  modifierGroupId?: string;
   available?: boolean;
 }
 
@@ -127,8 +123,8 @@ export interface CreatePresetInput {
   name: string;
   baseId: string;
   modifierIds?: string[];
-  price: number;
-  defaultSize?: CupSize;
+  priceCents: number;
+  defaultVariationId?: string;
   defaultHot?: boolean;
   imageUrl?: string;
 }
@@ -140,8 +136,8 @@ export interface UpdatePresetInput {
   name?: string;
   baseId?: string;
   modifierIds?: string[];
-  price?: number;
-  defaultSize?: CupSize;
+  priceCents?: number;
+  defaultVariationId?: string;
   defaultHot?: boolean;
   imageUrl?: string;
   available?: boolean;
@@ -169,9 +165,6 @@ export interface PresetWithModifiers extends Preset {
 // =============================================================================
 
 const MAX_NAME_LENGTH = 255;
-const VALID_TEMPERATURE_CONSTRAINTS = ['HOT_ONLY', 'ICED_ONLY', 'BOTH'];
-const VALID_MODIFIER_TYPES = ['MILK', 'SYRUP', 'TOPPING'];
-const VALID_CUP_SIZES = ['SMALL', 'MEDIUM', 'LARGE'];
 
 // =============================================================================
 // SERVICE
@@ -367,8 +360,7 @@ export class CatalogService {
       businessId,
       categoryId,
       name,
-      basePrice,
-      temperatureConstraint = 'BOTH',
+      priceCents,
       available,
       visualColor,
       visualOpacity = 1.0,
@@ -384,13 +376,8 @@ export class CatalogService {
     }
 
     // Validate price
-    if (basePrice < 0) {
+    if (priceCents < 0) {
       throw new CatalogError('INVALID_PRICE', 'Price must be non-negative');
-    }
-
-    // Validate temperature constraint
-    if (!VALID_TEMPERATURE_CONSTRAINTS.includes(temperatureConstraint)) {
-      throw new CatalogError('INVALID_INPUT', 'Invalid temperature constraint');
     }
 
     // Validate category exists and belongs to business
@@ -423,8 +410,7 @@ export class CatalogService {
         businessId,
         categoryId,
         name: trimmedName,
-        basePrice,
-        temperatureConstraint: temperatureConstraint as TemperatureConstraint,
+        priceCents,
         ...(available !== undefined && { available }),
         visualColor,
         visualOpacity,
@@ -469,13 +455,8 @@ export class CatalogService {
     }
 
     // Validate price if provided
-    if (input.basePrice !== undefined && input.basePrice < 0) {
+    if (input.priceCents !== undefined && input.priceCents < 0) {
       throw new CatalogError('INVALID_PRICE', 'Price must be non-negative');
-    }
-
-    // Validate temperature constraint if provided
-    if (input.temperatureConstraint && !VALID_TEMPERATURE_CONSTRAINTS.includes(input.temperatureConstraint)) {
-      throw new CatalogError('INVALID_INPUT', 'Invalid temperature constraint');
     }
 
     // Update base
@@ -483,8 +464,7 @@ export class CatalogService {
       where: { id: baseId },
       data: {
         ...(trimmedName && { name: trimmedName }),
-        ...(input.basePrice !== undefined && { basePrice: input.basePrice }),
-        ...(input.temperatureConstraint && { temperatureConstraint: input.temperatureConstraint }),
+        ...(input.priceCents !== undefined && { priceCents: input.priceCents }),
         ...(input.available !== undefined && { available: input.available }),
         ...(input.visualColor !== undefined && { visualColor: input.visualColor }),
         ...(input.visualOpacity !== undefined && { visualOpacity: input.visualOpacity }),
@@ -545,9 +525,9 @@ export class CatalogService {
   async createModifier(input: CreateModifierInput): Promise<Modifier> {
     const {
       businessId,
+      modifierGroupId,
       name,
-      type,
-      price,
+      priceCents,
       available,
       visualColor,
       visualLayerOrder = 0,
@@ -564,36 +544,42 @@ export class CatalogService {
     }
 
     // Validate price
-    if (price < 0) {
+    if (priceCents < 0) {
       throw new CatalogError('INVALID_PRICE', 'Price must be non-negative');
     }
 
-    // Validate type
-    if (!VALID_MODIFIER_TYPES.includes(type)) {
-      throw new CatalogError('INVALID_INPUT', 'Invalid modifier type');
+    // Validate modifier group exists and belongs to business
+    const group = await this.prisma.modifierGroup.findUnique({
+      where: { id: modifierGroupId },
+    });
+    if (!group) {
+      throw new CatalogError('INVALID_INPUT', 'Modifier group not found');
+    }
+    if (group.businessId !== businessId) {
+      throw new CatalogError('INVALID_INPUT', 'Modifier group does not belong to this business');
     }
 
-    // Check for duplicate name within business and type
+    // Check for duplicate name within business and group
     const existingModifier = await this.prisma.modifier.findUnique({
       where: {
-        businessId_type_name: {
+        businessId_modifierGroupId_name: {
           businessId,
-          type: type as ModifierType,
+          modifierGroupId,
           name: trimmedName,
         },
       },
     });
     if (existingModifier) {
-      throw new CatalogError('DUPLICATE_NAME', 'A modifier with this name and type already exists');
+      throw new CatalogError('DUPLICATE_NAME', 'A modifier with this name already exists in this group');
     }
 
     // Create modifier
     return this.prisma.modifier.create({
       data: {
         businessId,
+        modifierGroupId,
         name: trimmedName,
-        type: type as ModifierType,
-        price,
+        priceCents,
         ...(available !== undefined && { available }),
         visualColor,
         visualLayerOrder,
@@ -625,22 +611,22 @@ export class CatalogService {
         throw new CatalogError('INVALID_INPUT', `Modifier name must be ${MAX_NAME_LENGTH} characters or less`);
       }
 
-      // Check for duplicate name within business and type
+      // Check for duplicate name within business and group
       const duplicate = await this.prisma.modifier.findFirst({
         where: {
           businessId: existing.businessId,
-          type: existing.type,
+          modifierGroupId: existing.modifierGroupId,
           name: trimmedName,
           id: { not: modifierId },
         },
       });
       if (duplicate) {
-        throw new CatalogError('DUPLICATE_NAME', 'A modifier with this name and type already exists');
+        throw new CatalogError('DUPLICATE_NAME', 'A modifier with this name already exists in this group');
       }
     }
 
     // Validate price if provided
-    if (input.price !== undefined && input.price < 0) {
+    if (input.priceCents !== undefined && input.priceCents < 0) {
       throw new CatalogError('INVALID_PRICE', 'Price must be non-negative');
     }
 
@@ -649,7 +635,7 @@ export class CatalogService {
       where: { id: modifierId },
       data: {
         ...(trimmedName && { name: trimmedName }),
-        ...(input.price !== undefined && { price: input.price }),
+        ...(input.priceCents !== undefined && { priceCents: input.priceCents }),
         ...(input.available !== undefined && { available: input.available }),
         ...(input.visualColor !== undefined && { visualColor: input.visualColor }),
         ...(input.visualLayerOrder !== undefined && { visualLayerOrder: input.visualLayerOrder }),
@@ -665,7 +651,7 @@ export class CatalogService {
     return this.prisma.modifier.findMany({
       where: {
         businessId: filter.businessId,
-        ...(filter.type && { type: filter.type }),
+        ...(filter.modifierGroupId && { modifierGroupId: filter.modifierGroupId }),
         ...(filter.available !== undefined && { available: filter.available }),
       },
       orderBy: { name: 'asc' },
@@ -713,8 +699,8 @@ export class CatalogService {
       name,
       baseId,
       modifierIds = [],
-      price,
-      defaultSize = 'MEDIUM',
+      priceCents,
+      defaultVariationId,
       defaultHot = true,
       imageUrl,
     } = input;
@@ -745,13 +731,18 @@ export class CatalogService {
     }
 
     // Validate price
-    if (price < 0) {
+    if (priceCents < 0) {
       throw new CatalogError('INVALID_PRICE', 'Price must be non-negative');
     }
 
-    // Validate default size
-    if (!VALID_CUP_SIZES.includes(defaultSize)) {
-      throw new CatalogError('INVALID_INPUT', 'Invalid default size');
+    // Validate default variation if provided
+    if (defaultVariationId) {
+      const variation = await this.prisma.variation.findUnique({
+        where: { id: defaultVariationId },
+      });
+      if (!variation || variation.baseId !== baseId) {
+        throw new CatalogError('INVALID_INPUT', 'Default variation not found or does not belong to this base');
+      }
     }
 
     // Validate modifiers exist and belong to business
@@ -788,8 +779,8 @@ export class CatalogService {
           businessId,
           name: trimmedName,
           baseId,
-          price,
-          defaultSize: defaultSize as CupSize,
+          priceCents,
+          defaultVariationId,
           defaultHot,
           imageUrl,
         },
@@ -846,7 +837,7 @@ export class CatalogService {
     }
 
     // Validate price if provided
-    if (input.price !== undefined && input.price < 0) {
+    if (input.priceCents !== undefined && input.priceCents < 0) {
       throw new CatalogError('INVALID_PRICE', 'Price must be non-negative');
     }
 
@@ -905,8 +896,8 @@ export class CatalogService {
         data: {
           ...(trimmedName && { name: trimmedName }),
           ...(input.baseId && { baseId: input.baseId }),
-          ...(input.price !== undefined && { price: input.price }),
-          ...(input.defaultSize && { defaultSize: input.defaultSize }),
+          ...(input.priceCents !== undefined && { priceCents: input.priceCents }),
+          ...(input.defaultVariationId !== undefined && { defaultVariationId: input.defaultVariationId }),
           ...(input.defaultHot !== undefined && { defaultHot: input.defaultHot }),
           ...(input.imageUrl !== undefined && { imageUrl: input.imageUrl }),
           ...(input.available !== undefined && { available: input.available }),
@@ -984,7 +975,7 @@ export class CatalogService {
   }
 
   /**
-   * Calculate suggested price from base and modifiers
+   * Calculate suggested price from base and modifiers (in cents)
    */
   async calculateSuggestedPrice(baseId: string, modifierIds: string[]): Promise<number> {
     // Get base price
@@ -995,18 +986,17 @@ export class CatalogService {
       throw new CatalogError('INVALID_BASE', 'Base not found');
     }
 
-    let totalPrice = base.basePrice;
+    let totalPriceCents = base.priceCents;
 
     // Add modifier prices
     if (modifierIds.length > 0) {
       const modifiers = await this.prisma.modifier.findMany({
         where: { id: { in: modifierIds } },
       });
-      totalPrice += modifiers.reduce((sum, m) => sum + m.price, 0);
+      totalPriceCents += modifiers.reduce((sum, m) => sum + m.priceCents, 0);
     }
 
-    // Round to 2 decimal places
-    return Math.round(totalPrice * 100) / 100;
+    return totalPriceCents;
   }
 
   // ===========================================================================

@@ -5,6 +5,7 @@ import {
   POSLocation,
   TokenResult,
   RawCatalogData,
+  RawPOSModifierList,
   CatalogItem,
   CatalogModifier,
   OrderSubmission,
@@ -46,6 +47,8 @@ interface SquareApiErrorResponse {
 interface SquareCatalogObject {
   type: string;
   id: string;
+  is_deleted?: boolean;
+  present_at_location_ids?: string[];
   category_data?: {
     name: string;
     ordinal?: number;
@@ -54,6 +57,9 @@ interface SquareCatalogObject {
     name: string;
     description?: string;
     category_id?: string;
+    category_ids?: string[];
+    image_ids?: string[];
+    tax_ids?: string[];
     variations?: Array<{
       id: string;
       item_variation_data: {
@@ -66,6 +72,8 @@ interface SquareCatalogObject {
     }>;
     modifier_list_info?: Array<{
       modifier_list_id: string;
+      min_selected_modifiers?: number;
+      max_selected_modifiers?: number;
     }>;
   };
   modifier_list_data?: {
@@ -80,6 +88,15 @@ interface SquareCatalogObject {
         };
       };
     }>;
+  };
+  image_data?: {
+    name?: string;
+    url?: string;
+  };
+  tax_data?: {
+    name: string;
+    percentage?: string;
+    enabled?: boolean;
   };
 }
 
@@ -246,6 +263,31 @@ export class SquareAdapter implements POSAdapter {
     };
   }
 
+  /**
+   * Fetch with retry and exponential backoff for rate limiting (429).
+   * Retries up to maxRetries times with delays of 1s, 2s, 4s.
+   */
+  private async fetchWithRetry(
+    url: string,
+    options: RequestInit,
+    maxRetries = 3,
+  ): Promise<Response> {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      const response = await fetch(url, options);
+
+      if (response.status === 429 && attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+
+      return response;
+    }
+
+    // Unreachable, but TypeScript needs it
+    throw new Error('Max retries exceeded');
+  }
+
   async importCatalog(): Promise<RawCatalogData> {
     if (!this.credentials) {
       throw new Error('Not authenticated');
@@ -255,6 +297,9 @@ export class SquareAdapter implements POSAdapter {
       items: [],
       modifiers: [],
       categories: [],
+      images: [],
+      taxes: [],
+      modifierLists: [],
     };
 
     let cursor: string | undefined;
@@ -264,7 +309,7 @@ export class SquareAdapter implements POSAdapter {
         ? `${this.getBaseUrl()}/v2/catalog/list?cursor=${cursor}`
         : `${this.getBaseUrl()}/v2/catalog/list`;
 
-      const response = await fetch(url, {
+      const response = await this.fetchWithRetry(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.credentials.accessToken}`,
@@ -285,6 +330,9 @@ export class SquareAdapter implements POSAdapter {
       const objects = catalogData.objects || [];
 
       for (const obj of objects) {
+        // Skip deleted objects
+        if (obj.is_deleted) continue;
+
         switch (obj.type) {
           case 'CATEGORY':
             if (obj.category_data) {
@@ -298,31 +346,78 @@ export class SquareAdapter implements POSAdapter {
 
           case 'ITEM':
             if (obj.item_data) {
+              const variations = (obj.item_data.variations || []).map(v => ({
+                id: v.id,
+                name: v.item_variation_data.name,
+                price: v.item_variation_data.price_money?.amount || 0,
+              }));
+
+              // Flag items where no variation has a price
+              const hasAnyPrice = variations.some(v => v.price > 0);
+
               result.items.push({
                 id: obj.id,
                 name: obj.item_data.name,
                 description: obj.item_data.description,
+                // Legacy singular category_id
                 categoryId: obj.item_data.category_id,
-                variations: (obj.item_data.variations || []).map(v => ({
-                  id: v.id,
-                  name: v.item_variation_data.name,
-                  price: v.item_variation_data.price_money?.amount || 0,
-                })),
+                // Modern plural category_ids (Square API)
+                categoryIds: obj.item_data.category_ids,
+                variations,
                 modifierListIds: obj.item_data.modifier_list_info?.map(m => m.modifier_list_id),
+                modifierListInfo: obj.item_data.modifier_list_info?.map(m => ({
+                  modifierListId: m.modifier_list_id,
+                  minSelectedModifiers: m.min_selected_modifiers,
+                  maxSelectedModifiers: m.max_selected_modifiers,
+                })),
+                imageIds: obj.item_data.image_ids,
+                taxIds: obj.item_data.tax_ids,
+                presentAtLocationIds: obj.present_at_location_ids,
+                needsReview: variations.length > 0 && !hasAnyPrice,
               });
             }
             break;
 
           case 'MODIFIER_LIST':
-            if (obj.modifier_list_data?.modifiers) {
-              for (const mod of obj.modifier_list_data.modifiers) {
-                result.modifiers.push({
-                  id: mod.id,
-                  name: mod.modifier_data.name,
-                  price: mod.modifier_data.price_money?.amount || 0,
-                  modifierListId: obj.id,
-                });
-              }
+            if (obj.modifier_list_data) {
+              const listModifiers = (obj.modifier_list_data.modifiers || []).map(mod => ({
+                id: mod.id,
+                name: mod.modifier_data.name,
+                price: mod.modifier_data.price_money?.amount || 0,
+                modifierListId: obj.id,
+                modifierListName: obj.modifier_list_data!.name,
+              }));
+
+              // Add individual modifiers to flat list (backward compatible)
+              result.modifiers.push(...listModifiers);
+
+              // Also store the full modifier list with its name
+              result.modifierLists.push({
+                id: obj.id,
+                name: obj.modifier_list_data.name,
+                modifiers: listModifiers,
+              });
+            }
+            break;
+
+          case 'IMAGE':
+            if (obj.image_data?.url) {
+              result.images.push({
+                id: obj.id,
+                url: obj.image_data.url,
+                name: obj.image_data.name,
+              });
+            }
+            break;
+
+          case 'TAX':
+            if (obj.tax_data) {
+              result.taxes.push({
+                id: obj.id,
+                name: obj.tax_data.name,
+                percentage: obj.tax_data.percentage,
+                enabled: obj.tax_data.enabled,
+              });
             }
             break;
         }

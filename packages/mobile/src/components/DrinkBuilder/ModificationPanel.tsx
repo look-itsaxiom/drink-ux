@@ -8,79 +8,112 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonCardContent,
+  IonNote,
 } from "@ionic/react";
-import { addCircleOutline, closeCircle } from "ionicons/icons";
-import { DrinkBuilderState, DrinkType, CupSize } from "@drink-ux/shared";
+import { addCircleOutline, closeCircle, radioButtonOn, radioButtonOff, checkboxOutline, squareOutline } from "ionicons/icons";
+import { MappedVariation, MappedModifierGroup, MappedModifier } from "../../services/catalogService";
 import "./ModificationPanel.css";
 
-interface ModificationPanelProps {
-  drinkType: DrinkType;
-  state: DrinkBuilderState;
-  onUpdate: (state: Partial<DrinkBuilderState>) => void;
-  onBack: () => void;
-  onShowMilkSelector: () => void;
-  onShowSyrupSelector: () => void;
-  onShowToppingSelector: () => void;
+/**
+ * Selected modifiers organized by group ID
+ */
+export interface SelectedModifiers {
+  [groupId: string]: MappedModifier[];
 }
 
-const cupSizes = [
-  { value: CupSize.SMALL, label: "Small", priceAdd: 0 },
-  { value: CupSize.MEDIUM, label: "Medium", priceAdd: 0.5 },
-  { value: CupSize.LARGE, label: "Large", priceAdd: 1.0 },
-];
+interface ModificationPanelProps {
+  /** Item name for display */
+  itemName: string;
+  /** Available variations (sizes) for this item */
+  variations: MappedVariation[];
+  /** Currently selected variation */
+  selectedVariation?: MappedVariation;
+  /** Whether temperature selection is available */
+  showTemperature: boolean;
+  /** Current temperature selection */
+  isHot?: boolean;
+  /** Modifier groups applicable to this item */
+  modifierGroups: MappedModifierGroup[];
+  /** Currently selected modifiers by group */
+  selectedModifiers: SelectedModifiers;
+  /** Callbacks */
+  onSelectVariation: (variation: MappedVariation) => void;
+  onSelectTemperature: (isHot: boolean) => void;
+  onOpenModifierGroup: (group: MappedModifierGroup) => void;
+  onRemoveModifier: (groupId: string, modifierId: string) => void;
+}
+
+/**
+ * Format cents to dollar display
+ */
+function formatPrice(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+/**
+ * Get selection hint text for a modifier group
+ */
+function getSelectionHint(group: MappedModifierGroup): string {
+  if (group.selectionMode === 'single') {
+    return group.minSelections > 0 ? 'Required — pick 1' : 'Pick 1';
+  }
+  if (group.minSelections > 0 && group.maxSelections < group.modifiers.length) {
+    return `Pick ${group.minSelections}–${group.maxSelections}`;
+  }
+  if (group.minSelections > 0) {
+    return `Pick at least ${group.minSelections}`;
+  }
+  if (group.maxSelections < group.modifiers.length) {
+    return `Pick up to ${group.maxSelections}`;
+  }
+  return 'Optional';
+}
 
 const ModificationPanel: React.FC<ModificationPanelProps> = ({
-  drinkType,
-  state,
-  onUpdate,
-  onShowMilkSelector,
-  onShowSyrupSelector,
-  onShowToppingSelector,
+  variations,
+  selectedVariation,
+  showTemperature,
+  isHot,
+  modifierGroups,
+  selectedModifiers,
+  onSelectVariation,
+  onSelectTemperature,
+  onOpenModifierGroup,
+  onRemoveModifier,
 }) => {
-  const canSelectTemperature = drinkType.isHot === undefined;
-
-  const handleRemoveMilk = () => {
-    onUpdate({ milk: undefined });
-  };
-
-  const handleRemoveSyrup = (syrupId: string) => {
-    onUpdate({ syrups: state.syrups.filter((s) => s.id !== syrupId) });
-  };
-
-  const handleRemoveTopping = (toppingId: string) => {
-    onUpdate({ toppings: state.toppings.filter((t) => t.id !== toppingId) });
-  };
-
   return (
     <div className="modification-panel">
       <div className="modifications-content">
-        {/* Cup Size */}
-        <IonCard className="mod-card">
-          <IonCardHeader>
-            <IonCardTitle>Cup Size</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <div className="size-buttons">
-              {cupSizes.map((size) => (
-                <IonButton
-                  key={size.value}
-                  size="small"
-                  fill={state.cupSize === size.value ? "solid" : "outline"}
-                  onClick={() => onUpdate({ cupSize: size.value })}
-                  className="size-button"
-                >
-                  {size.label}
-                  {size.priceAdd > 0 && (
-                    <span className="price-add">+${size.priceAdd}</span>
-                  )}
-                </IonButton>
-              ))}
-            </div>
-          </IonCardContent>
-        </IonCard>
+        {/* Variations (Size picker) — only show if more than 1 variation */}
+        {variations.length > 1 && (
+          <IonCard className="mod-card">
+            <IonCardHeader>
+              <IonCardTitle>Size</IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+              <div className="size-buttons">
+                {variations.map((variation) => {
+                  const isSelected = selectedVariation?.variationId === variation.variationId;
+                  return (
+                    <IonButton
+                      key={variation.variationId}
+                      size="small"
+                      fill={isSelected ? "solid" : "outline"}
+                      onClick={() => onSelectVariation(variation)}
+                      className="size-button"
+                    >
+                      {variation.name}
+                      <span className="price-add">{formatPrice(variation.price)}</span>
+                    </IonButton>
+                  );
+                })}
+              </div>
+            </IonCardContent>
+          </IonCard>
+        )}
 
-        {/* Temperature (if applicable) */}
-        {canSelectTemperature && (
+        {/* Temperature (only if applicable) */}
+        {showTemperature && (
           <IonCard className="mod-card">
             <IonCardHeader>
               <IonCardTitle>Temperature</IonCardTitle>
@@ -89,16 +122,16 @@ const ModificationPanel: React.FC<ModificationPanelProps> = ({
               <div className="temp-buttons">
                 <IonButton
                   size="small"
-                  fill={state.isHot === true ? "solid" : "outline"}
-                  onClick={() => onUpdate({ isHot: true })}
+                  fill={isHot === true ? "solid" : "outline"}
+                  onClick={() => onSelectTemperature(true)}
                   className="temp-button"
                 >
                   Hot
                 </IonButton>
                 <IonButton
                   size="small"
-                  fill={state.isHot === false ? "solid" : "outline"}
-                  onClick={() => onUpdate({ isHot: false })}
+                  fill={isHot === false ? "solid" : "outline"}
+                  onClick={() => onSelectTemperature(false)}
                   className="temp-button"
                 >
                   Iced
@@ -108,97 +141,58 @@ const ModificationPanel: React.FC<ModificationPanelProps> = ({
           </IonCard>
         )}
 
-        {/* Milk */}
-        <IonCard className="mod-card">
-          <IonCardHeader>
-            <IonCardTitle>Milk</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <div className="mod-chips">
-              {state.milk && (
-                <IonChip color="primary" className="selected-chip">
-                  <IonLabel>{state.milk.name}</IonLabel>
-                  <IonIcon icon={closeCircle} onClick={handleRemoveMilk} />
-                </IonChip>
-              )}
-              <IonButton
-                size="small"
-                fill="outline"
-                onClick={onShowMilkSelector}
-                className="add-button"
-              >
-                <IonIcon slot="start" icon={addCircleOutline} />
-                {state.milk ? "Change" : "Add"} Milk
-              </IonButton>
-            </div>
-          </IonCardContent>
-        </IonCard>
+        {/* Dynamic Modifier Groups */}
+        {modifierGroups.map((group) => {
+          const selected = selectedModifiers[group.id] || [];
+          const atMax = group.selectionMode === 'single'
+            ? selected.length >= 1
+            : selected.length >= group.maxSelections;
 
-        {/* Syrups */}
-        <IonCard className="mod-card">
-          <IonCardHeader>
-            <IonCardTitle>Syrups</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <div className="mod-chips">
-              {state.syrups.map((syrup) => (
-                <IonChip
-                  key={syrup.id}
-                  color="secondary"
-                  className="selected-chip"
-                >
-                  <IonLabel>{syrup.name}</IonLabel>
-                  <IonIcon
-                    icon={closeCircle}
-                    onClick={() => handleRemoveSyrup(syrup.id)}
-                  />
-                </IonChip>
-              ))}
-              <IonButton
-                size="small"
-                fill="outline"
-                onClick={onShowSyrupSelector}
-                className="add-button"
-              >
-                <IonIcon slot="start" icon={addCircleOutline} />
-                Add Syrup
-              </IonButton>
-            </div>
-          </IonCardContent>
-        </IonCard>
+          return (
+            <IonCard key={group.id} className="mod-card">
+              <IonCardHeader>
+                <IonCardTitle>{group.name}</IonCardTitle>
+                <IonNote color="medium" className="mod-group-hint">
+                  {getSelectionHint(group)}
+                </IonNote>
+              </IonCardHeader>
+              <IonCardContent>
+                <div className="mod-chips">
+                  {selected.map((mod) => (
+                    <IonChip key={mod.squareModifierId} color="primary" className="selected-chip">
+                      <IonLabel>
+                        {mod.name}
+                        {mod.price > 0 && <span className="chip-price"> +{formatPrice(mod.price)}</span>}
+                      </IonLabel>
+                      <IonIcon
+                        icon={closeCircle}
+                        onClick={() => onRemoveModifier(group.id, mod.squareModifierId)}
+                      />
+                    </IonChip>
+                  ))}
+                  {!atMax && (
+                    <IonButton
+                      size="small"
+                      fill="outline"
+                      onClick={() => onOpenModifierGroup(group)}
+                      className="add-button"
+                    >
+                      <IonIcon slot="start" icon={addCircleOutline} />
+                      {selected.length > 0 && group.selectionMode === 'single' ? 'Change' : 'Add'}
+                    </IonButton>
+                  )}
+                </div>
+              </IonCardContent>
+            </IonCard>
+          );
+        })}
 
-        {/* Toppings */}
-        <IonCard className="mod-card">
-          <IonCardHeader>
-            <IonCardTitle>Toppings</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <div className="mod-chips">
-              {state.toppings.map((topping) => (
-                <IonChip
-                  key={topping.id}
-                  color="tertiary"
-                  className="selected-chip"
-                >
-                  <IonLabel>{topping.name}</IonLabel>
-                  <IonIcon
-                    icon={closeCircle}
-                    onClick={() => handleRemoveTopping(topping.id)}
-                  />
-                </IonChip>
-              ))}
-              <IonButton
-                size="small"
-                fill="outline"
-                onClick={onShowToppingSelector}
-                className="add-button"
-              >
-                <IonIcon slot="start" icon={addCircleOutline} />
-                Add Topping
-              </IonButton>
-            </div>
-          </IonCardContent>
-        </IonCard>
+        {/* Empty state — no modifier groups and single variation */}
+        {modifierGroups.length === 0 && variations.length <= 1 && !showTemperature && (
+          <div className="empty-customization">
+            <p>No customization options for this item.</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -31,24 +31,24 @@ export interface CreateOrderInput {
  *
  * Supports two flows:
  * - **Legacy**: `baseId` is a Drink-UX Base model ID, modifiers are Modifier model IDs.
- *   Prices are looked up from the database.
+ *   Prices are looked up from the database (in cents).
  * - **Mapped (new)**: `baseId` is a Square item ID that exists in ItemMapping.
- *   `modifiers` are Square modifier IDs. `unitPrice` and `itemName` should be
+ *   `modifiers` are Square modifier IDs. `unitPriceCents` and `itemName` should be
  *   provided since prices come from the live Square catalog.
  */
 export interface OrderItemInput {
   baseId: string;
   quantity: number;
-  size: 'SMALL' | 'MEDIUM' | 'LARGE';
-  temperature: 'HOT' | 'ICED';
+  size: string;           // Variation name (e.g., "Small", "12oz", "Regular")
+  temperature: string;    // Free-form (e.g., "HOT", "ICED", or empty)
   modifiers: string[];
   notes?: string;
-  /** Client-provided unit price (mapped flow). Includes base + size + modifiers. */
-  unitPrice?: number;
+  /** Client-provided unit price in cents (mapped flow). Includes base + size + modifiers. */
+  unitPriceCents?: number;
   /** Client-provided item name (mapped flow). */
   itemName?: string;
   /** Client-provided modifier details (mapped flow). */
-  modifierDetails?: Array<{ id: string; name: string; price: number }>;
+  modifierDetails?: Array<{ id: string; name: string; priceCents: number }>;
 }
 
 /**
@@ -57,7 +57,7 @@ export interface OrderItemInput {
 export interface ModifierInfo {
   id: string;
   name: string;
-  price: number;
+  priceCents: number;
 }
 
 /**
@@ -69,8 +69,8 @@ export interface OrderItemResult {
   quantity: number;
   size: string;
   temperature: string;
-  unitPrice: number;
-  totalPrice: number;
+  unitPriceCents: number;
+  totalPriceCents: number;
   modifiers: ModifierInfo[];
   notes?: string;
 }
@@ -85,9 +85,9 @@ export interface OrderResult {
   status: OrderStatus;
   estimatedReadyAt?: Date;
   items: OrderItemResult[];
-  subtotal: number;
-  tax: number;
-  total: number;
+  subtotalCents: number;
+  taxCents: number;
+  totalCents: number;
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
@@ -118,19 +118,12 @@ interface CalculatedItem {
   temperature: string;
   notes?: string;
   name: string;
-  unitPrice: number;
-  totalPrice: number;
+  unitPriceCents: number;
+  totalPriceCents: number;
   modifiers: ModifierInfo[];
   /** When true, baseId is a Square item ID (no translation needed for POS). */
   isMapped?: boolean;
 }
-
-// Size multipliers for pricing (legacy flow)
-const SIZE_MULTIPLIERS: Record<string, number> = {
-  SMALL: 1.0,
-  MEDIUM: 1.25,
-  LARGE: 1.5,
-};
 
 // Default tax rate (8.25%)
 const DEFAULT_TAX_RATE = 0.0825;
@@ -142,6 +135,7 @@ const PICKUP_CODE_LENGTH = 4;
 /**
  * Order Service - handles order creation, retrieval, and status management.
  *
+ * All prices are stored and processed in integer cents.
  * Supports both the legacy Base/Modifier model flow and the new mapping-layer
  * flow where the mobile app submits Square IDs directly.
  */
@@ -191,10 +185,10 @@ export class OrderService {
     // Validate and calculate item prices
     const calculatedItems = await this.calculateItems(businessId, items);
 
-    // Calculate totals
-    const subtotal = calculatedItems.reduce((sum: number, item: CalculatedItem) => sum + item.totalPrice, 0);
-    const tax = this.roundPrice(subtotal * DEFAULT_TAX_RATE);
-    const total = this.roundPrice(subtotal + tax);
+    // Calculate totals (all in cents)
+    const subtotalCents = calculatedItems.reduce((sum: number, item: CalculatedItem) => sum + item.totalPriceCents, 0);
+    const taxCents = Math.round(subtotalCents * DEFAULT_TAX_RATE);
+    const totalCents = subtotalCents + taxCents;
 
     // Generate unique identifiers
     const orderNumber = await this.generateOrderNumber(businessId);
@@ -210,9 +204,9 @@ export class OrderService {
         customerPhone,
         customerEmail,
         notes,
-        subtotal: this.roundPrice(subtotal),
-        tax,
-        total,
+        subtotalCents,
+        taxCents,
+        totalCents,
         status: 'PENDING',
         items: {
           create: calculatedItems.map((item: CalculatedItem) => ({
@@ -221,8 +215,8 @@ export class OrderService {
             quantity: item.quantity,
             size: item.size,
             temperature: item.temperature,
-            unitPrice: item.unitPrice,
-            totalPrice: item.totalPrice,
+            unitPriceCents: item.unitPriceCents,
+            totalPriceCents: item.totalPriceCents,
             modifiers: item.modifiers as object[],
             notes: item.notes,
           })),
@@ -410,11 +404,11 @@ export class OrderService {
    * Calculate item prices and validate references.
    *
    * Supports two resolution strategies:
-   * 1. **Mapped flow**: If client provides `unitPrice` and the baseId matches an
+   * 1. **Mapped flow**: If client provides `unitPriceCents` and the baseId matches an
    *    ItemMapping, trust the client-provided price (it came from Square via
    *    MappedCatalogService). Modifier details are also client-provided.
-   * 2. **Legacy flow**: Look up Base and Modifier models from the database and
-   *    calculate prices using size multipliers.
+   * 2. **Legacy flow**: Look up Base and Variation models from the database and
+   *    calculate prices using the matched variation.
    */
   private async calculateItems(
     businessId: string,
@@ -430,9 +424,9 @@ export class OrderService {
         },
       });
 
-      if (mapping && item.unitPrice !== undefined) {
+      if (mapping && item.unitPriceCents !== undefined) {
         // Mapped flow: Square IDs with client-provided prices
-        result.push(this.calculateMappedItem(item, mapping.displayName || item.itemName || 'Custom Drink'));
+        result.push(this.calculateMappedItem(item, mapping.displayName || item.itemName || 'Custom Item'));
       } else {
         // Legacy flow: Drink-UX Base/Modifier model IDs
         const legacyItem = await this.calculateLegacyItem(businessId, item);
@@ -444,16 +438,16 @@ export class OrderService {
   }
 
   /**
-   * Calculate item using mapped flow (Square IDs, client-provided prices).
+   * Calculate item using mapped flow (Square IDs, client-provided prices in cents).
    */
   private calculateMappedItem(item: OrderItemInput, name: string): CalculatedItem {
-    const unitPrice = this.roundPrice(item.unitPrice!);
-    const totalPrice = this.roundPrice(unitPrice * item.quantity);
+    const unitPriceCents = item.unitPriceCents!;
+    const totalPriceCents = unitPriceCents * item.quantity;
 
     const modifiers: ModifierInfo[] = (item.modifierDetails || []).map(m => ({
       id: m.id,
       name: m.name,
-      price: m.price,
+      priceCents: m.priceCents,
     }));
 
     return {
@@ -463,15 +457,15 @@ export class OrderService {
       temperature: item.temperature,
       notes: item.notes,
       name,
-      unitPrice,
-      totalPrice,
+      unitPriceCents,
+      totalPriceCents,
       modifiers,
       isMapped: true,
     };
   }
 
   /**
-   * Calculate item using legacy flow (Drink-UX Base/Modifier IDs, DB prices).
+   * Calculate item using legacy flow (Drink-UX Base/Modifier IDs, DB prices in cents).
    */
   private async calculateLegacyItem(
     businessId: string,
@@ -483,15 +477,21 @@ export class OrderService {
         id: item.baseId,
         businessId,
       },
+      include: {
+        variations: true,
+      },
     });
 
     if (!base) {
       throw new OrderError('INVALID_ITEM', `Invalid item reference: ${item.baseId}`);
     }
 
-    // Calculate base price with size multiplier
-    const sizeMultiplier = SIZE_MULTIPLIERS[item.size] || 1.0;
-    let unitPrice = this.roundPrice(base.basePrice * sizeMultiplier);
+    // Find the matching variation by name, or fall back to base price
+    let unitPriceCents = base.priceCents;
+    const matchedVariation = base.variations.find(v => v.name === item.size);
+    if (matchedVariation) {
+      unitPriceCents = matchedVariation.priceCents;
+    }
 
     // Get modifier details and add their prices
     const modifierInfos: ModifierInfo[] = [];
@@ -507,13 +507,13 @@ export class OrderService {
         modifierInfos.push({
           id: mod.id,
           name: mod.name,
-          price: mod.price,
+          priceCents: mod.priceCents,
         });
-        unitPrice = this.roundPrice(unitPrice + mod.price);
+        unitPriceCents += mod.priceCents;
       }
     }
 
-    const totalPrice = this.roundPrice(unitPrice * item.quantity);
+    const totalPriceCents = unitPriceCents * item.quantity;
 
     return {
       baseId: item.baseId,
@@ -522,8 +522,8 @@ export class OrderService {
       temperature: item.temperature,
       notes: item.notes,
       name: base.name,
-      unitPrice,
-      totalPrice,
+      unitPriceCents,
+      totalPriceCents,
       modifiers: modifierInfos,
       isMapped: false,
     };
@@ -533,7 +533,7 @@ export class OrderService {
    * Submit order to POS.
    *
    * For mapped items, Square IDs are used directly (no translation needed).
-   * For legacy items, POS IDs are looked up from Base/Modifier models.
+   * For legacy items, POS IDs are looked up from Base/Variation models.
    */
   private async submitToPOS(
     order: Order,
@@ -558,10 +558,14 @@ export class OrderService {
             : undefined,
         });
       } else {
-        // Legacy flow: look up POS IDs from Base/Modifier models
+        // Legacy flow: look up POS IDs from Base/Variation models
         const base = await this.prisma.base.findUnique({
           where: { id: item.baseId },
+          include: { variations: true },
         });
+
+        // Find the variation matching the ordered size for the POS variation ID
+        const matchedVariation = base?.variations.find(v => v.name === item.size);
 
         const modifierIds = item.modifiers.map((m: ModifierInfo) => m.id);
         const modifiers = modifierIds.length > 0
@@ -576,8 +580,7 @@ export class OrderService {
 
         posItems.push({
           posItemId: base?.posItemId || '',
-          // Use posVariationId when available — Square orders require variation ID, not item ID
-          variationId: base?.posVariationId || undefined,
+          variationId: matchedVariation?.posVariationId || undefined,
           quantity: item.quantity,
           modifierIds: posModifierIds.length > 0 ? posModifierIds : undefined,
         });
@@ -669,13 +672,6 @@ export class OrderService {
   }
 
   /**
-   * Round price to 2 decimal places
-   */
-  private roundPrice(price: number): number {
-    return Math.round(price * 100) / 100;
-  }
-
-  /**
    * Convert database order to result format
    */
   private toOrderResult(
@@ -695,14 +691,14 @@ export class OrderService {
         quantity: item.quantity,
         size: item.size,
         temperature: item.temperature,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
+        unitPriceCents: item.unitPriceCents,
+        totalPriceCents: item.totalPriceCents,
         modifiers: calculatedItems?.[index]?.modifiers || (item.modifiers as unknown as ModifierInfo[]) || [],
         notes: item.notes || undefined,
       })),
-      subtotal: order.subtotal,
-      tax: order.tax,
-      total: order.total,
+      subtotalCents: order.subtotalCents,
+      taxCents: order.taxCents,
+      totalCents: order.totalCents,
       customerName: order.customerName,
       customerPhone: order.customerPhone || undefined,
       customerEmail: order.customerEmail || undefined,

@@ -1,5 +1,5 @@
 import { PrismaClient, ItemMapping } from '../../generated/prisma';
-import { POSAdapter, RawCatalogData, RawPOSItem, RawPOSModifier } from '../adapters/pos/POSAdapter';
+import { POSAdapter, RawCatalogData, RawPOSItem, RawPOSModifier, RawPOSImage, RawPOSModifierList } from '../adapters/pos/POSAdapter';
 import { decryptToken } from '../utils/encryption';
 
 const ENCRYPTION_KEY = process.env.POS_TOKEN_ENCRYPTION_KEY || 'test-key-must-be-32-chars-long!!';
@@ -16,7 +16,7 @@ export class MappedCatalogError extends Error {
   }
 }
 
-interface CatalogSize {
+interface CatalogVariation {
   variationId: string;
   name: string;
   price: number;
@@ -25,10 +25,13 @@ interface CatalogSize {
 interface CatalogBase {
   squareItemId: string;
   name: string;
+  description?: string;
+  imageUrl?: string;
   price: number;
   category: string;
-  sizes: CatalogSize[];
+  variations: CatalogVariation[];
   temperatures: string[];
+  modifierGroupIds: string[];
 }
 
 interface CatalogModifier {
@@ -37,13 +40,31 @@ interface CatalogModifier {
   price: number;
 }
 
+interface CatalogModifierGroup {
+  id: string;
+  name: string;
+  selectionMode: 'single' | 'multi';
+  minSelections: number;
+  maxSelections: number;
+  modifiers: CatalogModifier[];
+}
+
+interface CatalogPreset {
+  id: string;
+  name: string;
+  baseId: string;           // squareItemId of the base
+  baseName: string;
+  imageUrl?: string;
+  priceCents: number;
+  defaultVariationId?: string;  // variationId to pre-select
+  defaultHot: boolean;
+  modifierIds: string[];    // squareModifierIds to pre-select
+}
+
 interface MappedCatalog {
   bases: CatalogBase[];
-  modifiers: {
-    milks: CatalogModifier[];
-    syrups: CatalogModifier[];
-    toppings: CatalogModifier[];
-  };
+  modifierGroups: CatalogModifierGroup[];
+  presets: CatalogPreset[];
 }
 
 interface CacheEntry {
@@ -123,8 +144,18 @@ export class MappedCatalogService {
       where: { businessId },
     });
 
+    // Fetch presets from DB
+    const presets = await this.prisma.preset.findMany({
+      where: { businessId, available: true },
+      include: {
+        base: true,
+        defaultVariation: true,
+        modifiers: { include: { modifier: true } },
+      },
+    });
+
     // Build catalog
-    const catalog = this.buildCatalog(rawCatalog, mappings);
+    const catalog = this.buildCatalog(rawCatalog, mappings, presets);
 
     // Cache result
     this.cache.set(businessId, {
@@ -143,8 +174,23 @@ export class MappedCatalogService {
     }
   }
 
-  private buildCatalog(rawCatalog: RawCatalogData, mappings: ItemMapping[]): MappedCatalog {
+  private buildCatalog(rawCatalog: RawCatalogData, mappings: ItemMapping[], dbPresets: any[] = []): MappedCatalog {
     const mappingsBySquareId = new Map(mappings.map(m => [m.squareItemId, m]));
+
+    // Build image lookup: imageId -> url
+    const imageMap = new Map<string, string>();
+    for (const img of (rawCatalog.images || [])) {
+      imageMap.set(img.id, img.url);
+    }
+
+    // Build modifier list lookup
+    const modifierListMap = new Map<string, RawPOSModifierList>();
+    for (const ml of (rawCatalog.modifierLists || [])) {
+      modifierListMap.set(ml.id, ml);
+    }
+
+    // Track which modifier lists are actually referenced by items
+    const referencedModifierListIds = new Set<string>();
 
     // Build bases from items
     const bases: CatalogBase[] = [];
@@ -152,17 +198,35 @@ export class MappedCatalogService {
       const mapping = mappingsBySquareId.get(item.id);
       if (!mapping || mapping.itemType !== 'BASE') continue;
 
+      // Resolve image URL from imageIds
+      let imageUrl: string | undefined;
+      if (item.imageIds && item.imageIds.length > 0) {
+        imageUrl = imageMap.get(item.imageIds[0]);
+      }
+
+      // Track referenced modifier lists
+      const modifierGroupIds: string[] = [];
+      if (item.modifierListIds) {
+        for (const mlId of item.modifierListIds) {
+          referencedModifierListIds.add(mlId);
+          modifierGroupIds.push(mlId);
+        }
+      }
+
       bases.push({
         squareItemId: item.id,
         name: mapping.displayName || item.name,
+        description: item.description,
+        imageUrl,
         price: item.price || item.variations?.[0]?.price || 0,
         category: mapping.category || '',
-        sizes: (item.variations || []).map(v => ({
+        variations: (item.variations || []).map(v => ({
           variationId: v.id,
           name: v.name,
           price: v.price,
         })),
         temperatures: mapping.temperatureOptions,
+        modifierGroupIds,
       });
     }
 
@@ -173,38 +237,124 @@ export class MappedCatalogService {
       return orderA - orderB;
     });
 
-    // Build modifiers grouped by category
-    const milks: CatalogModifier[] = [];
-    const syrups: CatalogModifier[] = [];
-    const toppings: CatalogModifier[] = [];
+    // Build modifier groups from modifier lists
+    const modifierGroups: CatalogModifierGroup[] = [];
 
-    for (const mod of rawCatalog.modifiers) {
-      const mapping = mappingsBySquareId.get(mod.id);
-      if (!mapping || mapping.itemType !== 'MODIFIER') continue;
+    // First: build groups from Square modifier lists that items reference
+    for (const mlId of referencedModifierListIds) {
+      const ml = modifierListMap.get(mlId);
+      if (!ml) continue;
 
-      const catalogMod: CatalogModifier = {
-        squareModifierId: mod.id,
-        name: mapping.displayName || mod.name,
-        price: mod.price || 0,
-      };
+      // Determine selection constraints from item modifierListInfo
+      let minSelections = 0;
+      let maxSelections = -1; // -1 means unlimited
 
-      switch (mapping.category) {
-        case 'milk':
-          milks.push(catalogMod);
-          break;
-        case 'syrup':
-          syrups.push(catalogMod);
-          break;
-        case 'topping':
-          toppings.push(catalogMod);
-          break;
+      // Check all items for constraints on this modifier list
+      for (const item of rawCatalog.items) {
+        const info = item.modifierListInfo?.find(i => i.modifierListId === mlId);
+        if (info) {
+          if (info.minSelectedModifiers !== undefined) {
+            minSelections = Math.max(minSelections, info.minSelectedModifiers);
+          }
+          if (info.maxSelectedModifiers !== undefined) {
+            if (maxSelections === -1) {
+              maxSelections = info.maxSelectedModifiers;
+            } else {
+              maxSelections = Math.max(maxSelections, info.maxSelectedModifiers);
+            }
+          }
+        }
+      }
+
+      if (maxSelections === -1) {
+        maxSelections = ml.modifiers.length;
+      }
+
+      const selectionMode = maxSelections === 1 ? 'single' : 'multi';
+
+      const modifiers: CatalogModifier[] = ml.modifiers.map(mod => {
+        const modMapping = mappingsBySquareId.get(mod.id);
+        return {
+          squareModifierId: mod.id,
+          name: modMapping?.displayName || mod.name,
+          price: mod.price || 0,
+        };
+      });
+
+      modifierGroups.push({
+        id: mlId,
+        name: ml.name,
+        selectionMode,
+        minSelections,
+        maxSelections,
+        modifiers,
+      });
+    }
+
+    // Fallback: if no modifier lists found, build groups from ItemMapping categories
+    if (modifierGroups.length === 0) {
+      const groupMap = new Map<string, CatalogModifier[]>();
+
+      for (const mod of rawCatalog.modifiers) {
+        const mapping = mappingsBySquareId.get(mod.id);
+        if (!mapping || mapping.itemType !== 'MODIFIER') continue;
+
+        const category = mapping.category || 'other';
+        if (!groupMap.has(category)) {
+          groupMap.set(category, []);
+        }
+
+        groupMap.get(category)!.push({
+          squareModifierId: mod.id,
+          name: mapping.displayName || mod.name,
+          price: mod.price || 0,
+        });
+      }
+
+      for (const [category, modifiers] of groupMap) {
+        // Infer selection mode from category name
+        const isSingleSelect = ['milk'].includes(category.toLowerCase());
+        modifierGroups.push({
+          id: category,
+          name: formatGroupName(category),
+          selectionMode: isSingleSelect ? 'single' : 'multi',
+          minSelections: 0,
+          maxSelections: isSingleSelect ? 1 : modifiers.length,
+          modifiers,
+        });
       }
     }
 
+    // Build presets from DB records
+    const catalogPresets: CatalogPreset[] = dbPresets.map(p => ({
+      id: p.id,
+      name: p.name,
+      baseId: p.base?.posItemId || p.baseId,
+      baseName: p.base?.name || p.name,
+      imageUrl: p.imageUrl || p.base?.imageUrl || undefined,
+      priceCents: p.priceCents,
+      defaultVariationId: p.defaultVariation?.posVariationId || undefined,
+      defaultHot: p.defaultHot,
+      modifierIds: p.modifiers?.map((pm: any) => pm.modifier?.posModifierId).filter(Boolean) || [],
+    }));
+
     return {
       bases,
-      modifiers: { milks, syrups, toppings },
+      modifierGroups,
+      presets: catalogPresets,
     };
   }
 
+}
+
+/**
+ * Format a category slug into a display name
+ * e.g. "milk" -> "Milk Options", "syrup" -> "Syrups"
+ */
+function formatGroupName(category: string): string {
+  const name = category.charAt(0).toUpperCase() + category.slice(1);
+  // Common pluralizations
+  if (name.endsWith('s')) return name;
+  if (name.toLowerCase() === 'milk') return 'Milk Options';
+  return name + 's';
 }

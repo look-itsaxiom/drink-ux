@@ -9,7 +9,8 @@ import {
   groupBasesByCategory,
   MappedCatalog,
   MappedBase,
-  MappedModifiers,
+  MappedModifierGroup,
+  MappedPreset,
   DerivedCategory,
 } from '../services/catalogService';
 import { ApiClientError } from '../services/api';
@@ -34,23 +35,28 @@ export interface UseCatalogResult {
   categories: DerivedCategory[];
   /** All bases (flat list) */
   bases: MappedBase[];
-  /** Modifiers grouped by type */
-  modifiers: MappedModifiers;
+  /** Curated presets (recipes the business wants to push) */
+  presets: MappedPreset[];
+  /** Dynamic modifier groups with selection constraints */
+  modifierGroups: MappedModifierGroup[];
   /** Loading state */
   loading: boolean;
   /** Error message if fetch failed */
   error: string | null;
   /** Get bases for a specific category */
   getBasesByCategory: (categoryId: string) => MappedBase[];
+  /** Get modifier groups applicable to a specific item */
+  getModifierGroupsForItem: (item: MappedBase) => MappedModifierGroup[];
+  /** Find a base item by its squareItemId */
+  getBaseById: (squareItemId: string) => MappedBase | undefined;
+  /** Find a preset by its ID */
+  getPresetById: (presetId: string) => MappedPreset | undefined;
   /** Function to manually refetch the data */
   refetch: () => void;
 }
 
 /**
  * Hook to fetch and manage mapped catalog data
- *
- * @param options - Hook options
- * @returns Catalog data, loading state, and error
  */
 export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
   const { businessId, skip = false } = options;
@@ -102,9 +108,14 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
     return catalog?.bases || [];
   }, [catalog]);
 
-  // Get modifiers (with defaults)
-  const modifiers = useMemo((): MappedModifiers => {
-    return catalog?.modifiers || { milks: [], syrups: [], toppings: [] };
+  // Get presets
+  const presets = useMemo((): MappedPreset[] => {
+    return catalog?.presets || [];
+  }, [catalog]);
+
+  // Get modifier groups
+  const modifierGroups = useMemo((): MappedModifierGroup[] => {
+    return catalog?.modifierGroups || [];
   }, [catalog]);
 
   // Helper function to get bases by category
@@ -118,14 +129,49 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
     [categories]
   );
 
+  // Helper function to get modifier groups applicable to a specific item
+  const getModifierGroupsForItem = useCallback(
+    (item: MappedBase): MappedModifierGroup[] => {
+      if (item.modifierGroupIds && item.modifierGroupIds.length > 0) {
+        // Return only groups that this item references, in order
+        return item.modifierGroupIds
+          .map(id => modifierGroups.find(g => g.id === id))
+          .filter((g): g is MappedModifierGroup => g !== undefined);
+      }
+      // If item has no specific group IDs, return all groups (legacy fallback)
+      return modifierGroups;
+    },
+    [modifierGroups]
+  );
+
+  // Find a base by squareItemId
+  const getBaseById = useCallback(
+    (squareItemId: string): MappedBase | undefined => {
+      return bases.find(b => b.squareItemId === squareItemId);
+    },
+    [bases]
+  );
+
+  // Find a preset by ID
+  const getPresetById = useCallback(
+    (presetId: string): MappedPreset | undefined => {
+      return presets.find(p => p.id === presetId);
+    },
+    [presets]
+  );
+
   return {
     catalog,
     categories,
     bases,
-    modifiers,
+    presets,
+    modifierGroups,
     loading,
     error,
     getBasesByCategory,
+    getModifierGroupsForItem,
+    getBaseById,
+    getPresetById,
     refetch: fetchCatalog,
   };
 }
