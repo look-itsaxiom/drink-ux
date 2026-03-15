@@ -51,11 +51,27 @@ export interface MappedModifierGroup {
 }
 
 /**
+ * Preset (curated recipe) from the business
+ */
+export interface MappedPreset {
+  id: string;
+  name: string;
+  baseId: string;            // squareItemId of the underlying item
+  baseName: string;
+  imageUrl?: string;
+  priceCents: number;
+  defaultVariationId?: string;
+  defaultHot: boolean;
+  modifierIds: string[];     // squareModifierIds pre-selected
+}
+
+/**
  * Mapped catalog response shape
  */
 export interface MappedCatalog {
   bases: MappedBase[];
   modifierGroups: MappedModifierGroup[];
+  presets: MappedPreset[];
 }
 
 /**

@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback } from "react";
-import { useHistory } from "react-router";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useHistory, useParams } from "react-router";
 import {
   IonContent,
   IonPage,
@@ -25,6 +25,7 @@ import {
   MappedModifier,
   MappedModifierGroup,
   getDefaultIsHot,
+  getDisplayPrice,
 } from "../services/catalogService";
 
 import "./DrinkBuilder.css";
@@ -41,10 +42,24 @@ interface BuilderState {
   selectedModifiers: SelectedModifiers;
 }
 
+/**
+ * Parse the :id URL param to determine entry mode.
+ * - "new"              -> browse from category selection
+ * - "preset-{id}"      -> preset recipe, skip to customization with modifiers pre-loaded
+ * - "item-{id}"        -> direct item, skip to customization (empty modifiers)
+ * - anything else      -> treat as item ID (backwards compat)
+ */
+function parseRouteId(id: string): { mode: 'browse' | 'preset' | 'item'; targetId?: string } {
+  if (!id || id === 'new') return { mode: 'browse' };
+  if (id.startsWith('preset-')) return { mode: 'preset', targetId: id.slice(7) };
+  if (id.startsWith('item-')) return { mode: 'item', targetId: id.slice(5) };
+  return { mode: 'item', targetId: id };
+}
+
 const DrinkBuilder: React.FC = () => {
   const history = useHistory();
+  const { id: routeId } = useParams<{ id: string }>();
 
-  // Try to use cart context, handle gracefully if not available
   let cartAvailable = false;
   let addToCart: ((item: CartItem) => void) | null = null;
 
@@ -56,7 +71,6 @@ const DrinkBuilder: React.FC = () => {
     // Cart context not available
   }
 
-  // Try to use catalog context for modifier groups
   let catalogData: ReturnType<typeof useCatalogContext> | null = null;
   try {
     catalogData = useCatalogContext();
@@ -68,11 +82,112 @@ const DrinkBuilder: React.FC = () => {
   const [state, setState] = useState<BuilderState>({
     selectedModifiers: {},
   });
+  const [initialized, setInitialized] = useState(false);
 
-  // Currently open modifier group selector
   const [openGroup, setOpenGroup] = useState<MappedModifierGroup | null>(null);
 
-  // Get modifier groups for the selected item
+  // Initialize state based on URL param once catalog is loaded
+  useEffect(() => {
+    if (initialized || !catalogData || catalogData.loading) return;
+
+    const { mode, targetId } = parseRouteId(routeId);
+
+    if (mode === 'browse') {
+      setStep('category');
+      setInitialized(true);
+      return;
+    }
+
+    if (mode === 'preset' && targetId) {
+      const preset = catalogData.getPresetById(targetId);
+      if (preset) {
+        const base = catalogData.getBaseById(preset.baseId);
+        const { price } = base ? getDisplayPrice(base) : { price: preset.priceCents };
+
+        const drinkType: DrinkType = {
+          id: preset.baseId,
+          name: preset.baseName,
+          category: base?.category || '',
+          priceCents: price,
+          isHot: preset.defaultHot,
+        };
+
+        let selectedVariation: MappedVariation | undefined;
+        if (preset.defaultVariationId && base?.variations) {
+          selectedVariation = base.variations.find(v => v.variationId === preset.defaultVariationId);
+        }
+        if (!selectedVariation && base?.variations && base.variations.length > 0) {
+          const defaultIndex = base.variations.length >= 3 ? 1 : 0;
+          selectedVariation = base.variations[defaultIndex];
+        }
+
+        // Pre-select modifiers from the preset recipe
+        const preSelectedModifiers: SelectedModifiers = {};
+        if (preset.modifierIds.length > 0 && base) {
+          const groups = catalogData.getModifierGroupsForItem(base);
+          for (const group of groups) {
+            const matched = group.modifiers.filter(m =>
+              preset.modifierIds.includes(m.squareModifierId)
+            );
+            if (matched.length > 0) {
+              preSelectedModifiers[group.id] = matched;
+            }
+          }
+        }
+
+        setState({
+          category: base?.category,
+          categoryId: base?.category?.toLowerCase().replace(/\s+/g, '_'),
+          drinkType,
+          item: base,
+          selectedVariation,
+          isHot: preset.defaultHot,
+          selectedModifiers: preSelectedModifiers,
+        });
+        setStep('modifications');
+        setInitialized(true);
+        return;
+      }
+    }
+
+    if (mode === 'item' && targetId) {
+      const base = catalogData.getBaseById(targetId);
+      if (base) {
+        const { price } = getDisplayPrice(base);
+        const drinkType: DrinkType = {
+          id: base.squareItemId,
+          name: base.name,
+          category: base.category,
+          priceCents: price,
+          isHot: getDefaultIsHot(base.temperatures),
+        };
+
+        let selectedVariation: MappedVariation | undefined;
+        if (base.variations.length > 0) {
+          const defaultIndex = base.variations.length >= 3 ? 1 : 0;
+          selectedVariation = base.variations[defaultIndex];
+        }
+
+        setState({
+          category: base.category,
+          categoryId: base.category.toLowerCase().replace(/\s+/g, '_'),
+          drinkType,
+          item: base,
+          selectedVariation,
+          isHot: drinkType.isHot,
+          selectedModifiers: {},
+        });
+        setStep('modifications');
+        setInitialized(true);
+        return;
+      }
+    }
+
+    // Fallback: browse mode
+    setStep('category');
+    setInitialized(true);
+  }, [routeId, catalogData, initialized]);
+
   const itemModifierGroups = useMemo(() => {
     if (!state.item || !catalogData) return [];
     return catalogData.getModifierGroupsForItem(state.item);
@@ -84,7 +199,6 @@ const DrinkBuilder: React.FC = () => {
   };
 
   const handleTypeSelect = (drinkType: DrinkType) => {
-    // Find the matching MappedBase for this drink type (by squareItemId)
     const matchingBase = catalogData?.bases.find(b => b.squareItemId === drinkType.id);
 
     const newState: BuilderState = {
@@ -94,14 +208,11 @@ const DrinkBuilder: React.FC = () => {
       selectedModifiers: {},
     };
 
-    // Auto-select first variation if available
     if (matchingBase?.variations && matchingBase.variations.length > 0) {
-      // Default to first variation (or middle one if 3+)
       const defaultIndex = matchingBase.variations.length >= 3 ? 1 : 0;
       newState.selectedVariation = matchingBase.variations[defaultIndex];
     }
 
-    // Set temperature based on drink type constraints
     if (drinkType.isHot !== undefined) {
       newState.isHot = drinkType.isHot;
     }
@@ -130,7 +241,6 @@ const DrinkBuilder: React.FC = () => {
       const current = prev.selectedModifiers[groupId] || [];
 
       if (openGroup.selectionMode === 'single') {
-        // Single select: replace
         return {
           ...prev,
           selectedModifiers: {
@@ -140,7 +250,6 @@ const DrinkBuilder: React.FC = () => {
         };
       }
 
-      // Multi select: add if not already selected
       const alreadySelected = current.some(m => m.squareModifierId === modifier.squareModifierId);
       if (alreadySelected) return prev;
 
@@ -172,6 +281,11 @@ const DrinkBuilder: React.FC = () => {
   };
 
   const handleBackFromMods = () => {
+    const { mode } = parseRouteId(routeId);
+    if (mode !== 'browse') {
+      history.push('/home');
+      return;
+    }
     setState({
       ...state,
       drinkType: undefined,
@@ -183,10 +297,8 @@ const DrinkBuilder: React.FC = () => {
   };
 
   const calculateTotalPrice = (): number => {
-    // Use variation price if selected, otherwise base price
     let total = state.selectedVariation?.price || state.drinkType?.priceCents || 0;
 
-    // Add modifier prices
     for (const mods of Object.values(state.selectedModifiers)) {
       for (const mod of mods) {
         total += mod.price;
@@ -196,9 +308,6 @@ const DrinkBuilder: React.FC = () => {
     return total;
   };
 
-  /**
-   * Format price for display. Prices from Square are in cents.
-   */
   const formatDisplayPrice = (cents: number): string => {
     return `$${(cents / 100).toFixed(2)}`;
   };
@@ -224,7 +333,6 @@ const DrinkBuilder: React.FC = () => {
     const modifierNames: string[] = [];
     const modifierDetails: Array<{ id: string; name: string; price: number }> = [];
 
-    // Collect all selected modifiers across groups
     for (const mods of Object.values(state.selectedModifiers)) {
       for (const mod of mods) {
         modifierIds.push(mod.squareModifierId);
@@ -258,10 +366,8 @@ const DrinkBuilder: React.FC = () => {
     history.push("/cart");
   };
 
-  // Determine if temperature selection should be shown
   const showTemperature = useMemo(() => {
     if (!state.item) return state.drinkType?.isHot === undefined;
-    // Show if item supports both hot and iced
     const temps = state.item.temperatures || [];
     if (temps.length === 0) return false;
     const hot = temps.some(t => t.toUpperCase() === 'HOT');
@@ -269,19 +375,16 @@ const DrinkBuilder: React.FC = () => {
     return hot && iced;
   }, [state.item, state.drinkType]);
 
-  // For DrinkVisual compatibility — build a legacy-ish state object
   const drinkVisualState = useMemo(() => ({
     drinkType: state.drinkType,
-    cupSize: undefined,
+    selectedVariation: state.selectedVariation,
     isHot: state.isHot,
-    milk: undefined,
-    syrups: [],
-    toppings: [],
-    totalPrice: calculateTotalPrice(),
+    selectedModifiers: [],
+    totalPriceCents: calculateTotalPrice(),
   }), [state.drinkType, state.isHot, state.selectedModifiers, state.selectedVariation]);
 
-  // Progress steps data for AppHeader
-  const progressSteps = [
+  const { mode: entryMode } = parseRouteId(routeId);
+  const progressSteps = entryMode === 'browse' ? [
     {
       key: "category",
       label: "Category",
@@ -300,21 +403,31 @@ const DrinkBuilder: React.FC = () => {
       isActive: step === "modifications",
       isCompleted: false,
     },
+  ] : [
+    {
+      key: "modifications",
+      label: "Customize",
+      isActive: step === "modifications",
+      isCompleted: false,
+    },
   ];
 
-  // Selected modifier IDs for the currently open group
   const openGroupSelectedIds = useMemo(() => {
     if (!openGroup) return [];
     return (state.selectedModifiers[openGroup.id] || []).map(m => m.squareModifierId);
   }, [openGroup, state.selectedModifiers]);
 
+  const headerTitle = step === 'modifications' && state.drinkType
+    ? state.drinkType.name
+    : 'Build Your Order';
+
   return (
     <IonPage>
       <AppHeader
-        title="Build Your Order"
+        title={headerTitle}
         showBackButton={true}
         backHref="/home"
-        showProgress={true}
+        showProgress={entryMode === 'browse'}
         progressValue={getProgressValue()}
         progressSteps={progressSteps}
       />
@@ -333,14 +446,12 @@ const DrinkBuilder: React.FC = () => {
               : "builder-container-standard"
           }
         >
-          {/* Visual Section - Only visible on modifications step */}
           {step === "modifications" && (
             <div className="visual-section">
               <DrinkVisual state={drinkVisualState} />
             </div>
           )}
 
-          {/* Content Section - Changes based on step */}
           <div
             className={
               step === "modifications"
@@ -386,7 +497,6 @@ const DrinkBuilder: React.FC = () => {
           </div>
         </div>
 
-        {/* Modifier Group Selector Modal */}
         <ModifierSelector
           isOpen={!!openGroup}
           group={openGroup}

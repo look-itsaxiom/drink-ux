@@ -5,12 +5,9 @@ import { useBusinessContext } from '../context/BusinessContext';
 import { useCatalogContext } from '../context/CatalogContext';
 import { useCart } from '../hooks/useCart';
 import { ThemeSwitcher, CategoryPills } from '../components/design-system';
-import { MappedBase, getDisplayPrice } from '../services/catalogService';
+import { MappedBase, MappedPreset, getDisplayPrice } from '../services/catalogService';
 import './Home.css';
 
-/**
- * Format cents to dollar display
- */
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
@@ -33,13 +30,11 @@ const Home: React.FC = () => {
   const { business, loading } = businessData;
   const shopName = business?.name || 'Order';
 
-  // Build category pills from API data
   const categoryNames = useMemo(() => {
     if (!catalogData?.categories || catalogData.categories.length === 0) return ['All'];
     return ['All', ...catalogData.categories.map(c => c.name)];
   }, [catalogData?.categories]);
 
-  // Get items to display based on active category
   const displayItems = useMemo((): MappedBase[] => {
     if (!catalogData?.bases) return [];
     if (activeCategory === 'All') return catalogData.bases;
@@ -48,7 +43,10 @@ const Home: React.FC = () => {
     );
   }, [catalogData?.bases, activeCategory]);
 
-  // Featured items: first 4 items, or items with images
+  const presets = useMemo((): MappedPreset[] => {
+    return catalogData?.presets || [];
+  }, [catalogData?.presets]);
+
   const featuredItems = useMemo(() => {
     if (!catalogData?.bases || catalogData.bases.length === 0) return [];
     const withImages = catalogData.bases.filter(b => b.imageUrl);
@@ -56,8 +54,18 @@ const Home: React.FC = () => {
     return catalogData.bases.slice(0, 4);
   }, [catalogData?.bases]);
 
+  // Preset click → skip straight to customization with recipe pre-loaded
+  const handlePresetClick = (preset: MappedPreset) => {
+    history.push(`/drink/preset-${preset.id}`);
+  };
+
+  // Item click → skip to customization for that item (empty modifiers)
   const handleItemClick = (item: MappedBase) => {
-    // Navigate to drink builder — item will be selected via the catalog flow
+    history.push(`/drink/item-${item.squareItemId}`);
+  };
+
+  // Browse → full 3-step flow starting at category selection
+  const handleBrowseCategory = () => {
     history.push('/drink/new');
   };
 
@@ -72,6 +80,7 @@ const Home: React.FC = () => {
   }
 
   const hasMenu = catalogData && catalogData.bases.length > 0;
+  const hasPresets = presets.length > 0;
 
   return (
     <IonPage>
@@ -108,15 +117,48 @@ const Home: React.FC = () => {
           <div className="scroll-content">
             <CategoryPills categories={categoryNames} active={activeCategory} onSelect={setActiveCategory} />
 
-            {/* Featured Items */}
-            {featuredItems.length > 0 && activeCategory === 'All' && (
+            {/* ── Quick Order: Presets (curated recipes) ── */}
+            {hasPresets && activeCategory === 'All' && (
+              <div className="featured-section">
+                <div className="section-header">
+                  <div>
+                    <div className="section-label">{'\u26A1'} Quick Order</div>
+                    <div className="section-sublabel">Ready-to-go favorites</div>
+                  </div>
+                </div>
+                <div className="h-scroll">
+                  {presets.map((preset) => (
+                    <div key={preset.id} className="drink-card preset-card" style={{ width: 150 }} onClick={() => handlePresetClick(preset)}>
+                      <div className="drink-card-visual" style={{
+                        background: preset.imageUrl
+                          ? `url(${preset.imageUrl}) center/cover`
+                          : 'linear-gradient(160deg, rgba(255,193,7,0.25), rgba(255,87,34,0.15))'
+                      }}>
+                        {!preset.imageUrl && <span style={{ fontSize: 32 }}>{'\u2615'}</span>}
+                        <div className="preset-badge">Recipe</div>
+                      </div>
+                      <div className="drink-card-info">
+                        <div className="drink-card-name">{preset.name}</div>
+                        <div className="drink-card-detail">{preset.baseName}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+                          <span className="drink-card-price">{formatPrice(preset.priceCents)}</span>
+                          <button className="drink-card-add-btn" onClick={(e) => { e.stopPropagation(); handlePresetClick(preset); }} aria-label={`Order ${preset.name}`}>+</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Popular Items (when no presets, show top bases) ── */}
+            {!hasPresets && featuredItems.length > 0 && activeCategory === 'All' && (
               <div className="featured-section">
                 <div className="section-header">
                   <div>
                     <div className="section-label">{'\u2B50'} Popular Items</div>
                     <div className="section-sublabel">Top picks, ready to order</div>
                   </div>
-                  <button className="see-all" onClick={() => history.push('/drink/new')}>Order</button>
                 </div>
                 <div className="h-scroll">
                   {featuredItems.map((item) => {
@@ -151,7 +193,7 @@ const Home: React.FC = () => {
 
             <div className="divider" />
 
-            {/* Menu Items */}
+            {/* ── Full Menu (browsable by category) ── */}
             {hasMenu ? (
               <div className="menu-section">
                 <div className="section-header">
@@ -161,6 +203,9 @@ const Home: React.FC = () => {
                     </div>
                     <div className="section-sublabel">{displayItems.length} items</div>
                   </div>
+                  {activeCategory === 'All' && (
+                    <button className="see-all" onClick={handleBrowseCategory}>Browse All</button>
+                  )}
                 </div>
                 <div className="menu-items">
                   {displayItems.map((item) => {
@@ -182,7 +227,7 @@ const Home: React.FC = () => {
                               {hasMultiple ? 'from ' : ''}{formatPrice(price)}
                             </span>
                             {item.variations.length > 1 && (
-                              <span className="item-temp-badge">{item.variations.length} options</span>
+                              <span className="item-temp-badge">{item.variations.length} sizes</span>
                             )}
                           </div>
                         </div>
@@ -204,7 +249,7 @@ const Home: React.FC = () => {
                 </div>
                 <div className="empty-menu">
                   <p>No menu items yet. Start by building your order!</p>
-                  <button className="see-all" onClick={() => history.push('/drink/new')}>Build an Order</button>
+                  <button className="see-all" onClick={handleBrowseCategory}>Build an Order</button>
                 </div>
               </div>
             )}

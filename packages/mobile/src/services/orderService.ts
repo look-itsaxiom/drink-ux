@@ -3,7 +3,7 @@
  * Handles submitting orders to the API
  */
 
-import { OrderStatus, CupSize } from '@drink-ux/shared';
+import { OrderStatus } from '@drink-ux/shared';
 import { apiClient } from './api';
 
 /**
@@ -14,10 +14,10 @@ export interface OrderItemInput {
   baseId: string;
   /** Base drink name (for display) */
   baseName: string;
-  /** Cup size */
-  size: CupSize | string;
+  /** Variation name (e.g., "Small", "12oz", "Regular") */
+  size: string;
   /** Is this a hot drink? */
-  isHot: boolean;
+  isHot?: boolean;
   /** Array of modifier IDs */
   modifierIds: string[];
   /** Quantity of this item */
@@ -181,20 +181,9 @@ export function formatOrderItemDescription(item: OrderItemInput): string {
  * @param size - The cup size
  * @returns Formatted size string
  */
-function formatSize(size: CupSize | string): string {
-  switch (size) {
-    case CupSize.SMALL:
-    case 'SMALL':
-      return 'Small';
-    case CupSize.MEDIUM:
-    case 'MEDIUM':
-      return 'Medium';
-    case CupSize.LARGE:
-    case 'LARGE':
-      return 'Large';
-    default:
-      return String(size);
-  }
+function formatSize(size: string): string {
+  // Variation names are already display-ready from the catalog
+  return size || 'Regular';
 }
 
 /**

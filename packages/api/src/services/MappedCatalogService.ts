@@ -49,9 +49,22 @@ interface CatalogModifierGroup {
   modifiers: CatalogModifier[];
 }
 
+interface CatalogPreset {
+  id: string;
+  name: string;
+  baseId: string;           // squareItemId of the base
+  baseName: string;
+  imageUrl?: string;
+  priceCents: number;
+  defaultVariationId?: string;  // variationId to pre-select
+  defaultHot: boolean;
+  modifierIds: string[];    // squareModifierIds to pre-select
+}
+
 interface MappedCatalog {
   bases: CatalogBase[];
   modifierGroups: CatalogModifierGroup[];
+  presets: CatalogPreset[];
 }
 
 interface CacheEntry {
@@ -131,8 +144,18 @@ export class MappedCatalogService {
       where: { businessId },
     });
 
+    // Fetch presets from DB
+    const presets = await this.prisma.preset.findMany({
+      where: { businessId, available: true },
+      include: {
+        base: true,
+        defaultVariation: true,
+        modifiers: { include: { modifier: true } },
+      },
+    });
+
     // Build catalog
-    const catalog = this.buildCatalog(rawCatalog, mappings);
+    const catalog = this.buildCatalog(rawCatalog, mappings, presets);
 
     // Cache result
     this.cache.set(businessId, {
@@ -151,7 +174,7 @@ export class MappedCatalogService {
     }
   }
 
-  private buildCatalog(rawCatalog: RawCatalogData, mappings: ItemMapping[]): MappedCatalog {
+  private buildCatalog(rawCatalog: RawCatalogData, mappings: ItemMapping[], dbPresets: any[] = []): MappedCatalog {
     const mappingsBySquareId = new Map(mappings.map(m => [m.squareItemId, m]));
 
     // Build image lookup: imageId -> url
@@ -302,9 +325,23 @@ export class MappedCatalogService {
       }
     }
 
+    // Build presets from DB records
+    const catalogPresets: CatalogPreset[] = dbPresets.map(p => ({
+      id: p.id,
+      name: p.name,
+      baseId: p.base?.posItemId || p.baseId,
+      baseName: p.base?.name || p.name,
+      imageUrl: p.imageUrl || p.base?.imageUrl || undefined,
+      priceCents: p.priceCents,
+      defaultVariationId: p.defaultVariation?.posVariationId || undefined,
+      defaultHot: p.defaultHot,
+      modifierIds: p.modifiers?.map((pm: any) => pm.modifier?.posModifierId).filter(Boolean) || [],
+    }));
+
     return {
       bases,
       modifierGroups,
+      presets: catalogPresets,
     };
   }
 

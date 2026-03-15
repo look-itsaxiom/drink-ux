@@ -10,6 +10,7 @@ import {
   MappedCatalog,
   MappedBase,
   MappedModifierGroup,
+  MappedPreset,
   DerivedCategory,
 } from '../services/catalogService';
 import { ApiClientError } from '../services/api';
@@ -34,6 +35,8 @@ export interface UseCatalogResult {
   categories: DerivedCategory[];
   /** All bases (flat list) */
   bases: MappedBase[];
+  /** Curated presets (recipes the business wants to push) */
+  presets: MappedPreset[];
   /** Dynamic modifier groups with selection constraints */
   modifierGroups: MappedModifierGroup[];
   /** Loading state */
@@ -44,6 +47,10 @@ export interface UseCatalogResult {
   getBasesByCategory: (categoryId: string) => MappedBase[];
   /** Get modifier groups applicable to a specific item */
   getModifierGroupsForItem: (item: MappedBase) => MappedModifierGroup[];
+  /** Find a base item by its squareItemId */
+  getBaseById: (squareItemId: string) => MappedBase | undefined;
+  /** Find a preset by its ID */
+  getPresetById: (presetId: string) => MappedPreset | undefined;
   /** Function to manually refetch the data */
   refetch: () => void;
 }
@@ -101,6 +108,11 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
     return catalog?.bases || [];
   }, [catalog]);
 
+  // Get presets
+  const presets = useMemo((): MappedPreset[] => {
+    return catalog?.presets || [];
+  }, [catalog]);
+
   // Get modifier groups
   const modifierGroups = useMemo((): MappedModifierGroup[] => {
     return catalog?.modifierGroups || [];
@@ -132,15 +144,34 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
     [modifierGroups]
   );
 
+  // Find a base by squareItemId
+  const getBaseById = useCallback(
+    (squareItemId: string): MappedBase | undefined => {
+      return bases.find(b => b.squareItemId === squareItemId);
+    },
+    [bases]
+  );
+
+  // Find a preset by ID
+  const getPresetById = useCallback(
+    (presetId: string): MappedPreset | undefined => {
+      return presets.find(p => p.id === presetId);
+    },
+    [presets]
+  );
+
   return {
     catalog,
     categories,
     bases,
+    presets,
     modifierGroups,
     loading,
     error,
     getBasesByCategory,
     getModifierGroupsForItem,
+    getBaseById,
+    getPresetById,
     refetch: fetchCatalog,
   };
 }

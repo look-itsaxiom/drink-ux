@@ -1,4 +1,24 @@
-import { DrinkBuilderState, DrinkCategory, CupSize } from '../../types.js';
+// DrinkVisualizer uses legacy state shape (milk, syrups, toppings, cupSize)
+// that has been removed from the shared types. Using `any` for state type
+// since this is only used for the visual cup animation, not business logic.
+type DrinkBuilderState = any;
+
+// Legacy category constants for visual color mapping
+const DrinkCategory = {
+  COFFEE: 'coffee',
+  TEA: 'tea',
+  ITALIAN_SODA: 'italian_soda',
+  JUICE: 'juice',
+  BLENDED: 'blended',
+  SPECIALTY: 'specialty',
+} as const;
+
+// Legacy cup size constants for visual sizing
+const CupSize = {
+  SMALL: 'small',
+  MEDIUM: 'medium',
+  LARGE: 'large',
+} as const;
 
 export interface DrinkLayer {
   id: string;
@@ -712,7 +732,7 @@ export class DrinkVisualizer {
            drinkName.includes('macchiato');
   }
 
-  static getCupHeight(cupSize?: CupSize): number {
+  static getCupHeight(cupSize?: string): number {
     switch (cupSize) {
       case CupSize.SMALL: return 160;
       case CupSize.MEDIUM: return 200;
