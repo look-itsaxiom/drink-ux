@@ -1,4 +1,3 @@
-// @ts-nocheck — Legacy shared code, mobile app uses its own ModificationPanel
 import { useCallback } from 'react';
 import { DrinkBuilderState, DrinkType, ComponentType, ModifierComponent } from '../../types.js';
 
@@ -34,11 +33,9 @@ export interface ModificationPanelProps {
 export interface UseModificationPanelReturn {
   cupSizes: CupSizeOption[];
   canSelectTemperature: boolean;
-  handleSizeChange: (size: CupSize) => void;
+  handleSizeChange: (size: string) => void;
   handleTemperatureChange: (isHot: boolean) => void;
-  handleRemoveMilk: () => void;
-  handleRemoveSyrup: (syrupId: string) => void;
-  handleRemoveTopping: (toppingId: string) => void;
+  handleRemoveModifier: (modifierId: string) => void;
   goBack: () => void;
 }
 
@@ -60,7 +57,7 @@ export const MILK_MODIFIERS: ModifierComponent[] = [
     name: 'Whole Milk',
     type: ComponentType.MODIFIER,
     category: 'milk',
-    price: 0,
+    priceCents: 0,
     canTransformDrink: false,
     visual: { color: '#fff9e6', opacity: 0.7, layerOrder: 2 },
     available: true,
@@ -70,7 +67,7 @@ export const MILK_MODIFIERS: ModifierComponent[] = [
     name: 'Oat Milk',
     type: ComponentType.MODIFIER,
     category: 'milk',
-    price: 0.75,
+    priceCents: 75,
     canTransformDrink: false,
     visual: { color: '#f5deb3', opacity: 0.6, layerOrder: 2 },
     available: true,
@@ -80,7 +77,7 @@ export const MILK_MODIFIERS: ModifierComponent[] = [
     name: 'Almond Milk',
     type: ComponentType.MODIFIER,
     category: 'milk',
-    price: 0.75,
+    priceCents: 75,
     canTransformDrink: false,
     visual: { color: '#f0e68c', opacity: 0.6, layerOrder: 2 },
     available: true,
@@ -90,7 +87,7 @@ export const MILK_MODIFIERS: ModifierComponent[] = [
     name: 'Soy Milk',
     type: ComponentType.MODIFIER,
     category: 'milk',
-    price: 0.75,
+    priceCents: 75,
     canTransformDrink: false,
     visual: { color: '#f5f5dc', opacity: 0.6, layerOrder: 2 },
     available: true,
@@ -106,7 +103,7 @@ export const SYRUP_MODIFIERS: ModifierComponent[] = [
     name: 'Vanilla Syrup',
     type: ComponentType.MODIFIER,
     category: 'syrup',
-    price: 0.5,
+    priceCents: 50,
     canTransformDrink: false,
     visual: { color: '#fff8dc', opacity: 0.4, layerOrder: 3 },
     available: true,
@@ -116,7 +113,7 @@ export const SYRUP_MODIFIERS: ModifierComponent[] = [
     name: 'Caramel Syrup',
     type: ComponentType.MODIFIER,
     category: 'syrup',
-    price: 0.5,
+    priceCents: 50,
     canTransformDrink: false,
     visual: { color: '#d2691e', opacity: 0.4, layerOrder: 3 },
     available: true,
@@ -126,7 +123,7 @@ export const SYRUP_MODIFIERS: ModifierComponent[] = [
     name: 'Hazelnut Syrup',
     type: ComponentType.MODIFIER,
     category: 'syrup',
-    price: 0.5,
+    priceCents: 50,
     canTransformDrink: false,
     visual: { color: '#c19a6b', opacity: 0.4, layerOrder: 3 },
     available: true,
@@ -136,7 +133,7 @@ export const SYRUP_MODIFIERS: ModifierComponent[] = [
     name: 'Mocha Syrup',
     type: ComponentType.MODIFIER,
     category: 'syrup',
-    price: 0.5,
+    priceCents: 50,
     canTransformDrink: false,
     visual: { color: '#8b4513', opacity: 0.4, layerOrder: 3 },
     available: true,
@@ -152,7 +149,7 @@ export const TOPPING_MODIFIERS: ModifierComponent[] = [
     name: 'Whipped Cream',
     type: ComponentType.MODIFIER,
     category: 'topping',
-    price: 0.5,
+    priceCents: 50,
     canTransformDrink: false,
     visual: { color: '#fffaf0', opacity: 0.9, layerOrder: 4 },
     available: true,
@@ -162,7 +159,7 @@ export const TOPPING_MODIFIERS: ModifierComponent[] = [
     name: 'Cinnamon Powder',
     type: ComponentType.MODIFIER,
     category: 'topping',
-    price: 0,
+    priceCents: 0,
     canTransformDrink: false,
     visual: { color: '#8b4513', opacity: 0.5, layerOrder: 4 },
     available: true,
@@ -172,7 +169,7 @@ export const TOPPING_MODIFIERS: ModifierComponent[] = [
     name: 'Chocolate Drizzle',
     type: ComponentType.MODIFIER,
     category: 'topping',
-    price: 0.5,
+    priceCents: 50,
     canTransformDrink: false,
     visual: { color: '#3e2723', opacity: 0.8, layerOrder: 4 },
     available: true,
@@ -252,25 +249,18 @@ export function useModificationPanel({
 }: ModificationPanelProps): UseModificationPanelReturn {
   const canSelectTemperature = drinkType.isHot === undefined;
 
-  const handleSizeChange = useCallback((size: CupSize) => {
-    onUpdate({ cupSize: size });
+  const handleSizeChange = useCallback((size: string) => {
+    onUpdate({ selectedVariation: { id: size, baseId: '', name: size, priceCents: 0, displayOrder: 0, available: true } });
   }, [onUpdate]);
 
   const handleTemperatureChange = useCallback((isHot: boolean) => {
     onUpdate({ isHot });
   }, [onUpdate]);
 
-  const handleRemoveMilk = useCallback(() => {
-    onUpdate({ milk: undefined });
-  }, [onUpdate]);
-
-  const handleRemoveSyrup = useCallback((syrupId: string) => {
-    onUpdate({ syrups: state.syrups.filter((s) => s.id !== syrupId) });
-  }, [onUpdate, state.syrups]);
-
-  const handleRemoveTopping = useCallback((toppingId: string) => {
-    onUpdate({ toppings: state.toppings.filter((t) => t.id !== toppingId) });
-  }, [onUpdate, state.toppings]);
+  const handleRemoveModifier = useCallback((modifierId: string) => {
+    const current = state.selectedModifiers || [];
+    onUpdate({ selectedModifiers: current.filter((m) => m.id !== modifierId) });
+  }, [onUpdate, state.selectedModifiers]);
 
   const goBack = useCallback(() => {
     onBack();
@@ -281,9 +271,7 @@ export function useModificationPanel({
     canSelectTemperature,
     handleSizeChange,
     handleTemperatureChange,
-    handleRemoveMilk,
-    handleRemoveSyrup,
-    handleRemoveTopping,
+    handleRemoveModifier,
     goBack,
   };
 }
