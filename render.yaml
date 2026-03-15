@@ -1,0 +1,68 @@
+services:
+  # ─── API (Docker web service) ─────────────────────────────────────────────
+  - type: web
+    name: drink-ux-api
+    runtime: docker
+    dockerfilePath: ./packages/api/Dockerfile
+    dockerContext: .
+    branch: develop
+    region: oregon
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: SQUARE_ENVIRONMENT
+        value: sandbox
+      - key: SQUARE_APPLICATION_ID
+        sync: false
+      - key: SQUARE_ACCESS_TOKEN
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+
+  # ─── Admin Portal (static site) ──────────────────────────────────────────
+  - type: web
+    name: drink-ux-admin
+    runtime: static
+    branch: develop
+    region: oregon
+    buildCommand: npm ci && npm run build --workspace=@drink-ux/shared && npm run build --workspace=@drink-ux/admin
+    staticPublishPath: ./packages/admin/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+
+  # ─── Mobile PWA (static site) ────────────────────────────────────────────
+  - type: web
+    name: drink-ux-mobile
+    runtime: static
+    branch: develop
+    region: oregon
+    buildCommand: npm ci && npm run build --workspace=@drink-ux/shared && npm run build --workspace=@drink-ux/mobile
+    staticPublishPath: ./packages/mobile/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_DEMO_MODE
+        value: false
+      - key: VITE_SQUARE_APP_ID
+        sync: false
+      - key: VITE_SQUARE_LOCATION_ID
+        sync: false

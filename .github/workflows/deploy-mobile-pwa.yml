@@ -1,93 +1,32 @@
-name: Deploy Mobile PWA
+name: Deploy Mobile PWA and Admin to Render
 
 on:
   push:
-    branches:
-      - develop
+    branches: [develop, main]
     paths:
       - 'packages/mobile/**'
+      - 'packages/admin/**'
       - 'packages/shared/**'
       - '.github/workflows/deploy-mobile-pwa.yml'
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
-  build:
+  deploy-mobile:
+    name: Deploy Mobile PWA to Render
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Trigger Render deploy — Mobile PWA
+        run: |
+          curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_MOBILE }}" \
+            || (echo "Deploy hook failed — check RENDER_DEPLOY_HOOK_MOBILE secret" && exit 1)
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build shared package
-        run: npm run build --workspace=@drink-ux/shared
-
-      - name: Build mobile package
-        run: npm run build --workspace=@drink-ux/mobile
-        env:
-          GITHUB_PAGES: true
-          VITE_DEMO_MODE: true
-          VITE_SQUARE_APP_ID: ${{ secrets.VITE_SQUARE_APP_ID }}
-          VITE_SQUARE_LOCATION_ID: ${{ secrets.VITE_SQUARE_LOCATION_ID }}
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './packages/mobile/dist'
-
-  deploy-github-pages:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  deploy-admin:
+    name: Deploy Admin Portal to Render
     runs-on: ubuntu-latest
-    needs: build
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  deploy-vercel:
-    name: Deploy to Vercel (drink-ux.com)
-    runs-on: ubuntu-latest
-    needs: build
-    if: false  # disabled until Vercel secrets are configured
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-
-      - name: Deploy to Vercel
-        run: vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Trigger Render deploy — Admin Portal
+        run: |
+          curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_ADMIN }}" \
+            || (echo "Deploy hook failed — check RENDER_DEPLOY_HOOK_ADMIN secret" && exit 1)
