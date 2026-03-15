@@ -107,16 +107,17 @@ ALTER TABLE "Modifier" ADD CONSTRAINT "Modifier_modifierGroupId_fkey"
 INSERT INTO "Variation" ("id", "baseId", "name", "priceCents", "displayOrder", "posVariationId", "updatedAt")
 SELECT
     gen_random_uuid()::text,
-    "id",
+    "Base"."id",
     'Regular',
-    ROUND("basePrice" * 100)::integer,
+    ROUND("Base"."basePrice" * 100)::integer,
     0,
-    "posVariationId",
+    "Base"."posVariationId",
     CURRENT_TIMESTAMP
 FROM "Base";
 
--- Add imageUrl to Base
-ALTER TABLE "Base" ADD COLUMN "imageUrl" TEXT;
+-- Add imageUrl and needsReview to Base
+ALTER TABLE "Base" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT;
+ALTER TABLE "Base" ADD COLUMN IF NOT EXISTS "needsReview" BOOLEAN NOT NULL DEFAULT false;
 
 -- =============================================================================
 -- Step 4: Rename price columns to cents (Float → Int)
