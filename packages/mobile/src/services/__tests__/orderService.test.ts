@@ -22,12 +22,12 @@ describe('orderService', () => {
   const mockOrderItem: OrderItemInput = {
     baseId: 'base-1',
     baseName: 'Latte',
-    size: 'MEDIUM',
+    size: 'Medium',
     isHot: true,
     modifierIds: ['mod-1', 'mod-2'],
     quantity: 1,
-    unitPrice: 5.5,
-    totalPrice: 5.5,
+    unitPrice: 550,
+    totalPrice: 550,
     notes: 'Extra hot',
   };
 
@@ -54,11 +54,11 @@ describe('orderService', () => {
         name: 'Latte',
         description: 'Medium, Hot, Extra hot',
         quantity: 1,
-        unitPrice: 5.5,
-        totalPrice: 5.5,
+        unitPrice: 550,
+        totalPrice: 550,
       },
     ],
-    totalAmount: 5.5,
+    totalAmount: 550,
     estimatedReadyAt: '2024-01-15T10:45:00Z',
     createdAt: '2024-01-15T10:30:00Z',
     updatedAt: '2024-01-15T10:30:00Z',
@@ -189,12 +189,12 @@ describe('orderService', () => {
           {
             baseId: 'base-2',
             baseName: 'Americano',
-            size: 'LARGE',
+            size: 'Large',
             isHot: false,
             modifierIds: [],
             quantity: 2,
-            unitPrice: 4.0,
-            totalPrice: 8.0,
+            unitPrice: 400,
+            totalPrice: 800,
           },
         ],
       };
@@ -208,11 +208,11 @@ describe('orderService', () => {
             name: 'Americano',
             description: 'Large, Iced',
             quantity: 2,
-            unitPrice: 4.0,
-            totalPrice: 8.0,
+            unitPrice: 400,
+            totalPrice: 800,
           },
         ],
-        totalAmount: 13.5,
+        totalAmount: 1350,
       };
 
       const mockResponse = createMockResponse({
@@ -224,7 +224,7 @@ describe('orderService', () => {
       const result = await submitOrder(multiItemOrder);
 
       expect(result.items).toHaveLength(2);
-      expect(result.totalAmount).toBe(13.5);
+      expect(result.totalAmount).toBe(1350);
     });
 
     it('should handle POS integration errors gracefully', async () => {
@@ -396,15 +396,15 @@ describe('orderService', () => {
   describe('calculateOrderTotal', () => {
     it('should calculate total for single item', () => {
       const items = [mockOrderItem];
-      expect(calculateOrderTotal(items)).toBe(5.5);
+      expect(calculateOrderTotal(items)).toBe(550);
     });
 
     it('should calculate total for multiple items', () => {
       const items = [
         mockOrderItem,
-        { ...mockOrderItem, totalPrice: 8.0 },
+        { ...mockOrderItem, totalPrice: 800 },
       ];
-      expect(calculateOrderTotal(items)).toBe(13.5);
+      expect(calculateOrderTotal(items)).toBe(1350);
     });
 
     it('should return 0 for empty array', () => {

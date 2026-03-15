@@ -104,13 +104,13 @@ describe('Checkout Page', () => {
     id: 'item-1',
     baseId: 'base-1',
     baseName: 'Latte',
-    size: 'MEDIUM',
+    size: 'Medium',
     isHot: true,
     modifierIds: ['mod-1'],
     modifierNames: ['Vanilla Syrup'],
     quantity: 1,
-    unitPrice: 5.5,
-    totalPrice: 5.5,
+    unitPrice: 550,
+    totalPrice: 550,
     notes: '',
   };
 
@@ -128,11 +128,11 @@ describe('Checkout Page', () => {
         name: 'Latte',
         description: 'Medium, Hot, Vanilla Syrup',
         quantity: 1,
-        unitPrice: 5.5,
-        totalPrice: 5.5,
+        unitPrice: 550,
+        totalPrice: 550,
       },
     ],
-    totalAmount: 5.5,
+    totalAmount: 550,
     estimatedReadyAt: '2024-01-15T10:45:00Z',
     createdAt: '2024-01-15T10:30:00Z',
     updatedAt: '2024-01-15T10:30:00Z',
@@ -170,7 +170,7 @@ describe('Checkout Page', () => {
 
     it('should show item quantity', async () => {
       mockCartItems.length = 0;
-      mockCartItems.push({ ...mockCartItem, quantity: 2, totalPrice: 11 });
+      mockCartItems.push({ ...mockCartItem, quantity: 2, totalPrice: 1100 });
 
       render(<Checkout />);
 
@@ -182,7 +182,7 @@ describe('Checkout Page', () => {
     it('should show total for multiple items', async () => {
       mockCartItems.length = 0;
       mockCartItems.push(mockCartItem);
-      mockCartItems.push({ ...mockCartItem, id: 'item-2', baseName: 'Americano', totalPrice: 4.5 });
+      mockCartItems.push({ ...mockCartItem, id: 'item-2', baseName: 'Americano', totalPrice: 450 });
 
       render(<Checkout />);
 
