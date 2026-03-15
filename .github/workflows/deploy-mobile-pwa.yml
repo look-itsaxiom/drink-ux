@@ -18,8 +18,12 @@ jobs:
     steps:
       - name: Trigger Render deploy — Mobile PWA
         run: |
-          curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_MOBILE }}" \
-            || (echo "Deploy hook failed — check RENDER_DEPLOY_HOOK_MOBILE secret" && exit 1)
+          curl -sf -X POST \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID_MOBILE }}/deploys" \
+            -d '{"clearCache":"do_not_clear"}' \
+            || (echo "Deploy failed — check RENDER_API_KEY and RENDER_SERVICE_ID_MOBILE secrets" && exit 1)
 
   deploy-admin:
     name: Deploy Admin Portal to Render
@@ -28,5 +32,9 @@ jobs:
     steps:
       - name: Trigger Render deploy — Admin Portal
         run: |
-          curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_ADMIN }}" \
-            || (echo "Deploy hook failed — check RENDER_DEPLOY_HOOK_ADMIN secret" && exit 1)
+          curl -sf -X POST \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID_ADMIN }}/deploys" \
+            -d '{"clearCache":"do_not_clear"}' \
+            || (echo "Deploy failed — check RENDER_API_KEY and RENDER_SERVICE_ID_ADMIN secrets" && exit 1)
