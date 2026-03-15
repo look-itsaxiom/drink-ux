@@ -385,7 +385,7 @@ describe('Catalog Routes', () => {
           businessId: business.id,
           categoryId: category.id,
           name: 'Active Base',
-          basePrice: 3.99,
+          priceCents: 399,
         });
 
         const response = await request(app)
@@ -465,7 +465,7 @@ describe('Catalog Routes', () => {
             businessId: testBusinessId,
             categoryId: testCategoryId,
             name: 'Espresso',
-            basePrice: 3.99,
+            priceCents: 399,
           });
 
         expect(response.status).toBe(201);
@@ -481,14 +481,13 @@ describe('Catalog Routes', () => {
             businessId: testBusinessId,
             categoryId: testCategoryId,
             name: 'Hot Chocolate',
-            basePrice: 4.50,
-            temperatureConstraint: 'HOT_ONLY',
+            priceCents: 450,
             visualColor: '#8B4513',
             visualOpacity: 0.9,
           });
 
         expect(response.status).toBe(201);
-        expect(response.body.data.temperatureConstraint).toBe('HOT_ONLY');
+        // temperatureConstraint assertion removed (field no longer exists)
         expect(response.body.data.visualColor).toBe('#8B4513');
       });
 
@@ -500,7 +499,7 @@ describe('Catalog Routes', () => {
             businessId: testBusinessId,
             categoryId: 'invalid-id',
             name: 'Test Base',
-            basePrice: 3.99,
+            priceCents: 399,
           });
 
         expect(response.status).toBe(400);
@@ -515,7 +514,7 @@ describe('Catalog Routes', () => {
             businessId: testBusinessId,
             categoryId: testCategoryId,
             name: 'Test Base',
-            basePrice: -1.00,
+            priceCents: -100,
           });
 
         expect(response.status).toBe(400);
@@ -529,13 +528,13 @@ describe('Catalog Routes', () => {
           businessId: testBusinessId,
           categoryId: testCategoryId,
           name: 'Espresso',
-          basePrice: 3.99,
+          priceCents: 399,
         });
         await catalogService.createBase({
           businessId: testBusinessId,
           categoryId: testCategoryId,
           name: 'Latte',
-          basePrice: 4.99,
+          priceCents: 499,
         });
 
         const response = await request(app)
@@ -557,13 +556,13 @@ describe('Catalog Routes', () => {
           businessId: testBusinessId,
           categoryId: testCategoryId,
           name: 'Espresso',
-          basePrice: 3.99,
+          priceCents: 399,
         });
         await catalogService.createBase({
           businessId: testBusinessId,
           categoryId: otherCategory.id,
           name: 'Cold Brew',
-          basePrice: 4.50,
+          priceCents: 450,
         });
 
         const response = await request(app)
@@ -581,13 +580,13 @@ describe('Catalog Routes', () => {
           businessId: testBusinessId,
           categoryId: testCategoryId,
           name: 'Espresso',
-          basePrice: 3.99,
+          priceCents: 399,
         });
         await catalogService.createBase({
           businessId: testBusinessId,
           categoryId: testCategoryId,
           name: 'Latte',
-          basePrice: 4.99,
+          priceCents: 499,
         });
         await catalogService.updateBase(base.id, { available: false });
 
@@ -608,7 +607,7 @@ describe('Catalog Routes', () => {
           businessId: testBusinessId,
           categoryId: testCategoryId,
           name: 'Espresso',
-          basePrice: 3.99,
+          priceCents: 399,
         });
 
         const response = await request(app)
@@ -634,7 +633,7 @@ describe('Catalog Routes', () => {
           businessId: testBusinessId,
           categoryId: testCategoryId,
           name: 'Original',
-          basePrice: 3.99,
+          priceCents: 399,
         });
 
         const response = await request(app)
@@ -642,7 +641,7 @@ describe('Catalog Routes', () => {
           .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
           .send({
             name: 'Updated',
-            basePrice: 4.99,
+            priceCents: 499,
           });
 
         expect(response.status).toBe(200);
@@ -657,7 +656,7 @@ describe('Catalog Routes', () => {
           businessId: testBusinessId,
           categoryId: testCategoryId,
           name: 'To Delete',
-          basePrice: 3.99,
+          priceCents: 399,
         });
 
         const response = await request(app)
@@ -694,13 +693,13 @@ describe('Catalog Routes', () => {
           .send({
             businessId: testBusinessId,
             name: 'Oat Milk',
-            type: 'MILK',
-            price: 0.75,
+            modifierGroupId: 'test-mg-milk',
+            priceCents: 75,
           });
 
         expect(response.status).toBe(201);
         expect(response.body.data.name).toBe('Oat Milk');
-        expect(response.body.data.type).toBe('MILK');
+        expect(response.body.data.modifierGroupId).toBe('test-mg-milk');
         expect(response.body.data.price).toBe(0.75);
       });
 
@@ -711,8 +710,8 @@ describe('Catalog Routes', () => {
           .send({
             businessId: testBusinessId,
             name: 'Caramel Drizzle',
-            type: 'TOPPING',
-            price: 0.50,
+            modifierGroupId: 'test-mg-topping',
+            priceCents: 50,
             visualColor: '#D4A574',
             visualLayerOrder: 5,
             visualAnimationType: 'drizzle',
@@ -730,8 +729,8 @@ describe('Catalog Routes', () => {
           .send({
             businessId: testBusinessId,
             name: 'Ice',
-            type: 'TOPPING',
-            price: 0,
+            modifierGroupId: 'test-mg-topping',
+            priceCents: 0,
           });
 
         expect(response.status).toBe(201);
@@ -746,7 +745,7 @@ describe('Catalog Routes', () => {
             businessId: testBusinessId,
             name: 'Invalid',
             type: 'INVALID_TYPE',
-            price: 0.50,
+            priceCents: 50,
           });
 
         expect(response.status).toBe(400);
@@ -758,14 +757,14 @@ describe('Catalog Routes', () => {
         await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Oat Milk',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
         await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Vanilla',
-          type: 'SYRUP',
-          price: 0.50,
+          modifierGroupId: 'test-mg-syrup',
+          priceCents: 50,
         });
 
         const response = await request(app)
@@ -781,20 +780,20 @@ describe('Catalog Routes', () => {
         await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Oat Milk',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
         await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Vanilla',
-          type: 'SYRUP',
-          price: 0.50,
+          modifierGroupId: 'test-mg-syrup',
+          priceCents: 50,
         });
 
         const response = await request(app)
           .get('/api/catalog/modifiers')
           .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
-          .query({ businessId: testBusinessId, type: 'MILK' });
+          .query({ businessId: testBusinessId, modifierGroupId: 'test-mg-milk' });
 
         expect(response.status).toBe(200);
         expect(response.body.data).toHaveLength(1);
@@ -807,8 +806,8 @@ describe('Catalog Routes', () => {
         const modifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Oat Milk',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
 
         const response = await request(app)
@@ -825,8 +824,8 @@ describe('Catalog Routes', () => {
         const modifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Original',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
 
         const response = await request(app)
@@ -834,7 +833,7 @@ describe('Catalog Routes', () => {
           .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
           .send({
             name: 'Updated',
-            price: 1.00,
+            priceCents: 100,
           });
 
         expect(response.status).toBe(200);
@@ -848,8 +847,8 @@ describe('Catalog Routes', () => {
         const modifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'To Delete',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
 
         const response = await request(app)
@@ -890,21 +889,21 @@ describe('Catalog Routes', () => {
         businessId: testBusinessId,
         categoryId: testCategoryId,
         name: 'Espresso',
-        basePrice: 3.99,
+        priceCents: 399,
       });
       testBaseId = base.id;
 
       const modifier1 = await catalogService.createModifier({
         businessId: testBusinessId,
         name: 'Oat Milk',
-        type: 'MILK',
-        price: 0.75,
+        modifierGroupId: 'test-mg-milk',
+        priceCents: 75,
       });
       const modifier2 = await catalogService.createModifier({
         businessId: testBusinessId,
         name: 'Vanilla',
-        type: 'SYRUP',
-        price: 0.50,
+        modifierGroupId: 'test-mg-syrup',
+        priceCents: 50,
       });
       testModifierIds = [modifier1.id, modifier2.id];
     });
@@ -919,7 +918,7 @@ describe('Catalog Routes', () => {
             name: 'Vanilla Oat Latte',
             baseId: testBaseId,
             modifierIds: testModifierIds,
-            price: 5.99,
+            priceCents: 599,
           });
 
         expect(response.status).toBe(201);
@@ -935,13 +934,13 @@ describe('Catalog Routes', () => {
             businessId: testBusinessId,
             name: 'Iced Latte',
             baseId: testBaseId,
-            price: 5.99,
-            defaultSize: 'LARGE',
+            priceCents: 599,
+            defaultVariationId: 'test-variation-1',
             defaultHot: false,
           });
 
         expect(response.status).toBe(201);
-        expect(response.body.data.defaultSize).toBe('LARGE');
+        expect(response.body.data.defaultVariationId).toBe('LARGE');
         expect(response.body.data.defaultHot).toBe(false);
       });
 
@@ -953,7 +952,7 @@ describe('Catalog Routes', () => {
             businessId: testBusinessId,
             name: 'Plain Espresso',
             baseId: testBaseId,
-            price: 3.99,
+            priceCents: 399,
             modifierIds: [],
           });
 
@@ -969,7 +968,7 @@ describe('Catalog Routes', () => {
             businessId: testBusinessId,
             name: 'Invalid',
             baseId: 'invalid-id',
-            price: 5.99,
+            priceCents: 599,
           });
 
         expect(response.status).toBe(400);
@@ -985,7 +984,7 @@ describe('Catalog Routes', () => {
             name: 'Invalid',
             baseId: testBaseId,
             modifierIds: ['invalid-id'],
-            price: 5.99,
+            priceCents: 599,
           });
 
         expect(response.status).toBe(400);
@@ -999,13 +998,13 @@ describe('Catalog Routes', () => {
           name: 'Vanilla Latte',
           baseId: testBaseId,
           modifierIds: testModifierIds,
-          price: 5.99,
+          priceCents: 599,
         });
         await catalogService.createPreset({
           businessId: testBusinessId,
           name: 'Plain Espresso',
           baseId: testBaseId,
-          price: 3.99,
+          priceCents: 399,
         });
 
         const response = await request(app)
@@ -1022,13 +1021,13 @@ describe('Catalog Routes', () => {
           businessId: testBusinessId,
           name: 'Available',
           baseId: testBaseId,
-          price: 5.99,
+          priceCents: 599,
         });
         await catalogService.createPreset({
           businessId: testBusinessId,
           name: 'Unavailable',
           baseId: testBaseId,
-          price: 5.99,
+          priceCents: 599,
         });
         await catalogService.updatePreset(preset.id, { available: false });
 
@@ -1049,7 +1048,7 @@ describe('Catalog Routes', () => {
           businessId: testBusinessId,
           name: 'Test Preset',
           baseId: testBaseId,
-          price: 5.99,
+          priceCents: 599,
         });
 
         const response = await request(app)
@@ -1066,7 +1065,7 @@ describe('Catalog Routes', () => {
           name: 'Full Preset',
           baseId: testBaseId,
           modifierIds: testModifierIds,
-          price: 5.99,
+          priceCents: 599,
         });
 
         const response = await request(app)
@@ -1085,7 +1084,7 @@ describe('Catalog Routes', () => {
           businessId: testBusinessId,
           name: 'Original',
           baseId: testBaseId,
-          price: 5.99,
+          priceCents: 599,
         });
 
         const response = await request(app)
@@ -1093,7 +1092,7 @@ describe('Catalog Routes', () => {
           .set('Cookie', `${SESSION_COOKIE_NAME}=${sessionToken}`)
           .send({
             name: 'Updated',
-            price: 6.99,
+            priceCents: 699,
           });
 
         expect(response.status).toBe(200);
@@ -1107,7 +1106,7 @@ describe('Catalog Routes', () => {
           name: 'Original',
           baseId: testBaseId,
           modifierIds: [testModifierIds[0]],
-          price: 5.99,
+          priceCents: 599,
         });
 
         const response = await request(app)
@@ -1131,7 +1130,7 @@ describe('Catalog Routes', () => {
           businessId: testBusinessId,
           name: 'To Delete',
           baseId: testBaseId,
-          price: 5.99,
+          priceCents: 599,
         });
 
         const response = await request(app)

@@ -48,7 +48,7 @@ async function createTestBusinessWithCatalog(name: string = 'Test Business'): Pr
       businessId,
       categoryId: category.id,
       name: 'Espresso',
-      basePrice: 3.99,
+      priceCents: 399,
       posItemId: 'pos-item-1',
     },
   });
@@ -57,9 +57,9 @@ async function createTestBusinessWithCatalog(name: string = 'Test Business'): Pr
   const modifier1 = await prisma.modifier.create({
     data: {
       businessId,
-      type: 'MILK',
+      modifierGroupId: 'test-mg-milk',
       name: 'Oat Milk',
-      price: 0.75,
+      priceCents: 75,
       posModifierId: 'pos-mod-1',
     },
   });
@@ -67,9 +67,9 @@ async function createTestBusinessWithCatalog(name: string = 'Test Business'): Pr
   const modifier2 = await prisma.modifier.create({
     data: {
       businessId,
-      type: 'SYRUP',
+      modifierGroupId: 'test-mg-syrup',
       name: 'Vanilla',
-      price: 0.50,
+      priceCents: 50,
       posModifierId: 'pos-mod-2',
     },
   });
@@ -178,9 +178,9 @@ describe('OrderService', () => {
       // + Oat Milk: $0.75
       // + Vanilla: $0.50
       // Subtotal: $6.24 (rounded)
-      expect(result.subtotal).toBeCloseTo(6.24, 2);
-      expect(result.tax).toBeGreaterThan(0);
-      expect(result.total).toBeGreaterThan(result.subtotal);
+      expect(result.subtotalCents).toBeCloseTo(6.24, 2);
+      expect(result.taxCents).toBeGreaterThan(0);
+      expect(result.totalCents).toBeGreaterThan(result.subtotalCents);
     });
 
     it('generates unique pickup codes', async () => {
@@ -295,9 +295,9 @@ describe('OrderService', () => {
       expect(result.items).toHaveLength(1);
       expect(result.items[0].quantity).toBe(2);
       expect(result.items[0].notes).toBe('No foam');
-      expect(result.subtotal).toBeGreaterThan(0);
-      expect(result.tax).toBeGreaterThan(0);
-      expect(result.total).toBeGreaterThan(0);
+      expect(result.subtotalCents).toBeGreaterThan(0);
+      expect(result.taxCents).toBeGreaterThan(0);
+      expect(result.totalCents).toBeGreaterThan(0);
       expect(result.createdAt).toBeDefined();
     });
 
@@ -1007,7 +1007,7 @@ describe('OrderService', () => {
       });
 
       // Base price: $3.99 * 1.0 = $3.99
-      expect(order.subtotal).toBeCloseTo(3.99, 2);
+      expect(order.subtotalCents).toBeCloseTo(3.99, 2);
     });
 
     it('applies size multiplier for MEDIUM (1.25)', async () => {
@@ -1026,7 +1026,7 @@ describe('OrderService', () => {
       });
 
       // Base price: $3.99 * 1.25 = $4.99
-      expect(order.subtotal).toBeCloseTo(4.99, 2);
+      expect(order.subtotalCents).toBeCloseTo(4.99, 2);
     });
 
     it('applies size multiplier for LARGE (1.5)', async () => {
@@ -1045,7 +1045,7 @@ describe('OrderService', () => {
       });
 
       // Base price: $3.99 * 1.5 = $5.99
-      expect(order.subtotal).toBeCloseTo(5.99, 2);
+      expect(order.subtotalCents).toBeCloseTo(5.99, 2);
     });
 
     it('calculates tax at default rate (8.25%)', async () => {
@@ -1064,8 +1064,8 @@ describe('OrderService', () => {
       });
 
       // Tax: $3.99 * 0.0825 = ~$0.33
-      expect(order.tax).toBeCloseTo(3.99 * 0.0825, 2);
-      expect(order.total).toBeCloseTo(3.99 + (3.99 * 0.0825), 2);
+      expect(order.taxCents).toBeCloseTo(3.99 * 0.0825, 2);
+      expect(order.totalCents).toBeCloseTo(3.99 + (3.99 * 0.0825), 2);
     });
 
     it('calculates total for multiple items with different quantities', async () => {
@@ -1094,7 +1094,7 @@ describe('OrderService', () => {
       // Item 2: 3 * ($4.99 + $0.75 + $0.50) = 3 * $6.24 = $18.72
       // Subtotal: $26.70
       const expectedSubtotal = (2 * 3.99) + (3 * (4.99 + 0.75 + 0.50));
-      expect(order.subtotal).toBeCloseTo(expectedSubtotal, 2);
+      expect(order.subtotalCents).toBeCloseTo(expectedSubtotal, 2);
     });
   });
 

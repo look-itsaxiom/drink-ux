@@ -58,12 +58,12 @@ describe('templateCatalog', () => {
         expect(base.category).toBeDefined();
         expect(typeof base.category).toBe('string');
 
-        expect(base.price).toBeDefined();
-        expect(typeof base.price).toBe('number');
-        expect(base.price).toBeGreaterThanOrEqual(0);
+        expect(base.priceCents).toBeDefined();
+        expect(typeof base.priceCents).toBe('number');
+        expect(base.priceCents).toBeGreaterThanOrEqual(0);
 
-        expect(base.temp).toBeDefined();
-        expect(['HOT_ONLY', 'ICED_ONLY', 'BOTH']).toContain(base.temp);
+        expect(base.variations).toBeDefined();
+        expect(Array.isArray(base.variations)).toBe(true);
       }
     });
 
@@ -75,11 +75,9 @@ describe('templateCatalog', () => {
       }
     });
 
-    it('bases have valid temperature constraints', () => {
-      const validConstraints = ['HOT_ONLY', 'ICED_ONLY', 'BOTH'];
-
+    it('bases have at least one variation', () => {
       for (const base of templateCatalog.bases) {
-        expect(validConstraints).toContain(base.temp);
+        expect(base.variations.length).toBeGreaterThan(0);
       }
     });
 
@@ -97,8 +95,8 @@ describe('templateCatalog', () => {
     it('bases have reasonable default prices', () => {
       for (const base of templateCatalog.bases) {
         // Prices in cents, should be between $1 and $20
-        expect(base.price).toBeGreaterThanOrEqual(100);
-        expect(base.price).toBeLessThanOrEqual(2000);
+        expect(base.priceCents).toBeGreaterThanOrEqual(100);
+        expect(base.priceCents).toBeLessThanOrEqual(2000);
       }
     });
   });
@@ -110,60 +108,60 @@ describe('templateCatalog', () => {
         expect(typeof modifier.name).toBe('string');
         expect(modifier.name.length).toBeGreaterThan(0);
 
-        expect(modifier.type).toBeDefined();
-        expect(['MILK', 'SYRUP', 'TOPPING']).toContain(modifier.type);
+        expect(modifier.group).toBeDefined();
+        expect(typeof modifier.group).toBe('string');
 
-        expect(modifier.price).toBeDefined();
-        expect(typeof modifier.price).toBe('number');
-        expect(modifier.price).toBeGreaterThanOrEqual(0);
+        expect(modifier.priceCents).toBeDefined();
+        expect(typeof modifier.priceCents).toBe('number');
+        expect(modifier.priceCents).toBeGreaterThanOrEqual(0);
       }
     });
 
-    it('modifiers have valid types', () => {
-      const validTypes = ['MILK', 'SYRUP', 'TOPPING'];
+    it('modifiers reference valid modifier groups', () => {
+      const groupNames = templateCatalog.modifierGroups.map((g) => g.name);
 
       for (const modifier of templateCatalog.modifiers) {
-        expect(validTypes).toContain(modifier.type);
+        expect(groupNames).toContain(modifier.group);
       }
     });
 
-    it('has at least one modifier of each type', () => {
-      const types = templateCatalog.modifiers.map((m) => m.type);
+    it('has at least one modifier in each group', () => {
+      const groups = templateCatalog.modifiers.map((m) => m.group);
 
-      expect(types).toContain('MILK');
-      expect(types).toContain('SYRUP');
-      expect(types).toContain('TOPPING');
+      for (const modifierGroup of templateCatalog.modifierGroups) {
+        expect(groups).toContain(modifierGroup.name);
+      }
     });
 
     it('milk modifiers have reasonable prices (some free)', () => {
-      const milkModifiers = templateCatalog.modifiers.filter((m) => m.type === 'MILK');
-      const hasFreeOption = milkModifiers.some((m) => m.price === 0);
+      const milkModifiers = templateCatalog.modifiers.filter((m) => m.group === 'Milk Options');
+      const hasFreeOption = milkModifiers.some((m) => m.priceCents === 0);
 
       expect(hasFreeOption).toBe(true);
 
       for (const milk of milkModifiers) {
         // Milk prices should be between $0 and $1.50
-        expect(milk.price).toBeLessThanOrEqual(150);
+        expect(milk.priceCents).toBeLessThanOrEqual(150);
       }
     });
 
     it('syrup modifiers have reasonable prices', () => {
-      const syrupModifiers = templateCatalog.modifiers.filter((m) => m.type === 'SYRUP');
+      const syrupModifiers = templateCatalog.modifiers.filter((m) => m.group === 'Syrups');
 
       for (const syrup of syrupModifiers) {
         // Syrup prices should be between $0 and $1.00
-        expect(syrup.price).toBeLessThanOrEqual(100);
+        expect(syrup.priceCents).toBeLessThanOrEqual(100);
       }
     });
 
-    it('modifiers have unique names within their type', () => {
-      const namesByType = new Map<string, string[]>();
+    it('modifiers have unique names within their group', () => {
+      const namesByGroup = new Map<string, string[]>();
 
       for (const modifier of templateCatalog.modifiers) {
-        const existing = namesByType.get(modifier.type) || [];
+        const existing = namesByGroup.get(modifier.group) || [];
         expect(existing).not.toContain(modifier.name);
         existing.push(modifier.name);
-        namesByType.set(modifier.type, existing);
+        namesByGroup.set(modifier.group, existing);
       }
     });
   });
@@ -188,8 +186,8 @@ describe('templateCatalog', () => {
     it('template prices are reasonable defaults', () => {
       // All prices should be in cents
       const allPrices = [
-        ...templateCatalog.bases.map((b) => b.price),
-        ...templateCatalog.modifiers.map((m) => m.price),
+        ...templateCatalog.bases.map((b) => b.priceCents),
+        ...templateCatalog.modifiers.map((m) => m.priceCents),
       ];
 
       for (const price of allPrices) {

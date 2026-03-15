@@ -157,7 +157,7 @@ function createSquarePaymentsClient(accessToken: string, environment: 'sandbox' 
 
 interface PayOrderRequest {
   sourceId: string;
-  amount: number;
+  amountCents: number;
 }
 
 const ENCRYPTION_KEY = process.env.POS_TOKEN_ENCRYPTION_KEY || 'test-key-must-be-32-chars-long!!';
@@ -175,7 +175,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
   router.post('/:orderId/pay', async (req, res: Response) => {
     try {
       const { orderId } = req.params;
-      const { sourceId, amount } = req.body as PayOrderRequest;
+      const { sourceId, amountCents } = req.body as PayOrderRequest;
 
       // Validate input
       if (!sourceId) {
@@ -186,10 +186,10 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
         return res.status(400).json(response);
       }
 
-      if (!amount || amount <= 0) {
+      if (!amountCents || amountCents <= 0) {
         const response: ApiResponse<never> = {
           success: false,
-          error: { code: 'VALIDATION_ERROR', message: 'amount is required and must be positive' },
+          error: { code: 'VALIDATION_ERROR', message: 'amountCents is required and must be positive' },
         };
         return res.status(400).json(response);
       }
@@ -225,7 +225,7 @@ export function createPaymentRouter(prisma: PrismaClient): Router {
       const result: PaymentResult = await paymentService.processPayment({
         orderId,
         sourceId,
-        amount,
+        amountCents,
       });
 
       // On successful payment, transition order to CONFIRMED

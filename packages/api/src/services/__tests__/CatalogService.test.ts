@@ -1,4 +1,4 @@
-import { PrismaClient, TemperatureConstraint, ModifierType } from '../../../generated/prisma';
+import { PrismaClient } from '../../../generated/prisma';
 import { CatalogService, CatalogError } from '../CatalogService';
 
 const prisma = new PrismaClient();
@@ -411,7 +411,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'Test Base',
-          basePrice: 4.99,
+          priceCents: 499,
         });
 
         await expect(
@@ -431,7 +431,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'Inactive Base',
-          basePrice: 4.99,
+          priceCents: 499,
         });
         await catalogService.updateBase(base.id, { available: false });
 
@@ -486,14 +486,14 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'Espresso',
-          basePrice: 3.99,
+          priceCents: 399,
         });
 
         expect(base).toBeDefined();
         expect(base.name).toBe('Espresso');
         expect(base.categoryId).toBe(categoryId);
-        expect(base.basePrice).toBe(3.99);
-        expect(base.temperatureConstraint).toBe('BOTH');
+        expect(base.priceCents).toBe(399);
+        // temperatureConstraint test removed (field no longer exists)
         expect(base.available).toBe(true);
       });
 
@@ -502,11 +502,10 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'Hot Chocolate',
-          basePrice: 4.50,
-          temperatureConstraint: 'HOT_ONLY',
+          priceCents: 450,
         });
 
-        expect(base.temperatureConstraint).toBe('HOT_ONLY');
+        // temperatureConstraint test removed (field no longer exists)
       });
 
       it('creates base with visual properties', async () => {
@@ -514,7 +513,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'Latte',
-          basePrice: 4.99,
+          priceCents: 499,
           visualColor: '#8B4513',
           visualOpacity: 0.8,
         });
@@ -529,11 +528,10 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'Latte',
-          basePrice: 4.50,
-          temperatureConstraint: 'BOTH',
+          priceCents: 450,
         });
 
-        expect(base.temperatureConstraint).toBe('BOTH');
+        // temperatureConstraint test removed (field no longer exists)
       });
 
       it('handles price as decimal (cents)', async () => {
@@ -541,10 +539,10 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'Drip Coffee',
-          basePrice: 2.49,
+          priceCents: 249,
         });
 
-        expect(base.basePrice).toBe(2.49);
+        expect(base.priceCents).toBe(249);
       });
 
       // Failure cases
@@ -554,8 +552,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             categoryId,
             name: 'Test Base',
-            basePrice: 3.99,
-            temperatureConstraint: 'INVALID' as TemperatureConstraint,
+            priceCents: 399,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -566,7 +563,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             categoryId: 'non-existent-id',
             name: 'Test Base',
-            basePrice: 3.99,
+            priceCents: 399,
           })
         ).rejects.toThrow(CatalogError);
 
@@ -575,7 +572,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             categoryId: 'non-existent-id',
             name: 'Test Base',
-            basePrice: 3.99,
+            priceCents: 399,
           });
         } catch (error) {
           expect((error as CatalogError).code).toBe('INVALID_CATEGORY');
@@ -588,7 +585,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             categoryId,
             name: 'Test Base',
-            basePrice: -1.00,
+            priceCents: -100,
           })
         ).rejects.toThrow(CatalogError);
 
@@ -597,7 +594,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             categoryId,
             name: 'Test Base',
-            basePrice: -1.00,
+            priceCents: -100,
           });
         } catch (error) {
           expect((error as CatalogError).code).toBe('INVALID_PRICE');
@@ -609,7 +606,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'Espresso',
-          basePrice: 3.99,
+          priceCents: 399,
         });
 
         await expect(
@@ -617,7 +614,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             categoryId,
             name: 'Espresso',
-            basePrice: 4.50,
+            priceCents: 450,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -628,7 +625,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             categoryId,
             name: '',
-            basePrice: 3.99,
+            priceCents: 399,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -642,7 +639,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'Original Base',
-          basePrice: 3.99,
+          priceCents: 399,
         });
         baseId = base.id;
       });
@@ -657,10 +654,10 @@ describe('CatalogService', () => {
 
       it('updates base price', async () => {
         const updated = await catalogService.updateBase(baseId, {
-          basePrice: 5.99,
+          priceCents: 599,
         });
 
-        expect(updated.basePrice).toBe(5.99);
+        expect(updated.priceCents).toBe(599);
       });
 
       it('toggles availability', async () => {
@@ -673,10 +670,9 @@ describe('CatalogService', () => {
 
       it('updates temperature constraint', async () => {
         const updated = await catalogService.updateBase(baseId, {
-          temperatureConstraint: 'ICED_ONLY',
         });
 
-        expect(updated.temperatureConstraint).toBe('ICED_ONLY');
+        // temperatureConstraint test removed (field no longer exists)
       });
 
       it('throws error for non-existent base', async () => {
@@ -692,13 +688,13 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'Espresso',
-          basePrice: 3.99,
+          priceCents: 399,
         });
         await catalogService.createBase({
           businessId: testBusinessId,
           categoryId,
           name: 'Latte',
-          basePrice: 4.99,
+          priceCents: 499,
         });
       });
 
@@ -735,7 +731,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'Espresso',
-          basePrice: 3.99,
+          priceCents: 399,
         });
 
         const retrieved = await catalogService.getBase(created.id);
@@ -759,7 +755,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId,
           name: 'To Delete',
-          basePrice: 3.99,
+          priceCents: 399,
         });
         baseId = base.id;
       });
@@ -789,14 +785,14 @@ describe('CatalogService', () => {
         const modifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Oat Milk',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
 
         expect(modifier).toBeDefined();
         expect(modifier.name).toBe('Oat Milk');
-        expect(modifier.type).toBe('MILK');
-        expect(modifier.price).toBe(0.75);
+        expect(modifier.modifierGroupId).toBe('test-mg-milk');
+        expect(modifier.priceCents).toBe(75);
         expect(modifier.available).toBe(true);
       });
 
@@ -804,30 +800,30 @@ describe('CatalogService', () => {
         const modifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Vanilla',
-          type: 'SYRUP',
-          price: 0.50,
+          modifierGroupId: 'test-mg-syrup',
+          priceCents: 50,
         });
 
-        expect(modifier.type).toBe('SYRUP');
+        expect(modifier.modifierGroupId).toBe('test-mg-syrup');
       });
 
       it('creates topping modifier', async () => {
         const modifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Whipped Cream',
-          type: 'TOPPING',
-          price: 0.50,
+          modifierGroupId: 'test-mg-topping',
+          priceCents: 50,
         });
 
-        expect(modifier.type).toBe('TOPPING');
+        expect(modifier.modifierGroupId).toBe('test-mg-topping');
       });
 
       it('creates modifier with visual properties', async () => {
         const modifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Caramel Drizzle',
-          type: 'TOPPING',
-          price: 0.50,
+          modifierGroupId: 'test-mg-topping',
+          priceCents: 50,
           visualColor: '#D4A574',
           visualLayerOrder: 5,
           visualAnimationType: 'drizzle',
@@ -843,11 +839,11 @@ describe('CatalogService', () => {
         const modifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Ice',
-          type: 'TOPPING',
-          price: 0,
+          modifierGroupId: 'test-mg-topping',
+          priceCents: 0,
         });
 
-        expect(modifier.price).toBe(0);
+        expect(modifier.priceCents).toBe(0);
       });
 
       // Failure cases
@@ -856,8 +852,8 @@ describe('CatalogService', () => {
           catalogService.createModifier({
             businessId: testBusinessId,
             name: 'Invalid',
-            type: 'INVALID' as ModifierType,
-            price: 0.50,
+            modifierGroupId: 'invalid-group',
+            priceCents: 50,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -867,42 +863,42 @@ describe('CatalogService', () => {
         const milkModifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Almond Milk',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
-        expect(milkModifier.type).toBe('MILK');
+        expect(milkModifier.modifierGroupId).toBe('test-mg-milk');
 
         const syrupModifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Hazelnut',
-          type: 'SYRUP',
-          price: 0.50,
+          modifierGroupId: 'test-mg-syrup',
+          priceCents: 50,
         });
-        expect(syrupModifier.type).toBe('SYRUP');
+        expect(syrupModifier.modifierGroupId).toBe('test-mg-syrup');
 
         const toppingModifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Foam',
-          type: 'TOPPING',
-          price: 0,
+          modifierGroupId: 'test-mg-topping',
+          priceCents: 0,
         });
-        expect(toppingModifier.type).toBe('TOPPING');
+        expect(toppingModifier.modifierGroupId).toBe('test-mg-topping');
       });
 
       it('rejects duplicate modifier name within same business and type', async () => {
         await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Oat Milk',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
 
         await expect(
           catalogService.createModifier({
             businessId: testBusinessId,
             name: 'Oat Milk',
-            type: 'MILK',
-            price: 0.80,
+            modifierGroupId: 'test-mg-milk',
+            priceCents: 80,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -911,8 +907,8 @@ describe('CatalogService', () => {
         await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Vanilla',
-          type: 'SYRUP',
-          price: 0.50,
+          modifierGroupId: 'test-mg-syrup',
+          priceCents: 50,
         });
 
         // Same name but different type should be allowed
@@ -922,12 +918,12 @@ describe('CatalogService', () => {
         const modifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Vanilla',
-          type: 'TOPPING', // Different type
-          price: 0.50,
+          modifierGroupId: 'test-mg-topping', // Different type
+          priceCents: 50,
         });
 
         expect(modifier.name).toBe('Vanilla');
-        expect(modifier.type).toBe('TOPPING');
+        expect(modifier.modifierGroupId).toBe('test-mg-topping');
       });
 
       it('throws error for empty name', async () => {
@@ -935,8 +931,8 @@ describe('CatalogService', () => {
           catalogService.createModifier({
             businessId: testBusinessId,
             name: '',
-            type: 'MILK',
-            price: 0.75,
+            modifierGroupId: 'test-mg-milk',
+            priceCents: 75,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -946,8 +942,8 @@ describe('CatalogService', () => {
           catalogService.createModifier({
             businessId: testBusinessId,
             name: 'Test',
-            type: 'MILK',
-            price: -0.50,
+            modifierGroupId: 'test-mg-milk',
+            priceCents: -50,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -960,8 +956,8 @@ describe('CatalogService', () => {
         const modifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Original Modifier',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
         modifierId = modifier.id;
       });
@@ -976,10 +972,10 @@ describe('CatalogService', () => {
 
       it('updates modifier price', async () => {
         const updated = await catalogService.updateModifier(modifierId, {
-          price: 1.00,
+          priceCents: 100,
         });
 
-        expect(updated.price).toBe(1.00);
+        expect(updated.priceCents).toBe(100);
       });
 
       it('toggles availability', async () => {
@@ -1002,20 +998,20 @@ describe('CatalogService', () => {
         await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Oat Milk',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
         await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Almond Milk',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
         await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Vanilla',
-          type: 'SYRUP',
-          price: 0.50,
+          modifierGroupId: 'test-mg-syrup',
+          priceCents: 50,
         });
       });
 
@@ -1028,11 +1024,11 @@ describe('CatalogService', () => {
       it('filters modifiers by type', async () => {
         const milkModifiers = await catalogService.listModifiers({
           businessId: testBusinessId,
-          type: 'MILK',
+          modifierGroupId: 'test-mg-milk',
         });
 
         expect(milkModifiers).toHaveLength(2);
-        expect(milkModifiers.every(m => m.type === 'MILK')).toBe(true);
+        expect(milkModifiers.every(m => m.modifierGroupId === 'test-mg-milk')).toBe(true);
       });
 
       it('filters by availability', async () => {
@@ -1053,8 +1049,8 @@ describe('CatalogService', () => {
         const created = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Test Modifier',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
 
         const retrieved = await catalogService.getModifier(created.id);
@@ -1077,8 +1073,8 @@ describe('CatalogService', () => {
         const modifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'To Delete',
-          type: 'MILK',
-          price: 0.75,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 75,
         });
         modifierId = modifier.id;
       });
@@ -1117,21 +1113,21 @@ describe('CatalogService', () => {
         businessId: testBusinessId,
         categoryId,
         name: 'Espresso',
-        basePrice: 3.99,
+        priceCents: 399,
       });
       baseId = base.id;
 
       const modifier1 = await catalogService.createModifier({
         businessId: testBusinessId,
         name: 'Oat Milk',
-        type: 'MILK',
-        price: 0.75,
+        modifierGroupId: 'test-mg-milk',
+        priceCents: 75,
       });
       const modifier2 = await catalogService.createModifier({
         businessId: testBusinessId,
         name: 'Vanilla',
-        type: 'SYRUP',
-        price: 0.50,
+        modifierGroupId: 'test-mg-syrup',
+        priceCents: 50,
       });
       modifierIds = [modifier1.id, modifier2.id];
     });
@@ -1144,13 +1140,13 @@ describe('CatalogService', () => {
           name: 'Vanilla Oat Latte',
           baseId,
           modifierIds,
-          price: 5.99,
+          priceCents: 599,
         });
 
         expect(preset).toBeDefined();
         expect(preset.name).toBe('Vanilla Oat Latte');
         expect(preset.baseId).toBe(baseId);
-        expect(preset.price).toBe(5.99);
+        expect(preset.priceCents).toBe(599);
         expect(preset.available).toBe(true);
       });
 
@@ -1159,12 +1155,12 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           name: 'Iced Latte',
           baseId,
-          price: 5.99,
-          defaultSize: 'LARGE',
+          priceCents: 599,
+          defaultVariationId: 'test-variation-1',
           defaultHot: false,
         });
 
-        expect(preset.defaultSize).toBe('LARGE');
+        expect(preset.defaultVariationId).toBe('test-variation-1');
         expect(preset.defaultHot).toBe(false);
       });
 
@@ -1173,7 +1169,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           name: 'Photo Latte',
           baseId,
-          price: 5.99,
+          priceCents: 599,
           imageUrl: 'https://example.com/latte.jpg',
         });
 
@@ -1186,7 +1182,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           name: 'Plain Espresso',
           baseId,
-          price: 3.99,
+          priceCents: 399,
           modifierIds: [],
         });
 
@@ -1199,8 +1195,8 @@ describe('CatalogService', () => {
         const extraMilk = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Extra Oat Milk',
-          type: 'MILK',
-          price: 0.50,
+          modifierGroupId: 'test-mg-milk',
+          priceCents: 50,
         });
 
         const preset = await catalogService.createPreset({
@@ -1208,7 +1204,7 @@ describe('CatalogService', () => {
           name: 'Double Milk Latte',
           baseId,
           modifierIds: [modifierIds[0], extraMilk.id],
-          price: 6.99,
+          priceCents: 699,
         });
 
         expect(preset).toBeDefined();
@@ -1228,7 +1224,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             name: 'No Base',
             baseId: '',
-            price: 5.99,
+            priceCents: 599,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -1239,7 +1235,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             name: 'Invalid Base',
             baseId: 'non-existent-id',
-            price: 5.99,
+            priceCents: 599,
           })
         ).rejects.toThrow(CatalogError);
 
@@ -1248,7 +1244,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             name: 'Invalid Base',
             baseId: 'non-existent-id',
-            price: 5.99,
+            priceCents: 599,
           });
         } catch (error) {
           expect((error as CatalogError).code).toBe('INVALID_BASE');
@@ -1262,7 +1258,7 @@ describe('CatalogService', () => {
             name: 'Invalid Modifiers',
             baseId,
             modifierIds: ['non-existent-id'],
-            price: 5.99,
+            priceCents: 599,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -1272,7 +1268,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           name: 'Vanilla Latte',
           baseId,
-          price: 5.99,
+          priceCents: 599,
         });
 
         await expect(
@@ -1280,7 +1276,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             name: 'Vanilla Latte',
             baseId,
-            price: 6.99,
+            priceCents: 699,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -1291,7 +1287,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             name: '',
             baseId,
-            price: 5.99,
+            priceCents: 599,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -1302,7 +1298,7 @@ describe('CatalogService', () => {
             businessId: testBusinessId,
             name: 'Negative Price',
             baseId,
-            price: -1.00,
+            priceCents: -100,
           })
         ).rejects.toThrow(CatalogError);
       });
@@ -1317,7 +1313,7 @@ describe('CatalogService', () => {
           name: 'Original Preset',
           baseId,
           modifierIds,
-          price: 5.99,
+          priceCents: 599,
         });
         presetId = preset.id;
       });
@@ -1332,18 +1328,18 @@ describe('CatalogService', () => {
 
       it('updates preset price', async () => {
         const updated = await catalogService.updatePreset(presetId, {
-          price: 6.99,
+          priceCents: 699,
         });
 
-        expect(updated.price).toBe(6.99);
+        expect(updated.priceCents).toBe(699);
       });
 
       it('updates preset modifiers', async () => {
         const newModifier = await catalogService.createModifier({
           businessId: testBusinessId,
           name: 'Caramel',
-          type: 'SYRUP',
-          price: 0.50,
+          modifierGroupId: 'test-mg-syrup',
+          priceCents: 50,
         });
 
         const updated = await catalogService.updatePreset(presetId, {
@@ -1379,13 +1375,13 @@ describe('CatalogService', () => {
           name: 'Vanilla Latte',
           baseId,
           modifierIds,
-          price: 5.99,
+          priceCents: 599,
         });
         await catalogService.createPreset({
           businessId: testBusinessId,
           name: 'Plain Espresso',
           baseId,
-          price: 3.99,
+          priceCents: 399,
         });
       });
 
@@ -1405,13 +1401,13 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           categoryId: otherCategory.id,
           name: 'Cold Brew',
-          basePrice: 4.50,
+          priceCents: 450,
         });
         await catalogService.createPreset({
           businessId: testBusinessId,
           name: 'Iced Cold Brew',
           baseId: otherBase.id,
-          price: 4.99,
+          priceCents: 499,
         });
 
         // Filter by original category
@@ -1443,7 +1439,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           name: 'Test Preset',
           baseId,
-          price: 5.99,
+          priceCents: 599,
         });
 
         const retrieved = await catalogService.getPreset(created.id);
@@ -1466,7 +1462,7 @@ describe('CatalogService', () => {
           name: 'Full Preset',
           baseId,
           modifierIds,
-          price: 5.99,
+          priceCents: 599,
         });
 
         const retrieved = await catalogService.getPresetWithModifiers(created.id);
@@ -1485,7 +1481,7 @@ describe('CatalogService', () => {
           businessId: testBusinessId,
           name: 'To Delete',
           baseId,
-          price: 5.99,
+          priceCents: 599,
         });
         presetId = preset.id;
       });
@@ -1538,13 +1534,13 @@ describe('CatalogService', () => {
         businessId: testBusinessId,
         categoryId: category.id,
         name: 'Transaction Base',
-        basePrice: 3.99,
+        priceCents: 399,
       });
       const modifier = await catalogService.createModifier({
         businessId: testBusinessId,
         name: 'Transaction Modifier',
-        type: 'MILK',
-        price: 0.75,
+        modifierGroupId: 'test-mg-milk',
+        priceCents: 75,
       });
 
       // Create preset - this should use a transaction
@@ -1553,7 +1549,7 @@ describe('CatalogService', () => {
         name: 'Transaction Preset',
         baseId: base.id,
         modifierIds: [modifier.id],
-        price: 5.99,
+        priceCents: 599,
       });
 
       expect(preset).toBeDefined();
