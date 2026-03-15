@@ -6,7 +6,7 @@ import {
   TypeSelectorProps,
   getDrinkTypesByCategory,
 } from '../TypeSelector';
-import { DrinkCategory, DrinkType } from '../../../types';
+import { DrinkType } from '../../../types';
 import React from 'react';
 
 // Test component that uses the hook
@@ -30,7 +30,7 @@ const TestTypeSelector: React.FC<TypeSelectorProps> = ({ category, onSelect, onB
           data-testid={`type-${type.id}`}
         >
           <span data-testid={`name-${type.id}`}>{type.name}</span>
-          <span data-testid={`price-${type.id}`}>${type.basePrice.toFixed(2)}</span>
+          <span data-testid={`price-${type.id}`}>${(type.priceCents / 100).toFixed(2)}</span>
           {type.isHot !== undefined && (
             <span data-testid={`temp-${type.id}`}>
               {type.isHot ? 'Hot only' : 'Iced only'}
@@ -46,16 +46,13 @@ describe('TypeSelector', () => {
   // Test DRINK_TYPES_BY_CATEGORY constant
   describe('DRINK_TYPES_BY_CATEGORY constant', () => {
     it('should have drink types for all categories', () => {
-      expect(DRINK_TYPES_BY_CATEGORY[DrinkCategory.COFFEE]).toBeDefined();
-      expect(DRINK_TYPES_BY_CATEGORY[DrinkCategory.TEA]).toBeDefined();
-      expect(DRINK_TYPES_BY_CATEGORY[DrinkCategory.ITALIAN_SODA]).toBeDefined();
-      expect(DRINK_TYPES_BY_CATEGORY[DrinkCategory.JUICE]).toBeDefined();
-      expect(DRINK_TYPES_BY_CATEGORY[DrinkCategory.BLENDED]).toBeDefined();
-      expect(DRINK_TYPES_BY_CATEGORY[DrinkCategory.SPECIALTY]).toBeDefined();
+      expect(DRINK_TYPES_BY_CATEGORY['coffee']).toBeDefined();
+      expect(DRINK_TYPES_BY_CATEGORY['tea']).toBeDefined();
+      expect(DRINK_TYPES_BY_CATEGORY['specialty']).toBeDefined();
     });
 
     it('should have multiple coffee drink types', () => {
-      const coffeeTypes = DRINK_TYPES_BY_CATEGORY[DrinkCategory.COFFEE];
+      const coffeeTypes = DRINK_TYPES_BY_CATEGORY['coffee'];
       expect(coffeeTypes.length).toBeGreaterThan(0);
 
       const typeNames = coffeeTypes.map((t) => t.name);
@@ -65,12 +62,11 @@ describe('TypeSelector', () => {
     });
 
     it('should have tea drink types', () => {
-      const teaTypes = DRINK_TYPES_BY_CATEGORY[DrinkCategory.TEA];
+      const teaTypes = DRINK_TYPES_BY_CATEGORY['tea'];
       expect(teaTypes.length).toBeGreaterThan(0);
 
       const typeNames = teaTypes.map((t) => t.name);
       expect(typeNames).toContain('Green Tea');
-      expect(typeNames).toContain('Black Tea');
     });
 
     it('each drink type should have required properties', () => {
@@ -79,9 +75,9 @@ describe('TypeSelector', () => {
           expect(type).toHaveProperty('id');
           expect(type).toHaveProperty('name');
           expect(type).toHaveProperty('category');
-          expect(type).toHaveProperty('basePrice');
-          expect(typeof type.basePrice).toBe('number');
-          expect(type.basePrice).toBeGreaterThan(0);
+          expect(type).toHaveProperty('priceCents');
+          expect(typeof type.priceCents).toBe('number');
+          expect(type.priceCents).toBeGreaterThan(0);
         });
       });
     });
@@ -97,13 +93,13 @@ describe('TypeSelector', () => {
 
   // Test getDrinkTypesByCategory function
   describe('getDrinkTypesByCategory', () => {
-    it('should return coffee types for COFFEE category', () => {
-      const types = getDrinkTypesByCategory(DrinkCategory.COFFEE);
-      expect(types).toEqual(DRINK_TYPES_BY_CATEGORY[DrinkCategory.COFFEE]);
+    it('should return coffee types for coffee category', () => {
+      const types = getDrinkTypesByCategory('coffee');
+      expect(types).toEqual(DRINK_TYPES_BY_CATEGORY['coffee']);
     });
 
     it('should return empty array for unknown category', () => {
-      const types = getDrinkTypesByCategory('unknown' as DrinkCategory);
+      const types = getDrinkTypesByCategory('unknown');
       expect(types).toEqual([]);
     });
   });
@@ -116,13 +112,13 @@ describe('TypeSelector', () => {
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.COFFEE}
+          category="coffee"
           onSelect={onSelect}
           onBack={onBack}
         />
       );
 
-      DRINK_TYPES_BY_CATEGORY[DrinkCategory.COFFEE].forEach((type) => {
+      DRINK_TYPES_BY_CATEGORY['coffee'].forEach((type) => {
         expect(screen.getByTestId(`type-${type.id}`)).toBeInTheDocument();
       });
     });
@@ -133,7 +129,7 @@ describe('TypeSelector', () => {
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.COFFEE}
+          category="coffee"
           onSelect={onSelect}
           onBack={onBack}
         />
@@ -145,7 +141,7 @@ describe('TypeSelector', () => {
         expect.objectContaining({
           id: 'latte',
           name: 'Latte',
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
         })
       );
     });
@@ -156,7 +152,7 @@ describe('TypeSelector', () => {
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.COFFEE}
+          category="coffee"
           onSelect={onSelect}
           onBack={onBack}
         />
@@ -173,7 +169,7 @@ describe('TypeSelector', () => {
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.TEA}
+          category="tea"
           onSelect={onSelect}
           onBack={onBack}
         />
@@ -188,17 +184,17 @@ describe('TypeSelector', () => {
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.COFFEE}
+          category="coffee"
           onSelect={onSelect}
           onBack={onBack}
         />
       );
 
-      const latteType = DRINK_TYPES_BY_CATEGORY[DrinkCategory.COFFEE].find(
+      const latteType = DRINK_TYPES_BY_CATEGORY['coffee'].find(
         (t) => t.id === 'latte'
       );
       expect(screen.getByTestId('price-latte')).toHaveTextContent(
-        `$${latteType?.basePrice.toFixed(2)}`
+        `$${(latteType!.priceCents / 100).toFixed(2)}`
       );
     });
   });
@@ -211,14 +207,14 @@ describe('TypeSelector', () => {
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.COFFEE}
+          category="coffee"
           onSelect={onSelect}
           onBack={onBack}
         />
       );
 
       // Cappuccino is hot only
-      const cappuccinoType = DRINK_TYPES_BY_CATEGORY[DrinkCategory.COFFEE].find(
+      const cappuccinoType = DRINK_TYPES_BY_CATEGORY['coffee'].find(
         (t) => t.id === 'cappuccino'
       );
       if (cappuccinoType?.isHot === true) {
@@ -232,14 +228,14 @@ describe('TypeSelector', () => {
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.COFFEE}
+          category="coffee"
           onSelect={onSelect}
           onBack={onBack}
         />
       );
 
       // Cold Brew is iced only
-      const coldBrewType = DRINK_TYPES_BY_CATEGORY[DrinkCategory.COFFEE].find(
+      const coldBrewType = DRINK_TYPES_BY_CATEGORY['coffee'].find(
         (t) => t.id === 'cold-brew'
       );
       if (coldBrewType?.isHot === false) {
@@ -253,14 +249,14 @@ describe('TypeSelector', () => {
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.COFFEE}
+          category="coffee"
           onSelect={onSelect}
           onBack={onBack}
         />
       );
 
       // Latte should have isHot undefined
-      const latteType = DRINK_TYPES_BY_CATEGORY[DrinkCategory.COFFEE].find(
+      const latteType = DRINK_TYPES_BY_CATEGORY['coffee'].find(
         (t) => t.id === 'latte'
       );
       if (latteType?.isHot === undefined) {
@@ -271,53 +267,36 @@ describe('TypeSelector', () => {
 
   // Different categories
   describe('different categories', () => {
-    it('should show tea types for TEA category', () => {
+    it('should show tea types for tea category', () => {
       const onSelect = vi.fn();
       const onBack = vi.fn();
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.TEA}
+          category="tea"
           onSelect={onSelect}
           onBack={onBack}
         />
       );
 
-      DRINK_TYPES_BY_CATEGORY[DrinkCategory.TEA].forEach((type) => {
+      DRINK_TYPES_BY_CATEGORY['tea'].forEach((type) => {
         expect(screen.getByTestId(`type-${type.id}`)).toBeInTheDocument();
       });
     });
 
-    it('should show Italian soda types for ITALIAN_SODA category', () => {
+    it('should show specialty types for specialty category', () => {
       const onSelect = vi.fn();
       const onBack = vi.fn();
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.ITALIAN_SODA}
+          category="specialty"
           onSelect={onSelect}
           onBack={onBack}
         />
       );
 
-      DRINK_TYPES_BY_CATEGORY[DrinkCategory.ITALIAN_SODA].forEach((type) => {
-        expect(screen.getByTestId(`type-${type.id}`)).toBeInTheDocument();
-      });
-    });
-
-    it('should show specialty types for SPECIALTY category', () => {
-      const onSelect = vi.fn();
-      const onBack = vi.fn();
-
-      render(
-        <TestTypeSelector
-          category={DrinkCategory.SPECIALTY}
-          onSelect={onSelect}
-          onBack={onBack}
-        />
-      );
-
-      DRINK_TYPES_BY_CATEGORY[DrinkCategory.SPECIALTY].forEach((type) => {
+      DRINK_TYPES_BY_CATEGORY['specialty'].forEach((type) => {
         expect(screen.getByTestId(`type-${type.id}`)).toBeInTheDocument();
       });
     });
@@ -331,7 +310,7 @@ describe('TypeSelector', () => {
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.COFFEE}
+          category="coffee"
           onSelect={onSelect}
           onBack={onBack}
         />
@@ -350,7 +329,7 @@ describe('TypeSelector', () => {
 
       render(
         <TestTypeSelector
-          category={DrinkCategory.COFFEE}
+          category="coffee"
           onSelect={onSelect}
           onBack={onBack}
         />

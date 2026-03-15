@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { DrinkVisualizer, DRINK_COLORS, SYRUP_COLORS, MILK_COLORS, TOPPING_PROPERTIES } from '../DrinkVisualizer';
-import { DrinkBuilderState, DrinkCategory, CupSize, ComponentType } from '../../../types';
 
-// Helper to create a minimal valid DrinkBuilderState
-const createBaseState = (overrides: Partial<DrinkBuilderState> = {}): DrinkBuilderState => ({
+// DrinkVisualizer uses a legacy state shape internally (milk, syrups, toppings, cupSize).
+// We pass plain objects that match that legacy shape since the module types state as `any`.
+
+// Helper to create a minimal valid state
+const createBaseState = (overrides: Record<string, any> = {}): Record<string, any> => ({
   syrups: [],
   toppings: [],
-  totalPrice: 0,
   ...overrides,
 });
 
@@ -26,12 +27,12 @@ describe('DrinkVisualizer', () => {
 
       it('should generate base layer when drink type is selected', () => {
         const state = createBaseState({
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
           drinkType: {
             id: 'latte',
             name: 'Latte',
-            category: DrinkCategory.COFFEE,
-            basePrice: 4.5,
+            category: 'coffee',
+            priceCents: 450,
           },
         });
 
@@ -45,19 +46,19 @@ describe('DrinkVisualizer', () => {
 
       it('should include syrup layer when syrup is added', () => {
         const state = createBaseState({
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
           drinkType: {
             id: 'latte',
             name: 'Latte',
-            category: DrinkCategory.COFFEE,
-            basePrice: 4.5,
+            category: 'coffee',
+            priceCents: 450,
           },
           syrups: [{
             id: 'vanilla',
             name: 'Vanilla Syrup',
-            type: ComponentType.MODIFIER,
+            type: 'modifier',
             category: 'syrup',
-            price: 0.5,
+            priceCents: 50,
             canTransformDrink: false,
             visual: { color: '#F5DEB3', opacity: 0.4, layerOrder: 1 },
             available: true,
@@ -73,19 +74,19 @@ describe('DrinkVisualizer', () => {
 
       it('should include milk layer when milk is added', () => {
         const state = createBaseState({
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
           drinkType: {
             id: 'latte',
             name: 'Latte',
-            category: DrinkCategory.COFFEE,
-            basePrice: 4.5,
+            category: 'coffee',
+            priceCents: 450,
           },
           milk: {
             id: 'oat',
             name: 'Oat Milk',
-            type: ComponentType.MODIFIER,
+            type: 'modifier',
             category: 'milk',
-            price: 0.75,
+            priceCents: 75,
             canTransformDrink: false,
             visual: { color: '#F0E68C', opacity: 0.8, layerOrder: 2 },
             available: true,
@@ -114,12 +115,12 @@ describe('DrinkVisualizer', () => {
 
       it('should add foam layer for hot drinks', () => {
         const state = createBaseState({
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
           drinkType: {
             id: 'latte',
             name: 'Latte',
-            category: DrinkCategory.COFFEE,
-            basePrice: 4.5,
+            category: 'coffee',
+            priceCents: 450,
           },
           isHot: true,
         });
@@ -133,19 +134,19 @@ describe('DrinkVisualizer', () => {
 
       it('should add whipped cream as a layer not a topping', () => {
         const state = createBaseState({
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
           drinkType: {
             id: 'latte',
             name: 'Latte',
-            category: DrinkCategory.COFFEE,
-            basePrice: 4.5,
+            category: 'coffee',
+            priceCents: 450,
           },
           toppings: [{
             id: 'whip',
             name: 'Whipped Cream',
-            type: ComponentType.MODIFIER,
+            type: 'modifier',
             category: 'topping',
-            price: 0.5,
+            priceCents: 50,
             canTransformDrink: false,
             visual: { color: '#FFFAF0', opacity: 0.9, layerOrder: 4 },
             available: true,
@@ -161,19 +162,19 @@ describe('DrinkVisualizer', () => {
 
       it('should show particle toppings for cinnamon', () => {
         const state = createBaseState({
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
           drinkType: {
             id: 'latte',
             name: 'Latte',
-            category: DrinkCategory.COFFEE,
-            basePrice: 4.5,
+            category: 'coffee',
+            priceCents: 450,
           },
           toppings: [{
             id: 'cinnamon',
             name: 'Cinnamon',
-            type: ComponentType.MODIFIER,
+            type: 'modifier',
             category: 'topping',
-            price: 0,
+            priceCents: 0,
             canTransformDrink: false,
             visual: { color: '#D2691E', opacity: 0.5, layerOrder: 4 },
             available: true,
@@ -188,20 +189,20 @@ describe('DrinkVisualizer', () => {
 
       it('should order layers correctly (syrup at bottom, foam at top)', () => {
         const state = createBaseState({
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
           drinkType: {
             id: 'latte',
             name: 'Latte',
-            category: DrinkCategory.COFFEE,
-            basePrice: 4.5,
+            category: 'coffee',
+            priceCents: 450,
           },
           isHot: true,
           milk: {
             id: 'whole',
             name: 'Whole Milk',
-            type: ComponentType.MODIFIER,
+            type: 'modifier',
             category: 'milk',
-            price: 0,
+            priceCents: 0,
             canTransformDrink: false,
             visual: { color: '#FFFEF7', opacity: 0.8, layerOrder: 2 },
             available: true,
@@ -209,9 +210,9 @@ describe('DrinkVisualizer', () => {
           syrups: [{
             id: 'caramel',
             name: 'Caramel Syrup',
-            type: ComponentType.MODIFIER,
+            type: 'modifier',
             category: 'syrup',
-            price: 0.5,
+            priceCents: 50,
             canTransformDrink: false,
             visual: { color: '#D2691E', opacity: 0.4, layerOrder: 1 },
             available: true,
@@ -233,7 +234,7 @@ describe('DrinkVisualizer', () => {
     describe('edge cases', () => {
       it('should handle missing drinkType gracefully', () => {
         const state = createBaseState({
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
         });
 
         const result = DrinkVisualizer.generateVisualProperties(state);
@@ -245,12 +246,12 @@ describe('DrinkVisualizer', () => {
 
       it('should handle empty syrups array', () => {
         const state = createBaseState({
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
           drinkType: {
             id: 'latte',
             name: 'Latte',
-            category: DrinkCategory.COFFEE,
-            basePrice: 4.5,
+            category: 'coffee',
+            priceCents: 450,
           },
           syrups: [],
         });
@@ -263,12 +264,12 @@ describe('DrinkVisualizer', () => {
 
       it('should handle empty toppings array', () => {
         const state = createBaseState({
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
           drinkType: {
             id: 'latte',
             name: 'Latte',
-            category: DrinkCategory.COFFEE,
-            basePrice: 4.5,
+            category: 'coffee',
+            priceCents: 450,
           },
           toppings: [],
         });
@@ -284,12 +285,12 @@ describe('DrinkVisualizer', () => {
     describe('drink categories', () => {
       it('should use green color for green tea', () => {
         const state = createBaseState({
-          category: DrinkCategory.TEA,
+          category: 'tea',
           drinkType: {
             id: 'green-tea',
             name: 'Green Tea',
-            category: DrinkCategory.TEA,
-            basePrice: 3.0,
+            category: 'tea',
+            priceCents: 300,
           },
         });
 
@@ -302,12 +303,12 @@ describe('DrinkVisualizer', () => {
 
       it('should use dark color for espresso', () => {
         const state = createBaseState({
-          category: DrinkCategory.COFFEE,
+          category: 'coffee',
           drinkType: {
             id: 'espresso',
             name: 'Espresso',
-            category: DrinkCategory.COFFEE,
-            basePrice: 3.0,
+            category: 'coffee',
+            priceCents: 300,
           },
         });
 
@@ -322,15 +323,15 @@ describe('DrinkVisualizer', () => {
 
   describe('getCupHeight', () => {
     it('should return 160 for small cup', () => {
-      expect(DrinkVisualizer.getCupHeight(CupSize.SMALL)).toBe(160);
+      expect(DrinkVisualizer.getCupHeight('small')).toBe(160);
     });
 
     it('should return 200 for medium cup', () => {
-      expect(DrinkVisualizer.getCupHeight(CupSize.MEDIUM)).toBe(200);
+      expect(DrinkVisualizer.getCupHeight('medium')).toBe(200);
     });
 
     it('should return 240 for large cup', () => {
-      expect(DrinkVisualizer.getCupHeight(CupSize.LARGE)).toBe(240);
+      expect(DrinkVisualizer.getCupHeight('large')).toBe(240);
     });
 
     it('should return 200 as default for undefined cup size', () => {
@@ -349,8 +350,8 @@ describe('DrinkVisualizer', () => {
         drinkType: {
           id: 'latte',
           name: 'Latte',
-          category: DrinkCategory.COFFEE,
-          basePrice: 4.5,
+          category: 'coffee',
+          priceCents: 450,
         },
       });
 
@@ -360,12 +361,12 @@ describe('DrinkVisualizer', () => {
 
     it('should include cup size', () => {
       const state = createBaseState({
-        cupSize: CupSize.LARGE,
+        cupSize: 'large',
         drinkType: {
           id: 'latte',
           name: 'Latte',
-          category: DrinkCategory.COFFEE,
-          basePrice: 4.5,
+          category: 'coffee',
+          priceCents: 450,
         },
       });
 
@@ -379,8 +380,8 @@ describe('DrinkVisualizer', () => {
         drinkType: {
           id: 'latte',
           name: 'Latte',
-          category: DrinkCategory.COFFEE,
-          basePrice: 4.5,
+          category: 'coffee',
+          priceCents: 450,
         },
       });
 
@@ -393,15 +394,15 @@ describe('DrinkVisualizer', () => {
         drinkType: {
           id: 'latte',
           name: 'Latte',
-          category: DrinkCategory.COFFEE,
-          basePrice: 4.5,
+          category: 'coffee',
+          priceCents: 450,
         },
         syrups: [{
           id: 'vanilla',
           name: 'Vanilla Syrup',
-          type: ComponentType.MODIFIER,
+          type: 'modifier',
           category: 'syrup',
-          price: 0.5,
+          priceCents: 50,
           canTransformDrink: false,
           visual: { color: '#F5DEB3', opacity: 0.4, layerOrder: 1 },
           available: true,
@@ -417,15 +418,15 @@ describe('DrinkVisualizer', () => {
         drinkType: {
           id: 'latte',
           name: 'Latte',
-          category: DrinkCategory.COFFEE,
-          basePrice: 4.5,
+          category: 'coffee',
+          priceCents: 450,
         },
         milk: {
           id: 'oat',
           name: 'Oat Milk',
-          type: ComponentType.MODIFIER,
+          type: 'modifier',
           category: 'milk',
-          price: 0.75,
+          priceCents: 75,
           canTransformDrink: false,
           visual: { color: '#F0E68C', opacity: 0.8, layerOrder: 2 },
           available: true,
@@ -441,15 +442,15 @@ describe('DrinkVisualizer', () => {
         drinkType: {
           id: 'latte',
           name: 'Latte',
-          category: DrinkCategory.COFFEE,
-          basePrice: 4.5,
+          category: 'coffee',
+          priceCents: 450,
         },
         milk: {
           id: 'whole',
           name: 'Whole Milk',
-          type: ComponentType.MODIFIER,
+          type: 'modifier',
           category: 'milk',
-          price: 0,
+          priceCents: 0,
           canTransformDrink: false,
           visual: { color: '#FFFEF7', opacity: 0.8, layerOrder: 2 },
           available: true,
@@ -463,13 +464,13 @@ describe('DrinkVisualizer', () => {
 
   // Test exported constants
   describe('exported constants', () => {
-    it('DRINK_COLORS should have all drink categories', () => {
-      expect(DRINK_COLORS[DrinkCategory.COFFEE]).toBeDefined();
-      expect(DRINK_COLORS[DrinkCategory.TEA]).toBeDefined();
-      expect(DRINK_COLORS[DrinkCategory.ITALIAN_SODA]).toBeDefined();
-      expect(DRINK_COLORS[DrinkCategory.JUICE]).toBeDefined();
-      expect(DRINK_COLORS[DrinkCategory.BLENDED]).toBeDefined();
-      expect(DRINK_COLORS[DrinkCategory.SPECIALTY]).toBeDefined();
+    it('DRINK_COLORS should have drink categories', () => {
+      expect(DRINK_COLORS['coffee']).toBeDefined();
+      expect(DRINK_COLORS['tea']).toBeDefined();
+      expect(DRINK_COLORS['italian_soda']).toBeDefined();
+      expect(DRINK_COLORS['juice']).toBeDefined();
+      expect(DRINK_COLORS['blended']).toBeDefined();
+      expect(DRINK_COLORS['specialty']).toBeDefined();
     });
 
     it('SYRUP_COLORS should have common syrup flavors', () => {

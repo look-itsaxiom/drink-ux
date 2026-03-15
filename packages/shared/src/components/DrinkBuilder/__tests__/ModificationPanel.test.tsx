@@ -8,14 +8,13 @@ import {
   useModificationPanel,
   ModificationPanelProps,
 } from '../ModificationPanel';
-import { DrinkBuilderState, DrinkCategory, CupSize, ComponentType, DrinkType } from '../../../types';
+import { DrinkBuilderState, DrinkType, ComponentType, ModifierComponent } from '../../../types';
 import React from 'react';
 
 // Helper to create test state
 const createTestState = (overrides: Partial<DrinkBuilderState> = {}): DrinkBuilderState => ({
-  syrups: [],
-  toppings: [],
-  totalPrice: 0,
+  selectedModifiers: [],
+  totalPriceCents: 0,
   ...overrides,
 });
 
@@ -23,8 +22,8 @@ const createTestState = (overrides: Partial<DrinkBuilderState> = {}): DrinkBuild
 const createTestDrinkType = (overrides: Partial<DrinkType> = {}): DrinkType => ({
   id: 'latte',
   name: 'Latte',
-  category: DrinkCategory.COFFEE,
-  basePrice: 4.5,
+  category: 'coffee',
+  priceCents: 450,
   isHot: undefined, // Can be both hot and iced
   ...overrides,
 });
@@ -44,9 +43,7 @@ const TestModificationPanel: React.FC<ModificationPanelProps> = ({
     canSelectTemperature,
     handleSizeChange,
     handleTemperatureChange,
-    handleRemoveMilk,
-    handleRemoveSyrup,
-    handleRemoveTopping,
+    handleRemoveModifier,
     goBack,
   } = useModificationPanel({
     drinkType,
@@ -57,6 +54,11 @@ const TestModificationPanel: React.FC<ModificationPanelProps> = ({
     onShowSyrupSelector,
     onShowToppingSelector,
   });
+
+  // Derive milk/syrups/toppings from selectedModifiers for display
+  const milkModifier = state.selectedModifiers?.find((m) => m.category === 'milk');
+  const syrupModifiers = state.selectedModifiers?.filter((m) => m.category === 'syrup') || [];
+  const toppingModifiers = state.selectedModifiers?.filter((m) => m.category === 'topping') || [];
 
   return (
     <div>
@@ -70,7 +72,7 @@ const TestModificationPanel: React.FC<ModificationPanelProps> = ({
             key={size.value}
             onClick={() => handleSizeChange(size.value)}
             data-testid={`size-${size.value}`}
-            data-selected={state.cupSize === size.value}
+            data-selected={state.selectedVariation?.name === size.value}
           >
             {size.label} (+${size.priceAdd})
           </button>
@@ -97,25 +99,25 @@ const TestModificationPanel: React.FC<ModificationPanelProps> = ({
       )}
 
       <div data-testid="milk-section">
-        {state.milk && (
+        {milkModifier && (
           <div data-testid="selected-milk">
-            <span>{state.milk.name}</span>
-            <button onClick={handleRemoveMilk} data-testid="remove-milk">
+            <span>{milkModifier.name}</span>
+            <button onClick={() => handleRemoveModifier(milkModifier.id)} data-testid="remove-milk">
               Remove
             </button>
           </div>
         )}
         <button onClick={onShowMilkSelector} data-testid="add-milk">
-          {state.milk ? 'Change' : 'Add'} Milk
+          {milkModifier ? 'Change' : 'Add'} Milk
         </button>
       </div>
 
       <div data-testid="syrups-section">
-        {state.syrups.map((syrup) => (
+        {syrupModifiers.map((syrup) => (
           <div key={syrup.id} data-testid={`selected-syrup-${syrup.id}`}>
             <span>{syrup.name}</span>
             <button
-              onClick={() => handleRemoveSyrup(syrup.id)}
+              onClick={() => handleRemoveModifier(syrup.id)}
               data-testid={`remove-syrup-${syrup.id}`}
             >
               Remove
@@ -128,11 +130,11 @@ const TestModificationPanel: React.FC<ModificationPanelProps> = ({
       </div>
 
       <div data-testid="toppings-section">
-        {state.toppings.map((topping) => (
+        {toppingModifiers.map((topping) => (
           <div key={topping.id} data-testid={`selected-topping-${topping.id}`}>
             <span>{topping.name}</span>
             <button
-              onClick={() => handleRemoveTopping(topping.id)}
+              onClick={() => handleRemoveModifier(topping.id)}
               data-testid={`remove-topping-${topping.id}`}
             >
               Remove
@@ -152,21 +154,21 @@ describe('ModificationPanel', () => {
   describe('CUP_SIZES constant', () => {
     it('should have small, medium, and large sizes', () => {
       const values = CUP_SIZES.map((s) => s.value);
-      expect(values).toContain(CupSize.SMALL);
-      expect(values).toContain(CupSize.MEDIUM);
-      expect(values).toContain(CupSize.LARGE);
+      expect(values).toContain('small');
+      expect(values).toContain('medium');
+      expect(values).toContain('large');
     });
 
     it('should have correct labels', () => {
-      expect(CUP_SIZES.find((s) => s.value === CupSize.SMALL)?.label).toBe('Small');
-      expect(CUP_SIZES.find((s) => s.value === CupSize.MEDIUM)?.label).toBe('Medium');
-      expect(CUP_SIZES.find((s) => s.value === CupSize.LARGE)?.label).toBe('Large');
+      expect(CUP_SIZES.find((s) => s.value === 'small')?.label).toBe('Small');
+      expect(CUP_SIZES.find((s) => s.value === 'medium')?.label).toBe('Medium');
+      expect(CUP_SIZES.find((s) => s.value === 'large')?.label).toBe('Large');
     });
 
     it('should have correct price additions', () => {
-      expect(CUP_SIZES.find((s) => s.value === CupSize.SMALL)?.priceAdd).toBe(0);
-      expect(CUP_SIZES.find((s) => s.value === CupSize.MEDIUM)?.priceAdd).toBe(0.5);
-      expect(CUP_SIZES.find((s) => s.value === CupSize.LARGE)?.priceAdd).toBe(1.0);
+      expect(CUP_SIZES.find((s) => s.value === 'small')?.priceAdd).toBe(0);
+      expect(CUP_SIZES.find((s) => s.value === 'medium')?.priceAdd).toBe(0.5);
+      expect(CUP_SIZES.find((s) => s.value === 'large')?.priceAdd).toBe(1.0);
     });
   });
 
@@ -265,7 +267,9 @@ describe('ModificationPanel', () => {
 
       fireEvent.click(screen.getByTestId('size-large'));
 
-      expect(onUpdate).toHaveBeenCalledWith({ cupSize: CupSize.LARGE });
+      expect(onUpdate).toHaveBeenCalledWith({
+        selectedVariation: expect.objectContaining({ id: 'large', name: 'large' }),
+      });
     });
 
     it('should show temperature selector when drink allows both', () => {
@@ -394,7 +398,7 @@ describe('ModificationPanel', () => {
         <TestModificationPanel
           drinkType={createTestDrinkType()}
           state={createTestState({
-            milk: MILK_MODIFIERS[0],
+            selectedModifiers: [MILK_MODIFIERS[0]],
           })}
           onUpdate={onUpdate}
           onBack={onBack}
@@ -442,7 +446,7 @@ describe('ModificationPanel', () => {
         <TestModificationPanel
           drinkType={createTestDrinkType()}
           state={createTestState({
-            milk: MILK_MODIFIERS[0],
+            selectedModifiers: [MILK_MODIFIERS[0]],
           })}
           onUpdate={onUpdate}
           onBack={onBack}
@@ -454,7 +458,7 @@ describe('ModificationPanel', () => {
 
       fireEvent.click(screen.getByTestId('remove-milk'));
 
-      expect(onUpdate).toHaveBeenCalledWith({ milk: undefined });
+      expect(onUpdate).toHaveBeenCalledWith({ selectedModifiers: [] });
     });
   });
 
@@ -473,7 +477,7 @@ describe('ModificationPanel', () => {
         <TestModificationPanel
           drinkType={createTestDrinkType()}
           state={createTestState({
-            syrups: [syrup],
+            selectedModifiers: [syrup],
           })}
           onUpdate={onUpdate}
           onBack={onBack}
@@ -499,7 +503,7 @@ describe('ModificationPanel', () => {
         <TestModificationPanel
           drinkType={createTestDrinkType()}
           state={createTestState({
-            syrups: [syrup],
+            selectedModifiers: [syrup],
           })}
           onUpdate={onUpdate}
           onBack={onBack}
@@ -511,7 +515,7 @@ describe('ModificationPanel', () => {
 
       fireEvent.click(screen.getByTestId(`remove-syrup-${syrup.id}`));
 
-      expect(onUpdate).toHaveBeenCalledWith({ syrups: [] });
+      expect(onUpdate).toHaveBeenCalledWith({ selectedModifiers: [] });
     });
 
     it('should call onShowSyrupSelector when add syrup is clicked', () => {
@@ -554,7 +558,7 @@ describe('ModificationPanel', () => {
         <TestModificationPanel
           drinkType={createTestDrinkType()}
           state={createTestState({
-            toppings: [topping],
+            selectedModifiers: [topping],
           })}
           onUpdate={onUpdate}
           onBack={onBack}
@@ -580,7 +584,7 @@ describe('ModificationPanel', () => {
         <TestModificationPanel
           drinkType={createTestDrinkType()}
           state={createTestState({
-            toppings: [topping],
+            selectedModifiers: [topping],
           })}
           onUpdate={onUpdate}
           onBack={onBack}
@@ -592,7 +596,7 @@ describe('ModificationPanel', () => {
 
       fireEvent.click(screen.getByTestId(`remove-topping-${topping.id}`));
 
-      expect(onUpdate).toHaveBeenCalledWith({ toppings: [] });
+      expect(onUpdate).toHaveBeenCalledWith({ selectedModifiers: [] });
     });
 
     it('should call onShowToppingSelector when add topping is clicked', () => {
@@ -649,7 +653,7 @@ describe('ModificationPanel', () => {
 
   // Edge cases
   describe('edge cases', () => {
-    it('should handle multiple syrups', () => {
+    it('should handle multiple syrups in selectedModifiers', () => {
       const onUpdate = vi.fn();
       const onBack = vi.fn();
       const onShowMilkSelector = vi.fn();
@@ -662,7 +666,7 @@ describe('ModificationPanel', () => {
         <TestModificationPanel
           drinkType={createTestDrinkType()}
           state={createTestState({
-            syrups,
+            selectedModifiers: syrups,
           })}
           onUpdate={onUpdate}
           onBack={onBack}
@@ -677,7 +681,7 @@ describe('ModificationPanel', () => {
       });
     });
 
-    it('should keep other syrups when removing one', () => {
+    it('should keep other modifiers when removing one', () => {
       const onUpdate = vi.fn();
       const onBack = vi.fn();
       const onShowMilkSelector = vi.fn();
@@ -690,7 +694,7 @@ describe('ModificationPanel', () => {
         <TestModificationPanel
           drinkType={createTestDrinkType()}
           state={createTestState({
-            syrups,
+            selectedModifiers: syrups,
           })}
           onUpdate={onUpdate}
           onBack={onBack}
@@ -703,7 +707,7 @@ describe('ModificationPanel', () => {
       fireEvent.click(screen.getByTestId(`remove-syrup-${syrups[0].id}`));
 
       expect(onUpdate).toHaveBeenCalledWith({
-        syrups: [syrups[1]],
+        selectedModifiers: [syrups[1]],
       });
     });
   });

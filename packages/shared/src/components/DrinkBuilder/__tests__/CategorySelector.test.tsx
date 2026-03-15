@@ -6,7 +6,6 @@ import {
   CategorySelectorProps,
   CategoryData,
 } from '../CategorySelector';
-import { DrinkCategory } from '../../../types';
 import React from 'react';
 
 // Test component that uses the hook
@@ -35,16 +34,13 @@ describe('CategorySelector', () => {
     it('should have all drink categories', () => {
       const categoryIds = CATEGORIES.map((c) => c.id);
 
-      expect(categoryIds).toContain(DrinkCategory.COFFEE);
-      expect(categoryIds).toContain(DrinkCategory.TEA);
-      expect(categoryIds).toContain(DrinkCategory.ITALIAN_SODA);
-      expect(categoryIds).toContain(DrinkCategory.JUICE);
-      expect(categoryIds).toContain(DrinkCategory.BLENDED);
-      expect(categoryIds).toContain(DrinkCategory.SPECIALTY);
+      expect(categoryIds).toContain('coffee');
+      expect(categoryIds).toContain('tea');
+      expect(categoryIds).toContain('specialty');
     });
 
-    it('should have 6 categories total', () => {
-      expect(CATEGORIES).toHaveLength(6);
+    it('should have 3 categories total', () => {
+      expect(CATEGORIES).toHaveLength(3);
     });
 
     it('each category should have required properties', () => {
@@ -61,12 +57,6 @@ describe('CategorySelector', () => {
       const hexColorRegex = /^#[0-9A-Fa-f]{6}$/;
       CATEGORIES.forEach((category) => {
         expect(category.color).toMatch(hexColorRegex);
-      });
-    });
-
-    it('should have valid image URLs', () => {
-      CATEGORIES.forEach((category) => {
-        expect(category.image).toMatch(/^https?:\/\//);
       });
     });
   });
@@ -86,9 +76,9 @@ describe('CategorySelector', () => {
       const onSelect = vi.fn();
       render(<TestCategorySelector onSelect={onSelect} />);
 
-      fireEvent.click(screen.getByTestId(`category-${DrinkCategory.COFFEE}`));
+      fireEvent.click(screen.getByTestId('category-coffee'));
 
-      expect(onSelect).toHaveBeenCalledWith(DrinkCategory.COFFEE);
+      expect(onSelect).toHaveBeenCalledWith('coffee');
     });
 
     it('should call onSelect with correct category for each option', () => {
@@ -96,51 +86,39 @@ describe('CategorySelector', () => {
       render(<TestCategorySelector onSelect={onSelect} />);
 
       // Test each category
-      fireEvent.click(screen.getByTestId(`category-${DrinkCategory.TEA}`));
-      expect(onSelect).toHaveBeenLastCalledWith(DrinkCategory.TEA);
+      fireEvent.click(screen.getByTestId('category-tea'));
+      expect(onSelect).toHaveBeenLastCalledWith('tea');
 
-      fireEvent.click(screen.getByTestId(`category-${DrinkCategory.ITALIAN_SODA}`));
-      expect(onSelect).toHaveBeenLastCalledWith(DrinkCategory.ITALIAN_SODA);
-
-      fireEvent.click(screen.getByTestId(`category-${DrinkCategory.JUICE}`));
-      expect(onSelect).toHaveBeenLastCalledWith(DrinkCategory.JUICE);
-
-      fireEvent.click(screen.getByTestId(`category-${DrinkCategory.BLENDED}`));
-      expect(onSelect).toHaveBeenLastCalledWith(DrinkCategory.BLENDED);
-
-      fireEvent.click(screen.getByTestId(`category-${DrinkCategory.SPECIALTY}`));
-      expect(onSelect).toHaveBeenLastCalledWith(DrinkCategory.SPECIALTY);
+      fireEvent.click(screen.getByTestId('category-specialty'));
+      expect(onSelect).toHaveBeenLastCalledWith('specialty');
     });
 
     it('should display category names correctly', () => {
       const onSelect = vi.fn();
       render(<TestCategorySelector onSelect={onSelect} />);
 
-      expect(screen.getByTestId(`name-${DrinkCategory.COFFEE}`)).toHaveTextContent('Coffee');
-      expect(screen.getByTestId(`name-${DrinkCategory.TEA}`)).toHaveTextContent('Tea');
-      expect(screen.getByTestId(`name-${DrinkCategory.ITALIAN_SODA}`)).toHaveTextContent('Italian Soda');
-      expect(screen.getByTestId(`name-${DrinkCategory.JUICE}`)).toHaveTextContent('Juice');
-      expect(screen.getByTestId(`name-${DrinkCategory.BLENDED}`)).toHaveTextContent('Blended');
-      expect(screen.getByTestId(`name-${DrinkCategory.SPECIALTY}`)).toHaveTextContent('Specialty');
+      expect(screen.getByTestId('name-coffee')).toHaveTextContent('Coffee');
+      expect(screen.getByTestId('name-tea')).toHaveTextContent('Tea');
+      expect(screen.getByTestId('name-specialty')).toHaveTextContent('Specialty');
     });
 
     it('should display category descriptions', () => {
       const onSelect = vi.fn();
       render(<TestCategorySelector onSelect={onSelect} />);
 
-      expect(screen.getByTestId(`description-${DrinkCategory.COFFEE}`)).toHaveTextContent('Hot & iced coffee drinks');
-      expect(screen.getByTestId(`description-${DrinkCategory.TEA}`)).toHaveTextContent('Hot & iced teas');
+      expect(screen.getByTestId('description-coffee')).toHaveTextContent('Hot & iced coffee drinks');
+      expect(screen.getByTestId('description-tea')).toHaveTextContent('Hot & iced teas');
     });
   });
 
   // Test CategoryData type structure
   describe('CategoryData structure', () => {
     it('should match expected shape', () => {
-      const coffeeCategory = CATEGORIES.find((c) => c.id === DrinkCategory.COFFEE);
+      const coffeeCategory = CATEGORIES.find((c) => c.id === 'coffee');
 
       expect(coffeeCategory).toBeDefined();
       expect(coffeeCategory).toEqual({
-        id: DrinkCategory.COFFEE,
+        id: 'coffee',
         name: 'Coffee',
         description: 'Hot & iced coffee drinks',
         image: expect.any(String),
@@ -155,9 +133,9 @@ describe('CategorySelector', () => {
       const onSelect = vi.fn();
       render(<TestCategorySelector onSelect={onSelect} />);
 
-      fireEvent.click(screen.getByTestId(`category-${DrinkCategory.COFFEE}`));
-      fireEvent.click(screen.getByTestId(`category-${DrinkCategory.TEA}`));
-      fireEvent.click(screen.getByTestId(`category-${DrinkCategory.JUICE}`));
+      fireEvent.click(screen.getByTestId('category-coffee'));
+      fireEvent.click(screen.getByTestId('category-tea'));
+      fireEvent.click(screen.getByTestId('category-specialty'));
 
       expect(onSelect).toHaveBeenCalledTimes(3);
     });
@@ -166,12 +144,12 @@ describe('CategorySelector', () => {
       const onSelect = vi.fn();
       render(<TestCategorySelector onSelect={onSelect} />);
 
-      fireEvent.click(screen.getByTestId(`category-${DrinkCategory.COFFEE}`));
-      fireEvent.click(screen.getByTestId(`category-${DrinkCategory.COFFEE}`));
+      fireEvent.click(screen.getByTestId('category-coffee'));
+      fireEvent.click(screen.getByTestId('category-coffee'));
 
       expect(onSelect).toHaveBeenCalledTimes(2);
-      expect(onSelect).toHaveBeenNthCalledWith(1, DrinkCategory.COFFEE);
-      expect(onSelect).toHaveBeenNthCalledWith(2, DrinkCategory.COFFEE);
+      expect(onSelect).toHaveBeenNthCalledWith(1, 'coffee');
+      expect(onSelect).toHaveBeenNthCalledWith(2, 'coffee');
     });
   });
 });

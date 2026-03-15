@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import LayeredCup from '../LayeredCup';
 import { DrinkLayer, TOPPING_PROPERTIES } from '../DrinkVisualizer';
-import { CupSize } from '../../../types';
 
 // Helper to create test layers
 const createTestLayer = (overrides: Partial<DrinkLayer> = {}): DrinkLayer => ({
@@ -24,7 +23,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -38,7 +37,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -52,7 +51,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -66,7 +65,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -85,7 +84,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[layer]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -106,7 +105,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={layers}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -120,7 +119,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
           className="custom-cup"
@@ -135,7 +134,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[]}
-          cupSize={CupSize.LARGE}
+          cupSize="large"
           cupHeight={240}
           hasTopping={false}
         />
@@ -149,7 +148,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -169,7 +168,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[layer]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -190,7 +189,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[layer]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -210,7 +209,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[layer]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -227,7 +226,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[createTestLayer()]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={true}
           toppingType="Foam"
@@ -242,7 +241,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[createTestLayer()]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={true}
           toppingType="Cinnamon"
@@ -257,7 +256,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[createTestLayer()]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={true}
           toppingType="Cocoa Powder"
@@ -272,7 +271,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[createTestLayer()]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
           toppingType="Cinnamon"
@@ -295,7 +294,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -309,7 +308,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[createTestLayer()]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={true}
           toppingType={undefined}
@@ -325,7 +324,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[createTestLayer()]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={true}
           toppingType="Unknown Topping"
@@ -346,7 +345,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={layers}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -360,7 +359,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[createTestLayer()]}
-          cupSize={CupSize.SMALL}
+          cupSize="small"
           cupHeight={50}
           hasTopping={false}
         />
@@ -377,7 +376,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[layer]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -395,7 +394,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -409,7 +408,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[]}
-          cupSize={CupSize.SMALL}
+          cupSize="small"
           cupHeight={160}
           hasTopping={false}
         />
@@ -423,7 +422,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[]}
-          cupSize={CupSize.LARGE}
+          cupSize="large"
           cupHeight={240}
           hasTopping={false}
         />
@@ -442,7 +441,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[layer]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
@@ -458,7 +457,7 @@ describe('LayeredCup', () => {
       render(
         <LayeredCup
           layers={[layer]}
-          cupSize={CupSize.MEDIUM}
+          cupSize="medium"
           cupHeight={200}
           hasTopping={false}
         />
