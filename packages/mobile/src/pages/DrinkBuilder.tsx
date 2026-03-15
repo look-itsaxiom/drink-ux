@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useHistory } from "react-router";
 import {
   IonContent,
@@ -8,193 +8,199 @@ import {
   IonToolbar,
 } from "@ionic/react";
 import {
-  DrinkCategory,
   DrinkType,
-  CupSize,
-  ComponentType,
-  ModifierComponent,
 } from "@drink-ux/shared";
 
 import AppHeader from "../components/AppHeader";
 import CategorySelector from "../components/DrinkBuilder/CategorySelector";
 import TypeSelector from "../components/DrinkBuilder/TypeSelector";
-import ModificationPanel from "../components/DrinkBuilder/ModificationPanel";
+import ModificationPanel, { SelectedModifiers } from "../components/DrinkBuilder/ModificationPanel";
 import DrinkVisual from "../components/DrinkBuilder/DrinkVisual";
-import ModifierSelector, {
-  milkModifiers as fallbackMilkModifiers,
-  syrupModifiers as fallbackSyrupModifiers,
-  toppingModifiers as fallbackToppingModifiers,
-} from "../components/DrinkBuilder/ModifierSelector";
+import ModifierSelector from "../components/DrinkBuilder/ModifierSelector";
 import { useCart, CartItem } from "../hooks/useCart";
 import { useCatalogContext } from "../context/CatalogContext";
-import { MappedModifier } from "../services/catalogService";
+import {
+  MappedBase,
+  MappedVariation,
+  MappedModifier,
+  MappedModifierGroup,
+  getDefaultIsHot,
+} from "../services/catalogService";
 
 import "./DrinkBuilder.css";
 
-/**
- * Transform mapped modifier to ModifierComponent for UI
- */
-function transformModifier(mod: MappedModifier, type: string): ModifierComponent {
-  return {
-    id: mod.squareModifierId, // Use Square modifier ID directly
-    name: mod.name,
-    type: ComponentType.MODIFIER,
-    category: type.toLowerCase(),
-    price: mod.price,
-    canTransformDrink: false,
-    visual: {
-      color: '#f0f0f0',
-      opacity: 0.6,
-      layerOrder: 2,
-    },
-    available: true,
-  };
-}
-
 type BuilderStep = "category" | "type" | "modifications";
 
-// Local state interface (not extending shared DrinkBuilderState to avoid import issues)
-interface DrinkBuilderLocalState {
-  category?: DrinkCategory;
+interface BuilderState {
+  category?: string;
   categoryId?: string;
   drinkType?: DrinkType;
-  cupSize?: CupSize;
+  item?: MappedBase;
+  selectedVariation?: MappedVariation;
   isHot?: boolean;
-  milk?: ModifierComponent;
-  syrups: ModifierComponent[];
-  toppings: ModifierComponent[];
-  totalPrice: number;
+  selectedModifiers: SelectedModifiers;
 }
 
 const DrinkBuilder: React.FC = () => {
   const history = useHistory();
-  const { addItem: addToCart } = useCart();
 
-  // Try to use catalog context for modifiers, handle gracefully if not available
-  let catalogModifiers = { milks: [] as MappedModifier[], syrups: [] as MappedModifier[], toppings: [] as MappedModifier[] };
+  // Try to use cart context, handle gracefully if not available
+  let cartAvailable = false;
+  let addToCart: ((item: CartItem) => void) | null = null;
 
   try {
-    const catalog = useCatalogContext();
-    catalogModifiers = catalog.modifiers || { milks: [], syrups: [], toppings: [] };
+    const cart = useCart();
+    addToCart = cart.addItem;
+    cartAvailable = true;
+  } catch {
+    // Cart context not available
+  }
+
+  // Try to use catalog context for modifier groups
+  let catalogData: ReturnType<typeof useCatalogContext> | null = null;
+  try {
+    catalogData = useCatalogContext();
   } catch {
     // Catalog context not available
   }
 
-  // Transform API modifiers to ModifierComponent format, or use fallbacks
-  const milkModifiers = useMemo(() => {
-    const apiMilks = catalogModifiers.milks || [];
-    return apiMilks.length > 0 ? apiMilks.map(m => transformModifier(m, 'milk')) : fallbackMilkModifiers;
-  }, [catalogModifiers.milks]);
-
-  const syrupModifiers = useMemo(() => {
-    const apiSyrups = catalogModifiers.syrups || [];
-    return apiSyrups.length > 0 ? apiSyrups.map(m => transformModifier(m, 'syrup')) : fallbackSyrupModifiers;
-  }, [catalogModifiers.syrups]);
-
-  const toppingModifiers = useMemo(() => {
-    const apiToppings = catalogModifiers.toppings || [];
-    return apiToppings.length > 0 ? apiToppings.map(m => transformModifier(m, 'topping')) : fallbackToppingModifiers;
-  }, [catalogModifiers.toppings]);
-
   const [step, setStep] = useState<BuilderStep>("category");
-  const [drinkState, setDrinkState] = useState<DrinkBuilderLocalState>({
-    syrups: [],
-    toppings: [],
-    totalPrice: 0,
-    cupSize: CupSize.MEDIUM, // Default size
+  const [state, setState] = useState<BuilderState>({
+    selectedModifiers: {},
   });
 
-  const [showMilkSelector, setShowMilkSelector] = useState(false);
-  const [showSyrupSelector, setShowSyrupSelector] = useState(false);
-  const [showToppingSelector, setShowToppingSelector] = useState(false);
+  // Currently open modifier group selector
+  const [openGroup, setOpenGroup] = useState<MappedModifierGroup | null>(null);
 
-  const handleCategorySelect = (category: DrinkCategory, categoryId: string) => {
-    setDrinkState({ ...drinkState, category, categoryId });
+  // Get modifier groups for the selected item
+  const itemModifierGroups = useMemo(() => {
+    if (!state.item || !catalogData) return [];
+    return catalogData.getModifierGroupsForItem(state.item);
+  }, [state.item, catalogData]);
+
+  const handleCategorySelect = (category: string, categoryId: string) => {
+    setState({ ...state, category, categoryId });
     setStep("type");
   };
 
-  // Drink types that traditionally include milk
-  const milkDrinkNames = [
-    'latte', 'cappuccino', 'flat white', 'mocha', 'macchiato',
-    'chai latte', 'matcha latte', 'hot chocolate', 'frappe',
-  ];
-
   const handleTypeSelect = (drinkType: DrinkType) => {
-    const newState = { ...drinkState, drinkType };
+    // Find the matching MappedBase for this drink type (by squareItemId)
+    const matchingBase = catalogData?.bases.find(b => b.squareItemId === drinkType.id);
+
+    const newState: BuilderState = {
+      ...state,
+      drinkType,
+      item: matchingBase,
+      selectedModifiers: {},
+    };
+
+    // Auto-select first variation if available
+    if (matchingBase?.variations && matchingBase.variations.length > 0) {
+      // Default to first variation (or middle one if 3+)
+      const defaultIndex = matchingBase.variations.length >= 3 ? 1 : 0;
+      newState.selectedVariation = matchingBase.variations[defaultIndex];
+    }
 
     // Set temperature based on drink type constraints
     if (drinkType.isHot !== undefined) {
       newState.isHot = drinkType.isHot;
     }
 
-    // Auto-select Whole Milk for drinks that traditionally include milk
-    const nameLower = drinkType.name.toLowerCase();
-    const needsMilk = milkDrinkNames.some(n => nameLower.includes(n));
-    if (needsMilk && !newState.milk) {
-      const wholeMilk = milkModifiers.find(m => m.name.toLowerCase().includes('whole'));
-      if (wholeMilk) {
-        newState.milk = wholeMilk;
-      }
-    }
-
-    setDrinkState(newState);
+    setState(newState);
     setStep("modifications");
   };
 
-  const handleStateUpdate = (updates: Partial<DrinkBuilderLocalState>) => {
-    setDrinkState({ ...drinkState, ...updates });
-  };
+  const handleSelectVariation = useCallback((variation: MappedVariation) => {
+    setState(prev => ({ ...prev, selectedVariation: variation }));
+  }, []);
 
-  const handleMilkSelect = (milk: ModifierComponent) => {
-    setDrinkState({ ...drinkState, milk });
-  };
+  const handleSelectTemperature = useCallback((isHot: boolean) => {
+    setState(prev => ({ ...prev, isHot }));
+  }, []);
 
-  const handleSyrupSelect = (syrup: ModifierComponent) => {
-    setDrinkState({ ...drinkState, syrups: [...drinkState.syrups, syrup] });
-  };
+  const handleOpenModifierGroup = useCallback((group: MappedModifierGroup) => {
+    setOpenGroup(group);
+  }, []);
 
-  const handleToppingSelect = (topping: ModifierComponent) => {
-    setDrinkState({
-      ...drinkState,
-      toppings: [...drinkState.toppings, topping],
+  const handleModifierSelect = useCallback((modifier: MappedModifier) => {
+    if (!openGroup) return;
+
+    setState(prev => {
+      const groupId = openGroup.id;
+      const current = prev.selectedModifiers[groupId] || [];
+
+      if (openGroup.selectionMode === 'single') {
+        // Single select: replace
+        return {
+          ...prev,
+          selectedModifiers: {
+            ...prev.selectedModifiers,
+            [groupId]: [modifier],
+          },
+        };
+      }
+
+      // Multi select: add if not already selected
+      const alreadySelected = current.some(m => m.squareModifierId === modifier.squareModifierId);
+      if (alreadySelected) return prev;
+
+      return {
+        ...prev,
+        selectedModifiers: {
+          ...prev.selectedModifiers,
+          [groupId]: [...current, modifier],
+        },
+      };
     });
-  };
+  }, [openGroup]);
+
+  const handleRemoveModifier = useCallback((groupId: string, modifierId: string) => {
+    setState(prev => ({
+      ...prev,
+      selectedModifiers: {
+        ...prev.selectedModifiers,
+        [groupId]: (prev.selectedModifiers[groupId] || []).filter(
+          m => m.squareModifierId !== modifierId
+        ),
+      },
+    }));
+  }, []);
 
   const handleBackFromType = () => {
-    setDrinkState({ ...drinkState, category: undefined, categoryId: undefined });
+    setState({ ...state, category: undefined, categoryId: undefined });
     setStep("category");
   };
 
   const handleBackFromMods = () => {
-    setDrinkState({
-      ...drinkState,
+    setState({
+      ...state,
       drinkType: undefined,
-      milk: undefined,
-      syrups: [],
-      toppings: [],
+      item: undefined,
+      selectedVariation: undefined,
+      selectedModifiers: {},
     });
     setStep("type");
   };
 
-  const calculateTotalPrice = () => {
-    let total = drinkState.drinkType?.basePrice || 0;
-
-    // Cup size premium
-    switch (drinkState.cupSize) {
-      case CupSize.MEDIUM:
-        total += 0.5;
-        break;
-      case CupSize.LARGE:
-        total += 1.0;
-        break;
-    }
+  const calculateTotalPrice = (): number => {
+    // Use variation price if selected, otherwise base price
+    let total = state.selectedVariation?.price || state.drinkType?.priceCents || 0;
 
     // Add modifier prices
-    if (drinkState.milk) total += drinkState.milk.price;
-    drinkState.syrups.forEach((s) => (total += s.price));
-    drinkState.toppings.forEach((t) => (total += t.price));
+    for (const mods of Object.values(state.selectedModifiers)) {
+      for (const mod of mods) {
+        total += mod.price;
+      }
+    }
 
     return total;
+  };
+
+  /**
+   * Format price for display. Prices from Square are in cents.
+   */
+  const formatDisplayPrice = (cents: number): string => {
+    return `$${(cents / 100).toFixed(2)}`;
   };
 
   const getProgressValue = () => {
@@ -211,38 +217,33 @@ const DrinkBuilder: React.FC = () => {
   };
 
   const handleAddToCart = () => {
-    if (!drinkState.drinkType) return;
+    if (!state.drinkType) return;
 
     const totalPrice = calculateTotalPrice();
     const modifierIds: string[] = [];
     const modifierNames: string[] = [];
-
-    // Collect modifier info - IDs are now Square modifier IDs
     const modifierDetails: Array<{ id: string; name: string; price: number }> = [];
-    if (drinkState.milk) {
-      modifierIds.push(drinkState.milk.id);
-      modifierNames.push(drinkState.milk.name);
-      modifierDetails.push({ id: drinkState.milk.id, name: drinkState.milk.name, price: drinkState.milk.price });
-    }
-    drinkState.syrups.forEach((s) => {
-      modifierIds.push(s.id);
-      modifierNames.push(s.name);
-      modifierDetails.push({ id: s.id, name: s.name, price: s.price });
-    });
-    drinkState.toppings.forEach((t) => {
-      modifierIds.push(t.id);
-      modifierNames.push(t.name);
-      modifierDetails.push({ id: t.id, name: t.name, price: t.price });
-    });
 
-    // Create cart item - baseId is now the Square item ID
+    // Collect all selected modifiers across groups
+    for (const mods of Object.values(state.selectedModifiers)) {
+      for (const mod of mods) {
+        modifierIds.push(mod.squareModifierId);
+        modifierNames.push(mod.name);
+        modifierDetails.push({
+          id: mod.squareModifierId,
+          name: mod.name,
+          price: mod.price,
+        });
+      }
+    }
+
     const cartItem: CartItem = {
       id: `item-${Date.now()}`,
-      baseId: drinkState.drinkType.id, // This is now squareItemId
-      baseName: drinkState.drinkType.name,
-      size: drinkState.cupSize || CupSize.MEDIUM,
-      isHot: drinkState.isHot ?? true,
-      modifierIds, // These are now squareModifierIds
+      baseId: state.drinkType.id,
+      baseName: state.drinkType.name,
+      size: state.selectedVariation?.name || 'Regular',
+      isHot: state.isHot,
+      modifierIds,
       modifierNames,
       quantity: 1,
       unitPrice: totalPrice,
@@ -250,9 +251,34 @@ const DrinkBuilder: React.FC = () => {
       modifierDetails,
     };
 
-    addToCart(cartItem);
+    if (cartAvailable && addToCart) {
+      addToCart(cartItem);
+    }
+
     history.push("/cart");
   };
+
+  // Determine if temperature selection should be shown
+  const showTemperature = useMemo(() => {
+    if (!state.item) return state.drinkType?.isHot === undefined;
+    // Show if item supports both hot and iced
+    const temps = state.item.temperatures || [];
+    if (temps.length === 0) return false;
+    const hot = temps.some(t => t.toUpperCase() === 'HOT');
+    const iced = temps.some(t => t.toUpperCase() === 'ICED');
+    return hot && iced;
+  }, [state.item, state.drinkType]);
+
+  // For DrinkVisual compatibility — build a legacy-ish state object
+  const drinkVisualState = useMemo(() => ({
+    drinkType: state.drinkType,
+    cupSize: undefined,
+    isHot: state.isHot,
+    milk: undefined,
+    syrups: [],
+    toppings: [],
+    totalPrice: calculateTotalPrice(),
+  }), [state.drinkType, state.isHot, state.selectedModifiers, state.selectedVariation]);
 
   // Progress steps data for AppHeader
   const progressSteps = [
@@ -264,7 +290,7 @@ const DrinkBuilder: React.FC = () => {
     },
     {
       key: "type",
-      label: "Type",
+      label: "Item",
       isActive: step === "type",
       isCompleted: step === "modifications",
     },
@@ -276,10 +302,16 @@ const DrinkBuilder: React.FC = () => {
     },
   ];
 
+  // Selected modifier IDs for the currently open group
+  const openGroupSelectedIds = useMemo(() => {
+    if (!openGroup) return [];
+    return (state.selectedModifiers[openGroup.id] || []).map(m => m.squareModifierId);
+  }, [openGroup, state.selectedModifiers]);
+
   return (
     <IonPage>
       <AppHeader
-        title="Build Your Drink"
+        title="Build Your Order"
         showBackButton={true}
         backHref="/home"
         showProgress={true}
@@ -304,7 +336,7 @@ const DrinkBuilder: React.FC = () => {
           {/* Visual Section - Only visible on modifications step */}
           {step === "modifications" && (
             <div className="visual-section">
-              <DrinkVisual state={drinkState} />
+              <DrinkVisual state={drinkVisualState} />
             </div>
           )}
 
@@ -327,55 +359,40 @@ const DrinkBuilder: React.FC = () => {
               <CategorySelector onSelect={handleCategorySelect} />
             )}
 
-            {step === "type" && drinkState.category && (
+            {step === "type" && state.category && (
               <TypeSelector
-                category={drinkState.category}
-                categoryId={drinkState.categoryId}
+                category={state.category}
+                categoryId={state.categoryId}
                 onSelect={handleTypeSelect}
                 onBack={handleBackFromType}
               />
             )}
 
-            {step === "modifications" && drinkState.drinkType && (
+            {step === "modifications" && state.drinkType && (
               <ModificationPanel
-                drinkType={drinkState.drinkType}
-                state={drinkState}
-                onUpdate={handleStateUpdate}
-                onBack={handleBackFromMods}
-                onShowMilkSelector={() => setShowMilkSelector(true)}
-                onShowSyrupSelector={() => setShowSyrupSelector(true)}
-                onShowToppingSelector={() => setShowToppingSelector(true)}
+                itemName={state.drinkType.name}
+                variations={state.item?.variations || []}
+                selectedVariation={state.selectedVariation}
+                showTemperature={showTemperature}
+                isHot={state.isHot}
+                modifierGroups={itemModifierGroups}
+                selectedModifiers={state.selectedModifiers}
+                onSelectVariation={handleSelectVariation}
+                onSelectTemperature={handleSelectTemperature}
+                onOpenModifierGroup={handleOpenModifierGroup}
+                onRemoveModifier={handleRemoveModifier}
               />
             )}
           </div>
         </div>
 
-        {/* Modals */}
+        {/* Modifier Group Selector Modal */}
         <ModifierSelector
-          isOpen={showMilkSelector}
-          title="Select Milk"
-          modifiers={milkModifiers}
-          onSelect={handleMilkSelect}
-          onDismiss={() => setShowMilkSelector(false)}
-          selectedIds={drinkState.milk ? [drinkState.milk.id] : []}
-        />
-
-        <ModifierSelector
-          isOpen={showSyrupSelector}
-          title="Select Syrup"
-          modifiers={syrupModifiers}
-          onSelect={handleSyrupSelect}
-          onDismiss={() => setShowSyrupSelector(false)}
-          selectedIds={drinkState.syrups.map((s) => s.id)}
-        />
-
-        <ModifierSelector
-          isOpen={showToppingSelector}
-          title="Select Topping"
-          modifiers={toppingModifiers}
-          onSelect={handleToppingSelect}
-          onDismiss={() => setShowToppingSelector(false)}
-          selectedIds={drinkState.toppings.map((t) => t.id)}
+          isOpen={!!openGroup}
+          group={openGroup}
+          selectedIds={openGroupSelectedIds}
+          onSelect={handleModifierSelect}
+          onDismiss={() => setOpenGroup(null)}
         />
       </IonContent>
 
@@ -385,9 +402,9 @@ const DrinkBuilder: React.FC = () => {
             <IonButton
               expand="block"
               onClick={handleAddToCart}
-              disabled={!drinkState.drinkType}
+              disabled={!state.drinkType}
             >
-              Add to Cart - ${calculateTotalPrice().toFixed(2)}
+              Add to Cart - {formatDisplayPrice(calculateTotalPrice())}
             </IonButton>
           </IonToolbar>
         </IonFooter>

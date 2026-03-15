@@ -28,6 +28,9 @@ export interface RawCatalogData {
   items: RawPOSItem[];
   modifiers: RawPOSModifier[];
   categories: RawPOSCategory[];
+  images: RawPOSImage[];
+  taxes: RawPOSTax[];
+  modifierLists: RawPOSModifierList[];
 }
 
 export interface RawPOSItem {
@@ -36,8 +39,15 @@ export interface RawPOSItem {
   description?: string;
   price?: number;
   categoryId?: string;
+  categoryIds?: string[];
   variations?: RawPOSVariation[];
   modifierListIds?: string[];
+  modifierListInfo?: RawPOSModifierListInfo[];
+  imageIds?: string[];
+  taxIds?: string[];
+  isDeleted?: boolean;
+  presentAtLocationIds?: string[];
+  needsReview?: boolean;
 }
 
 export interface RawPOSVariation {
@@ -51,12 +61,38 @@ export interface RawPOSModifier {
   name: string;
   price?: number;
   modifierListId?: string;
+  modifierListName?: string;
+}
+
+export interface RawPOSModifierList {
+  id: string;
+  name: string;
+  modifiers: RawPOSModifier[];
+}
+
+export interface RawPOSModifierListInfo {
+  modifierListId: string;
+  minSelectedModifiers?: number;
+  maxSelectedModifiers?: number;
 }
 
 export interface RawPOSCategory {
   id: string;
   name: string;
   ordinal?: number;
+}
+
+export interface RawPOSImage {
+  id: string;
+  url: string;
+  name?: string;
+}
+
+export interface RawPOSTax {
+  id: string;
+  name: string;
+  percentage?: string;
+  enabled?: boolean;
 }
 
 /**

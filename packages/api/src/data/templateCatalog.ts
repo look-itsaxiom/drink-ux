@@ -15,13 +15,30 @@ export interface TemplateCategory {
 }
 
 /**
+ * Template variation for a base item
+ */
+export interface TemplateVariation {
+  name: string;
+  priceCents: number;
+}
+
+/**
  * Template base drink structure
  */
 export interface TemplateBase {
   name: string;
   category: string;
-  temp: 'HOT_ONLY' | 'ICED_ONLY' | 'BOTH';
-  price: number; // In cents
+  priceCents: number; // Default/base price in cents
+  variations: TemplateVariation[];
+}
+
+/**
+ * Template modifier group structure
+ */
+export interface TemplateModifierGroup {
+  name: string;
+  displayOrder: number;
+  selectionMode: string; // "single" or "multiple"
 }
 
 /**
@@ -29,8 +46,8 @@ export interface TemplateBase {
  */
 export interface TemplateModifier {
   name: string;
-  type: 'MILK' | 'SYRUP' | 'TOPPING';
-  price: number; // In cents
+  group: string; // Name of the ModifierGroup this belongs to
+  priceCents: number;
 }
 
 /**
@@ -38,6 +55,7 @@ export interface TemplateModifier {
  */
 export interface TemplateCatalog {
   categories: TemplateCategory[];
+  modifierGroups: TemplateModifierGroup[];
   bases: TemplateBase[];
   modifiers: TemplateModifier[];
 }
@@ -52,64 +70,110 @@ export const templateCatalog: TemplateCatalog = {
     { name: 'Other', displayOrder: 3 },
   ],
 
+  modifierGroups: [
+    { name: 'Milk Options', displayOrder: 1, selectionMode: 'single' },
+    { name: 'Syrups', displayOrder: 2, selectionMode: 'multiple' },
+    { name: 'Toppings', displayOrder: 3, selectionMode: 'multiple' },
+  ],
+
   bases: [
-    // Coffee - Hot & Iced
-    { category: 'Coffee', name: 'Espresso', temp: 'HOT_ONLY', price: 300 },
-    { category: 'Coffee', name: 'Americano', temp: 'BOTH', price: 350 },
-    { category: 'Coffee', name: 'Latte', temp: 'BOTH', price: 450 },
-    { category: 'Coffee', name: 'Cappuccino', temp: 'HOT_ONLY', price: 450 },
-    { category: 'Coffee', name: 'Mocha', temp: 'BOTH', price: 500 },
-    { category: 'Coffee', name: 'Macchiato', temp: 'BOTH', price: 400 },
-    { category: 'Coffee', name: 'Flat White', temp: 'HOT_ONLY', price: 475 },
-    { category: 'Coffee', name: 'Cold Brew', temp: 'ICED_ONLY', price: 400 },
-    { category: 'Coffee', name: 'Drip Coffee', temp: 'BOTH', price: 275 },
+    // Coffee - each with Small/Medium/Large variations
+    { category: 'Coffee', name: 'Espresso', priceCents: 300, variations: [
+      { name: 'Single', priceCents: 300 }, { name: 'Double', priceCents: 400 },
+    ]},
+    { category: 'Coffee', name: 'Americano', priceCents: 350, variations: [
+      { name: 'Small', priceCents: 350 }, { name: 'Medium', priceCents: 425 }, { name: 'Large', priceCents: 500 },
+    ]},
+    { category: 'Coffee', name: 'Latte', priceCents: 450, variations: [
+      { name: 'Small', priceCents: 450 }, { name: 'Medium', priceCents: 550 }, { name: 'Large', priceCents: 650 },
+    ]},
+    { category: 'Coffee', name: 'Cappuccino', priceCents: 450, variations: [
+      { name: 'Small', priceCents: 450 }, { name: 'Medium', priceCents: 550 }, { name: 'Large', priceCents: 650 },
+    ]},
+    { category: 'Coffee', name: 'Mocha', priceCents: 500, variations: [
+      { name: 'Small', priceCents: 500 }, { name: 'Medium', priceCents: 600 }, { name: 'Large', priceCents: 700 },
+    ]},
+    { category: 'Coffee', name: 'Macchiato', priceCents: 400, variations: [
+      { name: 'Small', priceCents: 400 }, { name: 'Medium', priceCents: 500 }, { name: 'Large', priceCents: 600 },
+    ]},
+    { category: 'Coffee', name: 'Flat White', priceCents: 475, variations: [
+      { name: 'Small', priceCents: 475 }, { name: 'Medium', priceCents: 575 },
+    ]},
+    { category: 'Coffee', name: 'Cold Brew', priceCents: 400, variations: [
+      { name: 'Small', priceCents: 400 }, { name: 'Medium', priceCents: 500 }, { name: 'Large', priceCents: 600 },
+    ]},
+    { category: 'Coffee', name: 'Drip Coffee', priceCents: 275, variations: [
+      { name: 'Small', priceCents: 275 }, { name: 'Medium', priceCents: 350 }, { name: 'Large', priceCents: 425 },
+    ]},
 
     // Tea
-    { category: 'Tea', name: 'Black Tea', temp: 'BOTH', price: 300 },
-    { category: 'Tea', name: 'Green Tea', temp: 'BOTH', price: 300 },
-    { category: 'Tea', name: 'Chai Latte', temp: 'BOTH', price: 450 },
-    { category: 'Tea', name: 'Matcha Latte', temp: 'BOTH', price: 500 },
-    { category: 'Tea', name: 'Herbal Tea', temp: 'HOT_ONLY', price: 300 },
-    { category: 'Tea', name: 'Earl Grey', temp: 'BOTH', price: 300 },
+    { category: 'Tea', name: 'Black Tea', priceCents: 300, variations: [
+      { name: 'Small', priceCents: 300 }, { name: 'Medium', priceCents: 375 }, { name: 'Large', priceCents: 450 },
+    ]},
+    { category: 'Tea', name: 'Green Tea', priceCents: 300, variations: [
+      { name: 'Small', priceCents: 300 }, { name: 'Medium', priceCents: 375 }, { name: 'Large', priceCents: 450 },
+    ]},
+    { category: 'Tea', name: 'Chai Latte', priceCents: 450, variations: [
+      { name: 'Small', priceCents: 450 }, { name: 'Medium', priceCents: 550 }, { name: 'Large', priceCents: 650 },
+    ]},
+    { category: 'Tea', name: 'Matcha Latte', priceCents: 500, variations: [
+      { name: 'Small', priceCents: 500 }, { name: 'Medium', priceCents: 600 }, { name: 'Large', priceCents: 700 },
+    ]},
+    { category: 'Tea', name: 'Herbal Tea', priceCents: 300, variations: [
+      { name: 'Small', priceCents: 300 }, { name: 'Medium', priceCents: 375 }, { name: 'Large', priceCents: 450 },
+    ]},
+    { category: 'Tea', name: 'Earl Grey', priceCents: 300, variations: [
+      { name: 'Small', priceCents: 300 }, { name: 'Medium', priceCents: 375 }, { name: 'Large', priceCents: 450 },
+    ]},
 
     // Other
-    { category: 'Other', name: 'Hot Chocolate', temp: 'HOT_ONLY', price: 400 },
-    { category: 'Other', name: 'Steamer', temp: 'HOT_ONLY', price: 350 },
-    { category: 'Other', name: 'Italian Soda', temp: 'ICED_ONLY', price: 375 },
-    { category: 'Other', name: 'Lemonade', temp: 'ICED_ONLY', price: 350 },
-    { category: 'Other', name: 'Smoothie', temp: 'ICED_ONLY', price: 550 },
+    { category: 'Other', name: 'Hot Chocolate', priceCents: 400, variations: [
+      { name: 'Small', priceCents: 400 }, { name: 'Medium', priceCents: 500 }, { name: 'Large', priceCents: 600 },
+    ]},
+    { category: 'Other', name: 'Steamer', priceCents: 350, variations: [
+      { name: 'Small', priceCents: 350 }, { name: 'Medium', priceCents: 425 },
+    ]},
+    { category: 'Other', name: 'Italian Soda', priceCents: 375, variations: [
+      { name: 'Small', priceCents: 375 }, { name: 'Medium', priceCents: 450 }, { name: 'Large', priceCents: 525 },
+    ]},
+    { category: 'Other', name: 'Lemonade', priceCents: 350, variations: [
+      { name: 'Small', priceCents: 350 }, { name: 'Medium', priceCents: 425 }, { name: 'Large', priceCents: 500 },
+    ]},
+    { category: 'Other', name: 'Smoothie', priceCents: 550, variations: [
+      { name: 'Small', priceCents: 550 }, { name: 'Medium', priceCents: 650 }, { name: 'Large', priceCents: 750 },
+    ]},
   ],
 
   modifiers: [
-    // Milk options
-    { name: 'Whole Milk', type: 'MILK', price: 0 },
-    { name: '2% Milk', type: 'MILK', price: 0 },
-    { name: 'Skim Milk', type: 'MILK', price: 0 },
-    { name: 'Oat Milk', type: 'MILK', price: 75 },
-    { name: 'Almond Milk', type: 'MILK', price: 75 },
-    { name: 'Coconut Milk', type: 'MILK', price: 75 },
-    { name: 'Soy Milk', type: 'MILK', price: 50 },
-    { name: 'Half & Half', type: 'MILK', price: 25 },
-    { name: 'Heavy Cream', type: 'MILK', price: 50 },
+    // Milk options (single-select group)
+    { name: 'Whole Milk', group: 'Milk Options', priceCents: 0 },
+    { name: '2% Milk', group: 'Milk Options', priceCents: 0 },
+    { name: 'Skim Milk', group: 'Milk Options', priceCents: 0 },
+    { name: 'Oat Milk', group: 'Milk Options', priceCents: 75 },
+    { name: 'Almond Milk', group: 'Milk Options', priceCents: 75 },
+    { name: 'Coconut Milk', group: 'Milk Options', priceCents: 75 },
+    { name: 'Soy Milk', group: 'Milk Options', priceCents: 50 },
+    { name: 'Half & Half', group: 'Milk Options', priceCents: 25 },
+    { name: 'Heavy Cream', group: 'Milk Options', priceCents: 50 },
 
-    // Syrup flavors
-    { name: 'Vanilla', type: 'SYRUP', price: 50 },
-    { name: 'Caramel', type: 'SYRUP', price: 50 },
-    { name: 'Hazelnut', type: 'SYRUP', price: 50 },
-    { name: 'Mocha', type: 'SYRUP', price: 50 },
-    { name: 'Lavender', type: 'SYRUP', price: 75 },
-    { name: 'Honey', type: 'SYRUP', price: 50 },
-    { name: 'Brown Sugar', type: 'SYRUP', price: 50 },
-    { name: 'Pumpkin Spice', type: 'SYRUP', price: 75 },
-    { name: 'Peppermint', type: 'SYRUP', price: 50 },
-    { name: 'Sugar Free Vanilla', type: 'SYRUP', price: 50 },
+    // Syrup flavors (multi-select group)
+    { name: 'Vanilla', group: 'Syrups', priceCents: 50 },
+    { name: 'Caramel', group: 'Syrups', priceCents: 50 },
+    { name: 'Hazelnut', group: 'Syrups', priceCents: 50 },
+    { name: 'Mocha', group: 'Syrups', priceCents: 50 },
+    { name: 'Lavender', group: 'Syrups', priceCents: 75 },
+    { name: 'Honey', group: 'Syrups', priceCents: 50 },
+    { name: 'Brown Sugar', group: 'Syrups', priceCents: 50 },
+    { name: 'Pumpkin Spice', group: 'Syrups', priceCents: 75 },
+    { name: 'Peppermint', group: 'Syrups', priceCents: 50 },
+    { name: 'Sugar Free Vanilla', group: 'Syrups', priceCents: 50 },
 
-    // Toppings
-    { name: 'Whipped Cream', type: 'TOPPING', price: 50 },
-    { name: 'Chocolate Drizzle', type: 'TOPPING', price: 25 },
-    { name: 'Caramel Drizzle', type: 'TOPPING', price: 25 },
-    { name: 'Cinnamon', type: 'TOPPING', price: 0 },
-    { name: 'Cocoa Powder', type: 'TOPPING', price: 0 },
-    { name: 'Extra Shot', type: 'TOPPING', price: 100 },
+    // Toppings (multi-select group)
+    { name: 'Whipped Cream', group: 'Toppings', priceCents: 50 },
+    { name: 'Chocolate Drizzle', group: 'Toppings', priceCents: 25 },
+    { name: 'Caramel Drizzle', group: 'Toppings', priceCents: 25 },
+    { name: 'Cinnamon', group: 'Toppings', priceCents: 0 },
+    { name: 'Cocoa Powder', group: 'Toppings', priceCents: 0 },
+    { name: 'Extra Shot', group: 'Toppings', priceCents: 100 },
   ],
 };

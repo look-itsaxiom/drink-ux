@@ -3,6 +3,8 @@
  *
  * Compares local catalog state against last-known POS state
  * to determine what needs to be created, updated, or deactivated.
+ *
+ * All prices are in integer cents.
  */
 
 /**
@@ -11,8 +13,7 @@
 export interface LocalItem {
   id: string;
   name: string;
-  basePrice?: number; // For Base items
-  price?: number; // For Preset items
+  priceCents: number; // Price in cents
   posItemId: string | null;
   available: boolean;
   updatedAt: Date;
@@ -24,8 +25,8 @@ export interface LocalItem {
 export interface LocalModifier {
   id: string;
   name: string;
-  type: string; // MILK, SYRUP, TOPPING
-  price: number;
+  groupName: string; // ModifierGroup name (e.g., "Milk Options", "Syrups")
+  priceCents: number; // Price in cents
   posModifierId: string | null;
   available: boolean;
   updatedAt: Date;
@@ -37,7 +38,7 @@ export interface LocalModifier {
 export interface DiffItemChange {
   localId: string;
   name: string;
-  price: number;
+  priceCents: number; // Price in cents
   posItemId: string | null;
   itemType: 'base' | 'preset';
 }
@@ -48,9 +49,9 @@ export interface DiffItemChange {
 export interface DiffModifierChange {
   localId: string;
   name: string;
-  price: number;
+  priceCents: number; // Price in cents
   posModifierId: string | null;
-  modifierType: string;
+  groupName: string; // ModifierGroup name
 }
 
 /**
@@ -157,11 +158,10 @@ function classifyItemChange(
   itemType: 'base' | 'preset',
   lastSyncedAt?: Date | null
 ): { type: 'created' | 'updated' | 'deactivated'; item: DiffItemChange } | null {
-  const price = item.basePrice ?? item.price ?? 0;
   const change: DiffItemChange = {
     localId: item.id,
     name: item.name,
-    price,
+    priceCents: item.priceCents,
     posItemId: item.posItemId,
     itemType,
   };
@@ -195,9 +195,9 @@ function classifyModifierChange(
   const change: DiffModifierChange = {
     localId: modifier.id,
     name: modifier.name,
-    price: modifier.price,
+    priceCents: modifier.priceCents,
     posModifierId: modifier.posModifierId,
-    modifierType: modifier.type,
+    groupName: modifier.groupName,
   };
 
   // Never synced - create new

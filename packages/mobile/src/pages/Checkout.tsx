@@ -60,7 +60,9 @@ const Checkout: React.FC = () => {
   const formatItemDescription = (item: CartItem): string => {
     const parts: string[] = [];
     parts.push(formatSize(item.size));
-    parts.push(item.isHot ? 'Hot' : 'Iced');
+    if (item.isHot !== undefined) {
+      parts.push(item.isHot ? 'Hot' : 'Iced');
+    }
     if (item.modifierNames.length > 0) {
       parts.push(item.modifierNames.join(', '));
     }
@@ -153,7 +155,7 @@ const Checkout: React.FC = () => {
                       <p className="item-description">{formatItemDescription(item)}</p>
                     </IonLabel>
                     <span slot="end" className="item-price">
-                      ${item.totalPrice.toFixed(2)}
+                      ${(item.totalPrice / 100).toFixed(2)}
                     </span>
                   </IonItem>
                 ))}
@@ -163,7 +165,7 @@ const Checkout: React.FC = () => {
                 <div className="total-row">
                   <span className="total-label">Total</span>
                   <span className="total-amount">
-                    ${(pendingOrder?.totalAmount ?? total).toFixed(2)}
+                    ${((pendingOrder?.totalAmount ?? total) / 100).toFixed(2)}
                   </span>
                 </div>
               </div>

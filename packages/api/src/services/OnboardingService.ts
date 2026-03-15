@@ -13,8 +13,6 @@ import {
   PrismaClient,
   AccountState,
   Business,
-  TemperatureConstraint,
-  ModifierType,
   ItemType,
   Prisma,
 } from '../../generated/prisma';
@@ -455,13 +453,15 @@ export class OnboardingService {
       throw new OnboardingError('BUSINESS_NOT_FOUND', 'Business not found');
     }
 
-    // Delete catalog data
+    // Delete catalog data (order matters for FK constraints)
     await this.prisma.$transaction([
       this.prisma.presetModifier.deleteMany({
         where: { preset: { businessId } },
       }),
       this.prisma.preset.deleteMany({ where: { businessId } }),
+      this.prisma.variation.deleteMany({ where: { base: { businessId } } }),
       this.prisma.modifier.deleteMany({ where: { businessId } }),
+      this.prisma.modifierGroup.deleteMany({ where: { businessId } }),
       this.prisma.base.deleteMany({ where: { businessId } }),
       this.prisma.category.deleteMany({ where: { businessId } }),
     ]);
@@ -687,6 +687,7 @@ export class OnboardingService {
           businessId,
           name: cat.name,
           displayOrder: cat.ordinal || 0,
+          posCategoryId: cat.id,
         },
       });
       categoryMap.set(cat.id, category.id);
@@ -706,11 +707,37 @@ export class OnboardingService {
       defaultCategoryId = defaultCategory.id;
     }
 
+    // Create modifier groups from modifier lists
+    const modifierGroupMap = new Map<string, string>(); // Square modifier list ID → DB group ID
+    for (const modList of catalogData.modifierLists) {
+      const group = await this.prisma.modifierGroup.create({
+        data: {
+          businessId,
+          name: modList.name,
+          posModifierListId: modList.id,
+          selectionMode: this.inferSelectionMode(modList.name),
+        },
+      });
+      modifierGroupMap.set(modList.id, group.id);
+    }
+
+    // Create a default modifier group for orphan modifiers
+    let defaultGroupId: string | null = null;
+
+    // Build image lookup: Square IMAGE id → URL
+    const imageMap = new Map<string, string>();
+    for (const img of catalogData.images) {
+      imageMap.set(img.id, img.url);
+    }
+
     // Track names for uniqueness
     const usedNames = new Set<string>();
 
-    // Create bases from items
+    // Create bases from items (import ALL variations, not just the first one)
     for (const item of catalogData.items) {
+      // Skip deleted/disabled items
+      if (item.isDeleted) continue;
+
       let name = item.name;
       let counter = 1;
 
@@ -721,25 +748,64 @@ export class OnboardingService {
       }
       usedNames.add(name);
 
-      const categoryId = item.categoryId
-        ? categoryMap.get(item.categoryId) || defaultCategoryId
+      // Resolve category: prefer modern category_ids[], fall back to legacy category_id
+      const resolvedCategoryIds = item.categoryIds?.length
+        ? item.categoryIds
+        : item.categoryId
+          ? [item.categoryId]
+          : [];
+
+      const categoryId = resolvedCategoryIds.length > 0
+        ? categoryMap.get(resolvedCategoryIds[0]) || defaultCategoryId
         : defaultCategoryId;
 
       if (!categoryId) continue;
 
-      const price = item.variations?.[0]?.price || 0;
+      // Use the first variation's price as the base price, or 0
+      const basePriceCents = item.variations?.[0]?.price || 0;
 
-      await this.prisma.base.create({
+      // Resolve image URL from Square IMAGE objects
+      const imageUrl = item.imageIds?.length
+        ? imageMap.get(item.imageIds[0]) || null
+        : null;
+
+      const base = await this.prisma.base.create({
         data: {
           businessId,
           categoryId,
           name,
-          basePrice: price / 100, // Convert cents to dollars
+          priceCents: basePriceCents,
           posItemId: item.id,
-          posVariationId: item.variations?.[0]?.id || null, // Square requires variation ID for orders
-          temperatureConstraint: TemperatureConstraint.BOTH,
+          imageUrl,
+          needsReview: item.needsReview || false,
         },
       });
+
+      // Create a Variation for EACH Square variation (not just the first!)
+      if (item.variations && item.variations.length > 0) {
+        for (let i = 0; i < item.variations.length; i++) {
+          const v = item.variations[i];
+          await this.prisma.variation.create({
+            data: {
+              baseId: base.id,
+              name: v.name || 'Regular',
+              priceCents: v.price,
+              displayOrder: i,
+              posVariationId: v.id,
+            },
+          });
+        }
+      } else {
+        // No variations from POS — create a default one
+        await this.prisma.variation.create({
+          data: {
+            baseId: base.id,
+            name: 'Regular',
+            priceCents: basePriceCents,
+            displayOrder: 0,
+          },
+        });
+      }
 
       // Create ItemMapping so MappedCatalogService can find this item
       const categoryName = item.categoryId ? categoryNameMap.get(item.categoryId) : 'Uncategorized';
@@ -756,41 +822,59 @@ export class OnboardingService {
       });
     }
 
-    // Determine modifier types from list names
-    const getModifierType = (listId?: string, name?: string): ModifierType => {
-      const lowerName = (name || '').toLowerCase();
-      if (lowerName.includes('milk')) return ModifierType.MILK;
-      if (lowerName.includes('syrup') || lowerName.includes('flavor')) return ModifierType.SYRUP;
-      return ModifierType.TOPPING;
-    };
-
-    // Create modifiers
+    // Create modifiers — use modifier group from modifierListId
     for (const mod of catalogData.modifiers) {
-      const modType = getModifierType(mod.modifierListId, mod.name);
+      let groupId = mod.modifierListId ? modifierGroupMap.get(mod.modifierListId) : null;
+
+      // If no group found, create/use a default group
+      if (!groupId) {
+        if (!defaultGroupId) {
+          const defaultGroup = await this.prisma.modifierGroup.create({
+            data: {
+              businessId,
+              name: 'Other Options',
+              selectionMode: 'multiple',
+            },
+          });
+          defaultGroupId = defaultGroup.id;
+        }
+        groupId = defaultGroupId;
+      }
+
       await this.prisma.modifier.create({
         data: {
           businessId,
+          modifierGroupId: groupId,
           name: mod.name,
-          type: modType,
-          price: (mod.price || 0) / 100,
+          priceCents: mod.price || 0,
           posModifierId: mod.id,
         },
       });
 
       // Create ItemMapping for modifier so MappedCatalogService can include it
-      const modCategory = modType === ModifierType.MILK ? 'milk'
-        : modType === ModifierType.SYRUP ? 'syrup'
-        : 'topping';
       await this.prisma.itemMapping.create({
         data: {
           businessId,
           squareItemId: mod.id,
           itemType: ItemType.MODIFIER,
-          category: modCategory,
+          category: mod.modifierListId || 'other',
           displayName: mod.name,
         },
       });
     }
+  }
+
+  /**
+   * Infer selection mode from modifier list name.
+   * Lists with "milk", "cheese", "bread" etc. are typically single-select.
+   */
+  private inferSelectionMode(name: string): string {
+    const lowerName = name.toLowerCase();
+    const singleSelectPatterns = ['milk', 'bread', 'cheese', 'protein', 'base', 'size'];
+    if (singleSelectPatterns.some(p => lowerName.includes(p))) {
+      return 'single';
+    }
+    return 'multiple';
   }
 
   /**
@@ -812,30 +896,59 @@ export class OnboardingService {
       categoryMap.set(cat.name, category.id);
     }
 
-    // Create bases
+    // Create modifier groups from template group definitions
+    const modifierGroupMap = new Map<string, string>();
+    for (const group of template.modifierGroups) {
+      const mg = await this.prisma.modifierGroup.create({
+        data: {
+          businessId,
+          name: group.name,
+          displayOrder: group.displayOrder,
+          selectionMode: group.selectionMode,
+        },
+      });
+      modifierGroupMap.set(group.name, mg.id);
+    }
+
+    // Create bases with variations
     for (const base of template.bases) {
       const categoryId = categoryMap.get(base.category);
       if (!categoryId) continue;
 
-      await this.prisma.base.create({
+      const createdBase = await this.prisma.base.create({
         data: {
           businessId,
           categoryId,
           name: base.name,
-          basePrice: base.price / 100, // Template prices are in cents
-          temperatureConstraint: base.temp as TemperatureConstraint,
+          priceCents: base.priceCents,
         },
       });
+
+      // Create variations for each base
+      for (let i = 0; i < base.variations.length; i++) {
+        const v = base.variations[i];
+        await this.prisma.variation.create({
+          data: {
+            baseId: createdBase.id,
+            name: v.name,
+            priceCents: v.priceCents,
+            displayOrder: i,
+          },
+        });
+      }
     }
 
     // Create modifiers
     for (const mod of template.modifiers) {
+      const groupId = modifierGroupMap.get(mod.group);
+      if (!groupId) continue;
+
       await this.prisma.modifier.create({
         data: {
           businessId,
+          modifierGroupId: groupId,
           name: mod.name,
-          type: mod.type as ModifierType,
-          price: mod.price / 100,
+          priceCents: mod.priceCents,
         },
       });
     }

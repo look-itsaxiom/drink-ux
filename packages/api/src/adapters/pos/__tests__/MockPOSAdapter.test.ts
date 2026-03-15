@@ -100,6 +100,9 @@ describe('MockPOSAdapter', () => {
         items: [{ id: 'custom-1', name: 'Custom Item' }],
         modifiers: [],
         categories: [{ id: 'cat-1', name: 'Custom Category' }],
+        images: [],
+        taxes: [],
+        modifierLists: [],
       };
       adapter.setCatalogResponse(customCatalog);
 

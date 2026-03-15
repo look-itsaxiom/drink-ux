@@ -9,7 +9,7 @@ import {
   groupBasesByCategory,
   MappedCatalog,
   MappedBase,
-  MappedModifiers,
+  MappedModifierGroup,
   DerivedCategory,
 } from '../services/catalogService';
 import { ApiClientError } from '../services/api';
@@ -34,23 +34,22 @@ export interface UseCatalogResult {
   categories: DerivedCategory[];
   /** All bases (flat list) */
   bases: MappedBase[];
-  /** Modifiers grouped by type */
-  modifiers: MappedModifiers;
+  /** Dynamic modifier groups with selection constraints */
+  modifierGroups: MappedModifierGroup[];
   /** Loading state */
   loading: boolean;
   /** Error message if fetch failed */
   error: string | null;
   /** Get bases for a specific category */
   getBasesByCategory: (categoryId: string) => MappedBase[];
+  /** Get modifier groups applicable to a specific item */
+  getModifierGroupsForItem: (item: MappedBase) => MappedModifierGroup[];
   /** Function to manually refetch the data */
   refetch: () => void;
 }
 
 /**
  * Hook to fetch and manage mapped catalog data
- *
- * @param options - Hook options
- * @returns Catalog data, loading state, and error
  */
 export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
   const { businessId, skip = false } = options;
@@ -102,9 +101,9 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
     return catalog?.bases || [];
   }, [catalog]);
 
-  // Get modifiers (with defaults)
-  const modifiers = useMemo((): MappedModifiers => {
-    return catalog?.modifiers || { milks: [], syrups: [], toppings: [] };
+  // Get modifier groups
+  const modifierGroups = useMemo((): MappedModifierGroup[] => {
+    return catalog?.modifierGroups || [];
   }, [catalog]);
 
   // Helper function to get bases by category
@@ -118,14 +117,30 @@ export function useCatalog(options: UseCatalogOptions = {}): UseCatalogResult {
     [categories]
   );
 
+  // Helper function to get modifier groups applicable to a specific item
+  const getModifierGroupsForItem = useCallback(
+    (item: MappedBase): MappedModifierGroup[] => {
+      if (item.modifierGroupIds && item.modifierGroupIds.length > 0) {
+        // Return only groups that this item references, in order
+        return item.modifierGroupIds
+          .map(id => modifierGroups.find(g => g.id === id))
+          .filter((g): g is MappedModifierGroup => g !== undefined);
+      }
+      // If item has no specific group IDs, return all groups (legacy fallback)
+      return modifierGroups;
+    },
+    [modifierGroups]
+  );
+
   return {
     catalog,
     categories,
     bases,
-    modifiers,
+    modifierGroups,
     loading,
     error,
     getBasesByCategory,
+    getModifierGroupsForItem,
     refetch: fetchCatalog,
   };
 }

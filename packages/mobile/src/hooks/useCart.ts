@@ -4,7 +4,6 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
-import { CupSize } from '@drink-ux/shared';
 import { submitOrder, OrderInput, OrderResponse } from '../services/orderService';
 import { ApiClientError } from '../services/api';
 
@@ -18,10 +17,10 @@ export interface CartItem {
   baseId: string;
   /** Base drink name */
   baseName: string;
-  /** Cup size */
-  size: CupSize | string;
-  /** Is this a hot drink? */
-  isHot: boolean;
+  /** Variation name (e.g., "Small", "Regular", "12 oz") */
+  size: string;
+  /** Is this a hot item? undefined if temperature is not relevant */
+  isHot?: boolean;
   /** Array of modifier IDs */
   modifierIds: string[];
   /** Array of modifier names for display */

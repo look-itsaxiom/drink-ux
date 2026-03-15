@@ -8,31 +8,6 @@ const TEST_ENCRYPTION_KEY = process.env.POS_TOKEN_ENCRYPTION_KEY || 'test-key-mu
 
 const prisma = new PrismaClient();
 
-// Type definitions for catalog response
-interface CatalogBase {
-  squareItemId: string;
-  name: string;
-  price: number;
-  category: string;
-  sizes: Array<{ variationId: string; name: string; price: number }>;
-  temperatures: string[];
-}
-
-interface CatalogModifier {
-  squareModifierId: string;
-  name: string;
-  price: number;
-}
-
-interface MappedCatalog {
-  bases: CatalogBase[];
-  modifiers: {
-    milks: CatalogModifier[];
-    syrups: CatalogModifier[];
-    toppings: CatalogModifier[];
-  };
-}
-
 // Test fixtures
 const mockSquareCatalog: RawCatalogData = {
   items: [
@@ -41,6 +16,12 @@ const mockSquareCatalog: RawCatalogData = {
       name: 'Latte',
       description: 'Espresso with steamed milk',
       price: 500,
+      imageIds: ['IMG_LATTE'],
+      modifierListIds: ['MODLIST_MILK', 'MODLIST_SYRUP'],
+      modifierListInfo: [
+        { modifierListId: 'MODLIST_MILK', minSelectedModifiers: 1, maxSelectedModifiers: 1 },
+        { modifierListId: 'MODLIST_SYRUP', minSelectedModifiers: 0, maxSelectedModifiers: 3 },
+      ],
       variations: [
         { id: 'VAR_LATTE_SM', name: 'Small', price: 450 },
         { id: 'VAR_LATTE_MD', name: 'Medium', price: 500 },
@@ -80,6 +61,35 @@ const mockSquareCatalog: RawCatalogData = {
   categories: [
     { id: 'CAT_COFFEE', name: 'Coffee', ordinal: 1 },
     { id: 'CAT_TEA', name: 'Tea', ordinal: 2 },
+  ],
+  images: [
+    { id: 'IMG_LATTE', url: 'https://example.com/latte.jpg' },
+  ],
+  taxes: [],
+  modifierLists: [
+    {
+      id: 'MODLIST_MILK',
+      name: 'Milk Options',
+      modifiers: [
+        { id: 'MOD_OAT', name: 'Oat Milk', price: 75 },
+        { id: 'MOD_ALMOND', name: 'Almond Milk', price: 75 },
+      ],
+    },
+    {
+      id: 'MODLIST_SYRUP',
+      name: 'Syrups',
+      modifiers: [
+        { id: 'MOD_VANILLA', name: 'Vanilla Syrup', price: 50 },
+        { id: 'MOD_CARAMEL', name: 'Caramel Syrup', price: 50 },
+      ],
+    },
+    {
+      id: 'MODLIST_TOPPING',
+      name: 'Toppings',
+      modifiers: [
+        { id: 'MOD_WHIP', name: 'Whipped Cream', price: 0 },
+      ],
+    },
   ],
 };
 
@@ -143,7 +153,6 @@ describe('MappedCatalogService', () => {
   // ===========================================================================
   describe('getCatalog', () => {
     it('fetches from Square and returns structured catalog with bases', async () => {
-      // Create mappings for base drinks
       await prisma.itemMapping.createMany({
         data: [
           { businessId: testBusinessId, squareItemId: 'ITEM_LATTE', itemType: 'BASE', category: 'espresso' },
@@ -151,7 +160,7 @@ describe('MappedCatalogService', () => {
         ],
       });
 
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
       expect(catalog).toBeDefined();
       expect(catalog.bases).toHaveLength(2);
@@ -160,12 +169,46 @@ describe('MappedCatalogService', () => {
         name: 'Latte',
         category: 'espresso',
       });
-      expect(catalog.bases[0].sizes).toBeDefined();
-      expect(catalog.bases[0].sizes).toHaveLength(3);
+      expect(catalog.bases[0].variations).toBeDefined();
+      expect(catalog.bases[0].variations).toHaveLength(3);
     });
 
-    it('returns structured modifiers grouped by type (milks, syrups, toppings)', async () => {
-      // Create mappings for modifiers
+    it('returns dynamic modifier groups from Square modifier lists', async () => {
+      // Map items that reference modifier lists
+      await prisma.itemMapping.create({
+        data: { businessId: testBusinessId, squareItemId: 'ITEM_LATTE', itemType: 'BASE', category: 'espresso' },
+      });
+
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
+
+      // Should have modifier groups from referenced lists (MODLIST_MILK and MODLIST_SYRUP)
+      expect(catalog.modifierGroups).toBeDefined();
+      expect(catalog.modifierGroups.length).toBeGreaterThanOrEqual(2);
+
+      const milkGroup = catalog.modifierGroups.find(g => g.id === 'MODLIST_MILK');
+      expect(milkGroup).toBeDefined();
+      expect(milkGroup!.name).toBe('Milk Options');
+      expect(milkGroup!.selectionMode).toBe('single');
+      expect(milkGroup!.minSelections).toBe(1);
+      expect(milkGroup!.maxSelections).toBe(1);
+      expect(milkGroup!.modifiers).toHaveLength(2);
+
+      const syrupGroup = catalog.modifierGroups.find(g => g.id === 'MODLIST_SYRUP');
+      expect(syrupGroup).toBeDefined();
+      expect(syrupGroup!.name).toBe('Syrups');
+      expect(syrupGroup!.selectionMode).toBe('multi');
+      expect(syrupGroup!.maxSelections).toBe(3);
+    });
+
+    it('falls back to ItemMapping categories when no modifier lists exist', async () => {
+      // Use catalog without modifier lists
+      const catalogNoLists: RawCatalogData = {
+        ...mockSquareCatalog,
+        modifierLists: [],
+        items: mockSquareCatalog.items.map(i => ({ ...i, modifierListIds: undefined, modifierListInfo: undefined })),
+      };
+      mockPOSAdapter.setCatalogResponse(catalogNoLists);
+
       await prisma.itemMapping.createMany({
         data: [
           { businessId: testBusinessId, squareItemId: 'MOD_OAT', itemType: 'MODIFIER', category: 'milk' },
@@ -175,18 +218,49 @@ describe('MappedCatalogService', () => {
         ],
       });
 
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
-      expect(catalog.modifiers).toBeDefined();
-      expect(catalog.modifiers.milks).toHaveLength(2);
-      expect(catalog.modifiers.syrups).toHaveLength(1);
-      expect(catalog.modifiers.toppings).toHaveLength(1);
+      expect(catalog.modifierGroups).toHaveLength(3);
 
-      expect(catalog.modifiers.milks[0]).toMatchObject({
-        squareModifierId: 'MOD_OAT',
-        name: 'Oat Milk',
-        price: 75,
+      const milkGroup = catalog.modifierGroups.find(g => g.id === 'milk');
+      expect(milkGroup).toBeDefined();
+      expect(milkGroup!.name).toBe('Milk Options');
+      expect(milkGroup!.selectionMode).toBe('single');
+      expect(milkGroup!.modifiers).toHaveLength(2);
+
+      const syrupGroup = catalog.modifierGroups.find(g => g.id === 'syrup');
+      expect(syrupGroup).toBeDefined();
+      expect(syrupGroup!.modifiers).toHaveLength(1);
+    });
+
+    it('includes image URLs from Square catalog', async () => {
+      await prisma.itemMapping.create({
+        data: { businessId: testBusinessId, squareItemId: 'ITEM_LATTE', itemType: 'BASE', category: 'espresso' },
       });
+
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
+
+      expect(catalog.bases[0].imageUrl).toBe('https://example.com/latte.jpg');
+    });
+
+    it('includes description from Square catalog', async () => {
+      await prisma.itemMapping.create({
+        data: { businessId: testBusinessId, squareItemId: 'ITEM_LATTE', itemType: 'BASE', category: 'espresso' },
+      });
+
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
+
+      expect(catalog.bases[0].description).toBe('Espresso with steamed milk');
+    });
+
+    it('includes modifierGroupIds on bases', async () => {
+      await prisma.itemMapping.create({
+        data: { businessId: testBusinessId, squareItemId: 'ITEM_LATTE', itemType: 'BASE', category: 'espresso' },
+      });
+
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
+
+      expect(catalog.bases[0].modifierGroupIds).toEqual(['MODLIST_MILK', 'MODLIST_SYRUP']);
     });
 
     it('includes price from Square catalog', async () => {
@@ -194,7 +268,7 @@ describe('MappedCatalogService', () => {
         data: { businessId: testBusinessId, squareItemId: 'ITEM_MATCHA', itemType: 'BASE', category: 'tea' },
       });
 
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
       expect(catalog.bases[0].price).toBe(600);
     });
@@ -204,9 +278,9 @@ describe('MappedCatalogService', () => {
         data: { businessId: testBusinessId, squareItemId: 'ITEM_LATTE', itemType: 'BASE', category: 'espresso' },
       });
 
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
-      expect(catalog.bases[0].sizes).toEqual([
+      expect(catalog.bases[0].variations).toEqual([
         { variationId: 'VAR_LATTE_SM', name: 'Small', price: 450 },
         { variationId: 'VAR_LATTE_MD', name: 'Medium', price: 500 },
         { variationId: 'VAR_LATTE_LG', name: 'Large', price: 550 },
@@ -224,7 +298,7 @@ describe('MappedCatalogService', () => {
         },
       });
 
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
       expect(catalog.bases[0].temperatures).toEqual(['HOT', 'ICED']);
     });
@@ -239,13 +313,11 @@ describe('MappedCatalogService', () => {
         data: { businessId: testBusinessId, squareItemId: 'ITEM_LATTE', itemType: 'BASE', category: 'espresso' },
       });
 
-      // First call - should hit Square
       await mappedCatalogService.getCatalog(testBusinessId);
       expect(mockPOSAdapter.getCalls('importCatalog')).toHaveLength(1);
 
-      // Second call - should use cache
       await mappedCatalogService.getCatalog(testBusinessId);
-      expect(mockPOSAdapter.getCalls('importCatalog')).toHaveLength(1); // Still 1
+      expect(mockPOSAdapter.getCalls('importCatalog')).toHaveLength(1);
     });
 
     it('fetches fresh data if cache is stale', async () => {
@@ -253,19 +325,14 @@ describe('MappedCatalogService', () => {
         data: { businessId: testBusinessId, squareItemId: 'ITEM_LATTE', itemType: 'BASE', category: 'espresso' },
       });
 
-      // First call
       await mappedCatalogService.getCatalog(testBusinessId);
-
-      // Force cache to be stale (simulate time passing)
       mappedCatalogService.invalidateCache(testBusinessId);
 
-      // Second call - should hit Square again
       await mappedCatalogService.getCatalog(testBusinessId);
       expect(mockPOSAdapter.getCalls('importCatalog')).toHaveLength(2);
     });
 
     it('caches per business (different businesses have separate caches)', async () => {
-      // Create second business
       const user2 = await prisma.user.create({
         data: { email: 'test2@example.com', hashedPassword: 'hashed' },
       });
@@ -288,11 +355,9 @@ describe('MappedCatalogService', () => {
         ],
       });
 
-      // Fetch for first business
       await mappedCatalogService.getCatalog(testBusinessId);
       expect(mockPOSAdapter.getCalls('importCatalog')).toHaveLength(1);
 
-      // Fetch for second business - should call Square again (different cache)
       await mappedCatalogService.getCatalog(business2.id);
       expect(mockPOSAdapter.getCalls('importCatalog')).toHaveLength(2);
     });
@@ -303,25 +368,31 @@ describe('MappedCatalogService', () => {
   // ===========================================================================
   describe('empty mappings', () => {
     it('returns empty arrays when no mappings exist', async () => {
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
       expect(catalog.bases).toEqual([]);
-      expect(catalog.modifiers.milks).toEqual([]);
-      expect(catalog.modifiers.syrups).toEqual([]);
-      expect(catalog.modifiers.toppings).toEqual([]);
+      expect(catalog.modifierGroups).toEqual([]);
     });
 
-    it('returns empty modifiers when only base mappings exist', async () => {
+    it('returns empty modifier groups when only base mappings exist and no modifier lists referenced', async () => {
+      // Use catalog with items that don't reference modifier lists
+      const catalogNoListRefs: RawCatalogData = {
+        ...mockSquareCatalog,
+        items: [
+          { id: 'ITEM_MATCHA', name: 'Matcha Latte', price: 600 },
+        ],
+        modifierLists: [],
+      };
+      mockPOSAdapter.setCatalogResponse(catalogNoListRefs);
+
       await prisma.itemMapping.create({
-        data: { businessId: testBusinessId, squareItemId: 'ITEM_LATTE', itemType: 'BASE', category: 'espresso' },
+        data: { businessId: testBusinessId, squareItemId: 'ITEM_MATCHA', itemType: 'BASE', category: 'tea' },
       });
 
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
       expect(catalog.bases).toHaveLength(1);
-      expect(catalog.modifiers.milks).toEqual([]);
-      expect(catalog.modifiers.syrups).toEqual([]);
-      expect(catalog.modifiers.toppings).toEqual([]);
+      expect(catalog.modifierGroups).toEqual([]);
     });
   });
 
@@ -337,31 +408,21 @@ describe('MappedCatalogService', () => {
         ],
       });
 
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
       expect(catalog.bases).toHaveLength(1);
       expect(catalog.bases[0].squareItemId).toBe('ITEM_LATTE');
-      // T-shirt should not appear anywhere
-      const allItemIds = [
-        ...catalog.bases.map((b: CatalogBase) => b.squareItemId),
-        ...catalog.modifiers.milks.map((m: CatalogModifier) => m.squareModifierId),
-        ...catalog.modifiers.syrups.map((m: CatalogModifier) => m.squareModifierId),
-        ...catalog.modifiers.toppings.map((m: CatalogModifier) => m.squareModifierId),
-      ];
-      expect(allItemIds).not.toContain('ITEM_TSHIRT');
     });
 
     it('does not include unmapped Square items in catalog', async () => {
-      // Only map one item - others should not appear
       await prisma.itemMapping.create({
         data: { businessId: testBusinessId, squareItemId: 'ITEM_LATTE', itemType: 'BASE', category: 'espresso' },
       });
 
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
       expect(catalog.bases).toHaveLength(1);
       expect(catalog.bases[0].squareItemId).toBe('ITEM_LATTE');
-      // ITEM_MOCHA, ITEM_MATCHA, ITEM_TSHIRT should not appear
     });
   });
 
@@ -382,7 +443,6 @@ describe('MappedCatalogService', () => {
     });
 
     it('throws error when business has no POS credentials', async () => {
-      // Create business without POS credentials
       const userNoCreds = await prisma.user.create({
         data: { email: 'nocreds@example.com', hashedPassword: 'hashed' },
       });
@@ -391,7 +451,6 @@ describe('MappedCatalogService', () => {
           name: 'No Creds Shop',
           slug: 'no-creds-shop',
           ownerId: userNoCreds.id,
-          // No POS credentials
         },
       });
 
@@ -426,18 +485,13 @@ describe('MappedCatalogService', () => {
         data: { businessId: testBusinessId, squareItemId: 'ITEM_LATTE', itemType: 'BASE', category: 'espresso' },
       });
 
-      // First call succeeds - populates cache
-      const freshCatalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const freshCatalog = await mappedCatalogService.getCatalog(testBusinessId);
       expect(freshCatalog.bases).toHaveLength(1);
 
-      // Invalidate cache (make it stale)
       mappedCatalogService.invalidateCache(testBusinessId);
-
-      // Set Square to fail
       mockPOSAdapter.setError('importCatalog', new Error('Square API unavailable'));
 
-      // Should return stale cache rather than throwing (graceful degradation)
-      const staleCatalog = await mappedCatalogService.getCatalog(testBusinessId, { allowStale: true }) as MappedCatalog;
+      const staleCatalog = await mappedCatalogService.getCatalog(testBusinessId, { allowStale: true });
       expect(staleCatalog.bases).toHaveLength(1);
       expect(staleCatalog.bases[0].squareItemId).toBe('ITEM_LATTE');
     });
@@ -458,7 +512,7 @@ describe('MappedCatalogService', () => {
         },
       });
 
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
       expect(catalog.bases[0].name).toBe('Signature Latte');
     });
@@ -470,11 +524,10 @@ describe('MappedCatalogService', () => {
           squareItemId: 'ITEM_LATTE',
           itemType: 'BASE',
           category: 'espresso',
-          // No displayName
         },
       });
 
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
       expect(catalog.bases[0].name).toBe('Latte');
     });
@@ -493,11 +546,11 @@ describe('MappedCatalogService', () => {
         ],
       });
 
-      const catalog = await mappedCatalogService.getCatalog(testBusinessId) as MappedCatalog;
+      const catalog = await mappedCatalogService.getCatalog(testBusinessId);
 
-      expect(catalog.bases[0].squareItemId).toBe('ITEM_MOCHA'); // displayOrder: 1
-      expect(catalog.bases[1].squareItemId).toBe('ITEM_LATTE'); // displayOrder: 2
-      expect(catalog.bases[2].squareItemId).toBe('ITEM_MATCHA'); // displayOrder: 3
+      expect(catalog.bases[0].squareItemId).toBe('ITEM_MOCHA');
+      expect(catalog.bases[1].squareItemId).toBe('ITEM_LATTE');
+      expect(catalog.bases[2].squareItemId).toBe('ITEM_MATCHA');
     });
   });
 });

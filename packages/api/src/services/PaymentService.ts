@@ -23,8 +23,8 @@ export interface ProcessPaymentInput {
   orderId: string;
   /** Payment token from Square Web Payments SDK */
   sourceId: string;
-  /** Amount to charge in dollars */
-  amount: number;
+  /** Amount to charge in cents */
+  amountCents: number;
   /** Currency code (default: USD) */
   currency?: string;
   /** Optional customer ID for Square */
@@ -151,7 +151,7 @@ export class PaymentService {
    * Process a payment for an order
    */
   async processPayment(input: ProcessPaymentInput): Promise<PaymentResult> {
-    const { orderId, sourceId, amount, currency = 'USD', customerId } = input;
+    const { orderId, sourceId, amountCents, currency = 'USD', customerId } = input;
 
     // Fetch the order
     const order = await this.prisma.order.findUnique({
@@ -173,12 +173,12 @@ export class PaymentService {
       throw new PaymentError('PAYMENT_IN_PROGRESS', 'A payment is already being processed for this order');
     }
 
-    // Validate amount matches order total
-    if (Math.abs(amount - order.total) > 0.01) {
+    // Validate amount matches order total (both in cents)
+    if (amountCents !== order.totalCents) {
       throw new PaymentError(
         'AMOUNT_MISMATCH',
         'Payment amount does not match order total',
-        `Expected ${order.total}, got ${amount}`
+        `Expected ${order.totalCents}, got ${amountCents}`
       );
     }
 
@@ -189,8 +189,6 @@ export class PaymentService {
     });
 
     try {
-      // Convert amount to cents
-      const amountInCents = Math.round(amount * 100);
       const idempotencyKey = `order-${orderId}-${randomUUID()}`;
 
       // Create payment with Square
@@ -198,7 +196,7 @@ export class PaymentService {
         idempotencyKey,
         sourceId,
         amountMoney: {
-          amount: BigInt(amountInCents),
+          amount: BigInt(amountCents),
           currency,
         },
         orderId: order.posOrderId || undefined,
@@ -209,7 +207,7 @@ export class PaymentService {
       const payment = response.result.payment;
 
       // Update order with payment info
-      await this.linkPaymentToOrder(orderId, payment.id, amount);
+      await this.linkPaymentToOrder(orderId, payment.id, amountCents);
 
       return {
         success: true,
@@ -299,14 +297,14 @@ export class PaymentService {
     }
 
     try {
-      const amountInCents = Math.round((order.paymentAmount || order.total) * 100);
+      const amountCents = order.paymentAmountCents || order.totalCents;
       const idempotencyKey = `refund-${paymentId}-${randomUUID()}`;
 
       const response = await this.squareClient.refundsApi.refundPayment({
         idempotencyKey,
         paymentId,
         amountMoney: {
-          amount: BigInt(amountInCents),
+          amount: BigInt(amountCents),
           currency: 'USD',
         },
         reason,
@@ -349,14 +347,14 @@ export class PaymentService {
   private async linkPaymentToOrder(
     orderId: string,
     paymentId: string,
-    amount: number
+    amountCents: number
   ): Promise<void> {
     await this.prisma.order.update({
       where: { id: orderId },
       data: {
         paymentId,
         paymentStatus: 'COMPLETED',
-        paymentAmount: amount,
+        paymentAmountCents: amountCents,
         paymentMethod: 'card',
         paidAt: new Date(),
       },

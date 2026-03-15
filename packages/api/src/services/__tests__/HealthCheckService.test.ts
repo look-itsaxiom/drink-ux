@@ -21,7 +21,7 @@ class MockPOSAdapter implements POSAdapter {
     return { accessToken: 'token', refreshToken: 'refresh', expiresAt: new Date(), merchantId: 'merchant' };
   }
   async importCatalog(): Promise<RawCatalogData> {
-    return { items: [], modifiers: [], categories: [] };
+    return { items: [], modifiers: [], categories: [], images: [], taxes: [], modifierLists: [] };
   }
   async pushItem(_item: CatalogItem): Promise<string> { return 'item-id'; }
   async pushModifier(_modifier: CatalogModifier): Promise<string> { return 'mod-id'; }

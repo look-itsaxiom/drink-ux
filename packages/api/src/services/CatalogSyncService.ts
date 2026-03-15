@@ -231,7 +231,7 @@ export class CatalogSyncService {
       // 5. Get catalog data
       const [bases, modifiers, presets] = await Promise.all([
         this.prisma.base.findMany({ where: { businessId } }),
-        this.prisma.modifier.findMany({ where: { businessId } }),
+        this.prisma.modifier.findMany({ where: { businessId }, include: { modifierGroup: true } }),
         this.prisma.preset.findMany({ where: { businessId } }),
       ]);
 
@@ -239,7 +239,7 @@ export class CatalogSyncService {
       const localBases: LocalItem[] = bases.map((b) => ({
         id: b.id,
         name: b.name,
-        basePrice: b.basePrice,
+        priceCents: b.priceCents,
         posItemId: b.posItemId,
         available: b.available,
         updatedAt: b.updatedAt,
@@ -248,8 +248,8 @@ export class CatalogSyncService {
       const localModifiers: LocalModifier[] = modifiers.map((m) => ({
         id: m.id,
         name: m.name,
-        type: m.type,
-        price: m.price,
+        groupName: m.modifierGroup.name,
+        priceCents: m.priceCents,
         posModifierId: m.posModifierId,
         available: m.available,
         updatedAt: m.updatedAt,
@@ -258,7 +258,7 @@ export class CatalogSyncService {
       const localPresets: LocalItem[] = presets.map((p) => ({
         id: p.id,
         name: p.name,
-        price: p.price,
+        priceCents: p.priceCents,
         posItemId: p.posItemId,
         available: p.available,
         updatedAt: p.updatedAt,
@@ -400,23 +400,25 @@ export class CatalogSyncService {
   }
 
   /**
-   * Convert diff item to CatalogItem for POS adapter
+   * Convert diff item to CatalogItem for POS adapter.
+   * Prices in diff are already in cents — pass through directly.
    */
   private toCatalogItem(item: DiffItemChange): CatalogItem {
     return {
       name: item.name,
-      price: Math.round(item.price * 100), // Convert to cents
+      price: item.priceCents,
     };
   }
 
   /**
-   * Convert diff modifier to CatalogModifier for POS adapter
+   * Convert diff modifier to CatalogModifier for POS adapter.
+   * Prices in diff are already in cents — pass through directly.
    */
   private toCatalogModifier(modifier: DiffModifierChange): CatalogModifier {
     return {
       name: modifier.name,
-      price: Math.round(modifier.price * 100), // Convert to cents
-      modifierListName: modifier.modifierType,
+      price: modifier.priceCents,
+      modifierListName: modifier.groupName,
     };
   }
 
@@ -462,14 +464,14 @@ export class CatalogSyncService {
     // Calculate pending changes
     const [bases, modifiers, presets] = await Promise.all([
       this.prisma.base.findMany({ where: { businessId } }),
-      this.prisma.modifier.findMany({ where: { businessId } }),
+      this.prisma.modifier.findMany({ where: { businessId }, include: { modifierGroup: true } }),
       this.prisma.preset.findMany({ where: { businessId } }),
     ]);
 
     const localBases: LocalItem[] = bases.map((b) => ({
       id: b.id,
       name: b.name,
-      basePrice: b.basePrice,
+      priceCents: b.priceCents,
       posItemId: b.posItemId,
       available: b.available,
       updatedAt: b.updatedAt,
@@ -478,8 +480,8 @@ export class CatalogSyncService {
     const localModifiers: LocalModifier[] = modifiers.map((m) => ({
       id: m.id,
       name: m.name,
-      type: m.type,
-      price: m.price,
+      groupName: m.modifierGroup.name,
+      priceCents: m.priceCents,
       posModifierId: m.posModifierId,
       available: m.available,
       updatedAt: m.updatedAt,
@@ -488,7 +490,7 @@ export class CatalogSyncService {
     const localPresets: LocalItem[] = presets.map((p) => ({
       id: p.id,
       name: p.name,
-      price: p.price,
+      priceCents: p.priceCents,
       posItemId: p.posItemId,
       available: p.available,
       updatedAt: p.updatedAt,

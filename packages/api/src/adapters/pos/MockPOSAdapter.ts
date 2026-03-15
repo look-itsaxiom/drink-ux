@@ -40,6 +40,9 @@ export class MockPOSAdapter implements POSAdapter {
     categories: [
       { id: 'mock-cat-1', name: 'Mock Coffee', ordinal: 1 },
     ],
+    images: [],
+    taxes: [],
+    modifierLists: [],
   };
 
   private pushItemResponse: string = 'mock-pos-item-id';

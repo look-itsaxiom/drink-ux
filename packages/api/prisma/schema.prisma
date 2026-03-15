@@ -1,5 +1,5 @@
 // Prisma schema for Drink-UX
-// Source of truth for coffee shop menu management
+// Source of truth for menu management — supports any food/drink business
 
 generator client {
   provider = "prisma-client-js"
@@ -33,29 +33,11 @@ enum POSProvider {
   CLOVER
 }
 
-enum TemperatureConstraint {
-  HOT_ONLY
-  ICED_ONLY
-  BOTH
-}
-
-enum ModifierType {
-  MILK
-  SYRUP
-  TOPPING
-}
-
 enum ItemType {
   BASE
   MODIFIER
   HIDDEN
   COMBO
-}
-
-enum CupSize {
-  SMALL
-  MEDIUM
-  LARGE
 }
 
 enum OrderStatus {
@@ -159,6 +141,7 @@ model Business {
   owner              User         @relation(fields: [ownerId], references: [id])
   categories         Category[]
   bases              Base[]
+  modifierGroups     ModifierGroup[]
   modifiers          Modifier[]
   presets            Preset[]
   orders             Order[]
@@ -179,6 +162,7 @@ model Category {
   displayOrder Int      @default(0)
   color        String?  // Hex color for UI
   icon         String?  // Icon identifier
+  posCategoryId String? // Square category ID
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -190,80 +174,129 @@ model Category {
 }
 
 model Base {
-  id                    String                @id @default(cuid())
+  id                    String    @id @default(cuid())
   businessId            String
   categoryId            String
   name                  String
-  basePrice             Float
-  temperatureConstraint TemperatureConstraint @default(BOTH)
-  available             Boolean               @default(true)
+  priceCents            Int       // Base price in cents (used when no variations exist)
+  available             Boolean   @default(true)
+  needsReview           Boolean   @default(false) // Flagged for admin review (e.g., imported without price)
+  imageUrl              String?   // Product image URL
 
   // Visual properties for DrinkVisualizer
   visualColor           String?
-  visualOpacity         Float                 @default(1.0)
+  visualOpacity         Float     @default(1.0)
 
   // POS mapping (set after sync)
-  posItemId             String?               // Square catalog ITEM ID (for catalog sync/update)
-  posVariationId        String?               // Square catalog VARIATION ID (required for order submission)
+  posItemId             String?   // Square catalog ITEM ID (for catalog sync/update)
 
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   // Relations
-  business              Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  category              Category              @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  business              Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category              Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  variations            Variation[]
   presets               Preset[]
 
   @@unique([businessId, name])
 }
 
+/// Represents a purchasable variant of a Base item (e.g., "Small", "12oz", "Single Shot").
+/// Maps 1:1 to Square ITEM_VARIATION objects. Every Base should have at least one Variation.
+model Variation {
+  id              String   @id @default(cuid())
+  baseId          String
+  name            String   // e.g., "Small", "Medium", "Large", "12oz", "Regular"
+  priceCents      Int      // Price in cents for this variation
+  displayOrder    Int      @default(0)
+  available       Boolean  @default(true)
+
+  // POS mapping
+  posVariationId  String?  // Square catalog ITEM_VARIATION ID (required for order submission)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  base            Base     @relation(fields: [baseId], references: [id], onDelete: Cascade)
+  presets         Preset[] @relation("PresetDefaultVariation")
+
+  @@unique([baseId, name])
+}
+
+/// Groups modifiers by business-defined categories (e.g., "Milk Options", "Sauces", "Sides").
+/// Replaces the old ModifierType enum (MILK|SYRUP|TOPPING) with a flexible, freeform model.
+/// Maps 1:1 to Square MODIFIER_LIST objects.
+model ModifierGroup {
+  id                  String   @id @default(cuid())
+  businessId          String
+  name                String   // e.g., "Milk Options", "Syrups", "Toppings", "Sauces"
+  displayOrder        Int      @default(0)
+  selectionMode       String   @default("multiple") // "single" (pick one) or "multiple" (pick many)
+
+  // POS mapping
+  posModifierListId   String?  // Square MODIFIER_LIST ID
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  business            Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  modifiers           Modifier[]
+
+  @@unique([businessId, name])
+}
+
 model Modifier {
-  id                   String       @id @default(cuid())
+  id                   String        @id @default(cuid())
   businessId           String
-  type                 ModifierType
+  modifierGroupId      String
   name                 String
-  price                Float        @default(0)
-  available            Boolean      @default(true)
+  priceCents           Int           @default(0)  // Price in cents
+  available            Boolean       @default(true)
 
   // Visual properties for DrinkVisualizer
   visualColor          String?
-  visualLayerOrder     Int          @default(0)
-  visualAnimationType  String?      // "foam", "drizzle", "sparkle", etc.
+  visualLayerOrder     Int           @default(0)
+  visualAnimationType  String?       // "foam", "drizzle", "sparkle", etc.
 
   // POS mapping (set after sync)
   posModifierId        String?
 
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   // Relations
-  business             Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business             Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  modifierGroup        ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
   presetModifiers      PresetModifier[]
 
-  @@unique([businessId, type, name])
+  @@unique([businessId, modifierGroupId, name])
 }
 
 model Preset {
-  id          String    @id @default(cuid())
-  businessId  String
-  name        String
-  baseId      String
-  defaultSize CupSize   @default(MEDIUM)
-  defaultHot  Boolean   @default(true)
-  price       Float
-  available   Boolean   @default(true)
-  imageUrl    String?
+  id                 String     @id @default(cuid())
+  businessId         String
+  name               String
+  baseId             String
+  defaultVariationId String?    // Optional default variation (e.g., "Medium")
+  defaultHot         Boolean    @default(true)
+  priceCents         Int        // Price in cents
+  available          Boolean    @default(true)
+  imageUrl           String?
 
   // POS mapping (set after sync)
-  posItemId   String?
+  posItemId          String?
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
 
   // Relations
-  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  base        Base      @relation(fields: [baseId], references: [id], onDelete: Cascade)
-  modifiers   PresetModifier[]
+  business           Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  base               Base       @relation(fields: [baseId], references: [id], onDelete: Cascade)
+  defaultVariation   Variation? @relation("PresetDefaultVariation", fields: [defaultVariationId], references: [id])
+  modifiers          PresetModifier[]
 
   @@unique([businessId, name])
 }
@@ -306,15 +339,15 @@ model Order {
   // Order state
   status        OrderStatus @default(PENDING)
 
-  // Pricing
-  subtotal      Float
-  tax           Float
-  total         Float
+  // Pricing (in cents)
+  subtotalCents Int
+  taxCents      Int
+  totalCents    Int
 
   // Payment info
   paymentId       String?         // Square payment ID
   paymentStatus   PaymentStatus   @default(PENDING)
-  paymentAmount   Float?          // Amount charged (may differ from total in future)
+  paymentAmountCents Int?         // Amount charged in cents
   paymentMethod   String?         // "card", "cash", etc.
   paidAt          DateTime?       // When payment was completed
 
@@ -349,14 +382,14 @@ model OrderItem {
   // Snapshot of what was ordered (denormalized for history)
   name        String  // e.g., "Vanilla Oat Latte"
   quantity    Int     @default(1)
-  size        String  // SMALL, MEDIUM, LARGE
-  temperature String  // HOT, ICED
+  size        String  // Variation name (e.g., "Small", "12oz", "Regular")
+  temperature String  // Free-form (e.g., "HOT", "ICED", or empty for non-drink items)
 
-  // Pricing
-  unitPrice   Float
-  totalPrice  Float
+  // Pricing (in cents)
+  unitPriceCents  Int
+  totalPriceCents Int
 
-  // Modifiers as JSON array: [{ id, name, price }]
+  // Modifiers as JSON array: [{ id, name, priceCents }]
   modifiers   Json    @default("[]")
 
   notes       String?
@@ -435,7 +468,7 @@ model SubscriptionPlan {
   squarePlanId    String          @unique  // Square catalog subscription plan ID
   name            String
   description     String?
-  price           Float           // Price in dollars
+  priceCents      Int             // Price in cents
   interval        BillingInterval @default(MONTHLY)
   features        String[]        @default([])
   isActive        Boolean         @default(true)
