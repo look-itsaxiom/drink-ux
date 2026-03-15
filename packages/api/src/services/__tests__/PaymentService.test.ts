@@ -65,7 +65,7 @@ async function createTestBusinessWithOrder(): Promise<{
       businessId,
       categoryId: category.id,
       name: 'Latte',
-      basePrice: 5.0,
+      priceCents: 500,
     },
   });
 
@@ -77,9 +77,9 @@ async function createTestBusinessWithOrder(): Promise<{
       pickupCode: 'ABCD',
       customerName: 'Test Customer',
       customerEmail: 'test@example.com',
-      subtotal: 5.0,
-      tax: 0.41,
-      total: 5.41,
+      subtotalCents: 500,
+      taxCents: 41,
+      totalCents: 541,
       status: 'PENDING',
       paymentStatus: 'PENDING',
       items: {
@@ -89,8 +89,8 @@ async function createTestBusinessWithOrder(): Promise<{
           quantity: 1,
           size: 'MEDIUM',
           temperature: 'HOT',
-          unitPrice: 5.0,
-          totalPrice: 5.0,
+          unitPriceCents: 500,
+          totalPriceCents: 500,
           modifiers: '[]',
         },
       },
@@ -101,7 +101,7 @@ async function createTestBusinessWithOrder(): Promise<{
     userId: user.id,
     businessId,
     orderId: order.id,
-    orderTotal: order.total,
+    orderTotal: order.totalCents,
   };
 }
 
@@ -169,7 +169,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       const result = await paymentService.processPayment(input);
@@ -196,7 +196,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       await paymentService.processPayment(input);
@@ -224,7 +224,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       await paymentService.processPayment(input);
@@ -249,7 +249,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: 5.41, // $5.41
+        amountCents: 541, // 541 cents
       };
 
       await paymentService.processPayment(input);
@@ -277,7 +277,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: testData.orderTotal, // Must match order total
+        amountCents: testData.orderTotal, // Must match order total
         currency: 'CAD',
       };
 
@@ -312,7 +312,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'invalid-token',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       await expect(paymentService.processPayment(input)).rejects.toThrow(PaymentError);
@@ -338,7 +338,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-declined',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       await expect(paymentService.processPayment(input)).rejects.toThrow(PaymentError);
@@ -365,7 +365,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-expired',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       await expect(paymentService.processPayment(input)).rejects.toThrow(PaymentError);
@@ -385,7 +385,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       await expect(paymentService.processPayment(input)).rejects.toThrow(PaymentError);
@@ -401,7 +401,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: 'non-existent-order',
         sourceId: 'cnon:card-nonce-ok',
-        amount: 5.41,
+        amountCents: 541,
       };
 
       await expect(paymentService.processPayment(input)).rejects.toThrow(PaymentError);
@@ -427,7 +427,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       await expect(paymentService.processPayment(input)).rejects.toThrow(PaymentError);
@@ -453,7 +453,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-declined',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       try {
@@ -484,7 +484,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       await expect(paymentService.processPayment(input)).rejects.toThrow(PaymentError);
@@ -506,7 +506,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       await expect(paymentService.processPayment(input)).rejects.toThrow(PaymentError);
@@ -516,7 +516,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: 100.00, // Different from order total of 5.41
+        amountCents: 10000, // Different from order total of 541
       };
 
       await expect(paymentService.processPayment(input)).rejects.toThrow(PaymentError);
@@ -532,7 +532,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: 2.00, // Partial payment
+        amountCents: 200, // Partial payment in cents
       };
 
       await expect(paymentService.processPayment(input)).rejects.toThrow(PaymentError);
@@ -623,7 +623,7 @@ describe('PaymentService', () => {
         data: {
           paymentStatus: 'COMPLETED',
           paymentId: 'payment-to-refund',
-          paymentAmount: testData.orderTotal,
+          paymentAmountCents: testData.orderTotal,
           paidAt: new Date(),
         },
       });
@@ -750,7 +750,7 @@ describe('PaymentService', () => {
       const input: ProcessPaymentInput = {
         orderId: testData.orderId,
         sourceId: 'cnon:card-nonce-ok',
-        amount: testData.orderTotal,
+        amountCents: testData.orderTotal,
       };
 
       await paymentService.processPayment(input);
@@ -760,7 +760,7 @@ describe('PaymentService', () => {
       });
 
       expect(order?.paymentId).toBe('linked-payment-123');
-      expect(order?.paymentAmount).toBe(testData.orderTotal);
+      expect(order?.paymentAmountCents).toBe(testData.orderTotal);
     });
   });
 });

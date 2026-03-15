@@ -38,27 +38,50 @@ const mockMappedCatalog: MappedCatalog = {
       name: 'Latte',
       price: 4.50,
       category: 'Coffee',
-      sizes: ['small', 'medium', 'large'],
+      variations: [
+        { variationId: 'var-1', name: 'small', price: 4.00 },
+        { variationId: 'var-2', name: 'medium', price: 4.50 },
+        { variationId: 'var-3', name: 'large', price: 5.00 },
+      ],
       temperatures: ['hot', 'iced'],
+      modifierGroupIds: ['mg-milks', 'mg-syrups'],
     },
     {
       squareItemId: 'item-2',
       name: 'Green Tea',
       price: 3.00,
       category: 'Tea',
-      sizes: ['medium', 'large'],
+      variations: [
+        { variationId: 'var-4', name: 'medium', price: 3.00 },
+        { variationId: 'var-5', name: 'large', price: 3.50 },
+      ],
       temperatures: ['hot', 'iced'],
+      modifierGroupIds: ['mg-milks'],
     },
   ],
-  modifiers: {
-    milks: [
-      { squareModifierId: 'mod-1', name: 'Oat Milk', price: 0.75 },
-    ],
-    syrups: [
-      { squareModifierId: 'mod-2', name: 'Vanilla', price: 0.50 },
-    ],
-    toppings: [],
-  },
+  modifierGroups: [
+    {
+      id: 'mg-milks',
+      name: 'Milks',
+      selectionMode: 'single',
+      minSelections: 0,
+      maxSelections: 1,
+      modifiers: [
+        { squareModifierId: 'mod-1', name: 'Oat Milk', price: 0.75 },
+      ],
+    },
+    {
+      id: 'mg-syrups',
+      name: 'Syrups',
+      selectionMode: 'multi',
+      minSelections: 0,
+      maxSelections: 5,
+      modifiers: [
+        { squareModifierId: 'mod-2', name: 'Vanilla', price: 0.50 },
+      ],
+    },
+  ],
+  presets: [],
 };
 
 describe('useCatalog', () => {
@@ -105,7 +128,7 @@ describe('useCatalog', () => {
     expect(result.current.categories.map(c => c.name)).toContain('Tea');
   });
 
-  it('should provide modifiers grouped by type', async () => {
+  it('should provide modifier groups', async () => {
     const { result } = renderHook(() =>
       useCatalog({ businessId: 'test-business-id' })
     );
@@ -114,9 +137,9 @@ describe('useCatalog', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(result.current.modifiers.milks).toHaveLength(1);
-    expect(result.current.modifiers.syrups).toHaveLength(1);
-    expect(result.current.modifiers.toppings).toHaveLength(0);
+    expect(result.current.modifierGroups).toHaveLength(2);
+    expect(result.current.modifierGroups[0].name).toBe('Milks');
+    expect(result.current.modifierGroups[1].name).toBe('Syrups');
   });
 
   it('should skip fetch when skip option is true', () => {

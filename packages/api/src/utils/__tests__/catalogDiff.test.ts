@@ -34,7 +34,7 @@ describe('catalogDiff', () => {
             {
               id: 'base-1',
               name: 'Espresso',
-              basePrice: 3.5,
+              priceCents: 350,
               posItemId: null,
               available: true,
               updatedAt: new Date('2024-01-01'),
@@ -60,7 +60,7 @@ describe('catalogDiff', () => {
             {
               id: 'preset-1',
               name: 'Vanilla Latte',
-              price: 5.5,
+              priceCents: 550,
               posItemId: null,
               available: true,
               updatedAt: new Date('2024-01-01'),
@@ -80,8 +80,8 @@ describe('catalogDiff', () => {
             {
               id: 'mod-1',
               name: 'Oat Milk',
-              type: 'MILK',
-              price: 0.7,
+              groupName: 'MILK',
+              priceCents: 70,
               posModifierId: null,
               available: true,
               updatedAt: new Date('2024-01-01'),
@@ -109,7 +109,7 @@ describe('catalogDiff', () => {
               {
                 id: 'base-1',
                 name: 'Updated Espresso',
-                basePrice: 4.0,
+                priceCents: 400,
                 posItemId: 'pos-item-123', // Already synced
                 available: true,
                 updatedAt: afterSyncTime, // Modified after sync
@@ -132,7 +132,7 @@ describe('catalogDiff', () => {
             {
               id: 'base-1',
               name: 'Old Espresso',
-              basePrice: 3.5,
+              priceCents: 350,
               posItemId: 'pos-item-123',
               available: false, // Deactivated
               updatedAt: new Date('2024-01-01'),
@@ -157,7 +157,7 @@ describe('catalogDiff', () => {
               {
                 id: 'base-1',
                 name: 'Espresso',
-                basePrice: 3.5,
+                priceCents: 350,
                 posItemId: 'pos-item-123',
                 available: true,
                 updatedAt: beforeSyncTime, // Modified before sync
@@ -186,7 +186,7 @@ describe('catalogDiff', () => {
               {
                 id: 'base-new',
                 name: 'New Item',
-                basePrice: 3.0,
+                priceCents: 300,
                 posItemId: null,
                 available: true,
                 updatedAt: afterSyncTime,
@@ -195,7 +195,7 @@ describe('catalogDiff', () => {
               {
                 id: 'base-updated',
                 name: 'Updated Item',
-                basePrice: 4.0,
+                priceCents: 400,
                 posItemId: 'pos-123',
                 available: true,
                 updatedAt: afterSyncTime,
@@ -204,7 +204,7 @@ describe('catalogDiff', () => {
               {
                 id: 'base-deactivated',
                 name: 'Old Item',
-                basePrice: 3.5,
+                priceCents: 350,
                 posItemId: 'pos-456',
                 available: false,
                 updatedAt: afterSyncTime,
@@ -213,7 +213,7 @@ describe('catalogDiff', () => {
               {
                 id: 'base-unchanged',
                 name: 'Unchanged',
-                basePrice: 3.0,
+                priceCents: 300,
                 posItemId: 'pos-789',
                 available: true,
                 updatedAt: new Date('2023-12-01'), // Before sync
@@ -224,8 +224,8 @@ describe('catalogDiff', () => {
               {
                 id: 'mod-new',
                 name: 'New Syrup',
-                type: 'SYRUP',
-                price: 0.5,
+                groupName: 'SYRUP',
+                priceCents: 50,
                 posModifierId: null,
                 available: true,
                 updatedAt: afterSyncTime,
@@ -256,7 +256,7 @@ describe('catalogDiff', () => {
               {
                 id: 'preset-new',
                 name: 'New Latte',
-                price: 5.0,
+                priceCents: 500,
                 posItemId: null,
                 available: true,
                 updatedAt: afterSyncTime,
@@ -264,7 +264,7 @@ describe('catalogDiff', () => {
               {
                 id: 'preset-updated',
                 name: 'Updated Latte',
-                price: 5.5,
+                priceCents: 550,
                 posItemId: 'pos-preset-1',
                 available: true,
                 updatedAt: afterSyncTime,
@@ -272,7 +272,7 @@ describe('catalogDiff', () => {
               {
                 id: 'preset-deactivated',
                 name: 'Old Latte',
-                price: 5.0,
+                priceCents: 500,
                 posItemId: 'pos-preset-2',
                 available: false,
                 updatedAt: afterSyncTime,
@@ -310,7 +310,7 @@ describe('catalogDiff', () => {
               {
                 id: 'base-1',
                 name: 'Espresso',
-                basePrice: 3.5,
+                priceCents: 350,
                 posItemId: 'pos-123',
                 available: true,
                 updatedAt: new Date('2024-01-01'),
@@ -332,7 +332,7 @@ describe('catalogDiff', () => {
             {
               id: 'base-1',
               name: 'Espresso',
-              basePrice: 3.5,
+              priceCents: 350,
               posItemId: 'pos-123',
               available: true,
               updatedAt: new Date('2024-01-01'),
@@ -351,7 +351,7 @@ describe('catalogDiff', () => {
             {
               id: 'base-1',
               name: 'Base Item',
-              basePrice: 3.5,
+              priceCents: 350,
               posItemId: null,
               available: true,
               updatedAt: new Date(),
@@ -362,7 +362,7 @@ describe('catalogDiff', () => {
             {
               id: 'preset-1',
               name: 'Preset Item',
-              price: 5.0,
+              priceCents: 500,
               posItemId: null,
               available: true,
               updatedAt: new Date(),
@@ -383,7 +383,7 @@ describe('catalogDiff', () => {
             {
               id: 'base-1',
               name: 'Espresso',
-              basePrice: 3.5,
+              priceCents: 350,
               posItemId: null,
               available: true,
               updatedAt: new Date(),
@@ -393,8 +393,8 @@ describe('catalogDiff', () => {
             {
               id: 'mod-1',
               name: 'Vanilla',
-              type: 'SYRUP',
-              price: 0.75,
+              groupName: 'SYRUP',
+              priceCents: 75,
               posModifierId: null,
               available: true,
               updatedAt: new Date(),
@@ -404,7 +404,7 @@ describe('catalogDiff', () => {
             {
               id: 'preset-1',
               name: 'Latte',
-              price: 4.5,
+              priceCents: 450,
               posItemId: null,
               available: true,
               updatedAt: new Date(),
@@ -412,9 +412,9 @@ describe('catalogDiff', () => {
           ],
         });
 
-        expect(diff.items.created[0].price).toBe(3.5);
-        expect(diff.items.created[1].price).toBe(4.5);
-        expect(diff.modifiers.created[0].price).toBe(0.75);
+        expect(diff.items.created[0].priceCents).toBe(350);
+        expect(diff.items.created[1].priceCents).toBe(450);
+        expect(diff.modifiers.created[0].priceCents).toBe(75);
       });
 
       it('handles modifier type field correctly', () => {
@@ -424,8 +424,8 @@ describe('catalogDiff', () => {
             {
               id: 'mod-milk',
               name: 'Oat Milk',
-              type: 'MILK',
-              price: 0.7,
+              groupName: 'MILK',
+              priceCents: 70,
               posModifierId: null,
               available: true,
               updatedAt: new Date(),
@@ -433,8 +433,8 @@ describe('catalogDiff', () => {
             {
               id: 'mod-syrup',
               name: 'Vanilla',
-              type: 'SYRUP',
-              price: 0.5,
+              groupName: 'SYRUP',
+              priceCents: 50,
               posModifierId: null,
               available: true,
               updatedAt: new Date(),
@@ -442,8 +442,8 @@ describe('catalogDiff', () => {
             {
               id: 'mod-topping',
               name: 'Whipped Cream',
-              type: 'TOPPING',
-              price: 0.5,
+              groupName: 'TOPPING',
+              priceCents: 50,
               posModifierId: null,
               available: true,
               updatedAt: new Date(),
@@ -453,9 +453,9 @@ describe('catalogDiff', () => {
         });
 
         expect(diff.modifiers.created).toHaveLength(3);
-        expect(diff.modifiers.created.find(m => m.modifierType === 'MILK')).toBeDefined();
-        expect(diff.modifiers.created.find(m => m.modifierType === 'SYRUP')).toBeDefined();
-        expect(diff.modifiers.created.find(m => m.modifierType === 'TOPPING')).toBeDefined();
+        expect(diff.modifiers.created.find(m => m.groupName === 'MILK')).toBeDefined();
+        expect(diff.modifiers.created.find(m => m.groupName === 'SYRUP')).toBeDefined();
+        expect(diff.modifiers.created.find(m => m.groupName === 'TOPPING')).toBeDefined();
       });
 
       it('handles large catalog efficiently', () => {
@@ -467,7 +467,7 @@ describe('catalogDiff', () => {
           bases.push({
             id: `base-${i}`,
             name: `Item ${i}`,
-            basePrice: 3.0 + i * 0.1,
+            priceCents: 300 + i * 10,
             posItemId: i % 3 === 0 ? null : `pos-${i}`,
             available: i % 5 !== 0,
             updatedAt: new Date('2024-01-02'),
@@ -479,8 +479,8 @@ describe('catalogDiff', () => {
           modifiers.push({
             id: `mod-${i}`,
             name: `Modifier ${i}`,
-            type: 'SYRUP',
-            price: 0.5,
+            groupName: 'SYRUP',
+            priceCents: 50,
             posModifierId: i % 2 === 0 ? null : `pos-mod-${i}`,
             available: true,
             updatedAt: new Date('2024-01-02'),
@@ -508,7 +508,7 @@ describe('catalogDiff', () => {
             {
               id: 'base-1',
               name: '',
-              basePrice: 3.5,
+              priceCents: 350,
               posItemId: null,
               available: true,
               updatedAt: new Date(),
@@ -528,7 +528,7 @@ describe('catalogDiff', () => {
             {
               id: 'base-1',
               name: 'Free Item',
-              basePrice: 0,
+              priceCents: 0,
               posItemId: null,
               available: true,
               updatedAt: new Date(),
@@ -539,7 +539,7 @@ describe('catalogDiff', () => {
         });
 
         expect(diff.items.created).toHaveLength(1);
-        expect(diff.items.created[0].price).toBe(0);
+        expect(diff.items.created[0].priceCents).toBe(0);
       });
     });
   });

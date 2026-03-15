@@ -33,7 +33,8 @@ describe('Catalog Service', () => {
     it('should fetch mapped catalog from correct endpoint', async () => {
       const mockCatalog: MappedCatalog = {
         bases: [],
-        modifiers: { milks: [], syrups: [], toppings: [] },
+        modifierGroups: [],
+        presets: [],
       };
       mockGet.mockResolvedValue(mockCatalog);
 
@@ -47,9 +48,9 @@ describe('Catalog Service', () => {
   describe('groupBasesByCategory', () => {
     it('should group bases by category', () => {
       const bases: MappedBase[] = [
-        { squareItemId: '1', name: 'Latte', price: 4.5, category: 'Coffee', sizes: [], temperatures: [] },
-        { squareItemId: '2', name: 'Americano', price: 3.5, category: 'Coffee', sizes: [], temperatures: [] },
-        { squareItemId: '3', name: 'Green Tea', price: 3.0, category: 'Tea', sizes: [], temperatures: [] },
+        { squareItemId: '1', name: 'Latte', price: 4.5, category: 'Coffee', variations: [], temperatures: [], modifierGroupIds: [] },
+        { squareItemId: '2', name: 'Americano', price: 3.5, category: 'Coffee', variations: [], temperatures: [], modifierGroupIds: [] },
+        { squareItemId: '3', name: 'Green Tea', price: 3.0, category: 'Tea', variations: [], temperatures: [], modifierGroupIds: [] },
       ];
 
       const categories = groupBasesByCategory(bases);
@@ -65,7 +66,7 @@ describe('Catalog Service', () => {
 
     it('should use "Other" for bases without category', () => {
       const bases: MappedBase[] = [
-        { squareItemId: '1', name: 'Mystery Drink', price: 5.0, category: '', sizes: [], temperatures: [] },
+        { squareItemId: '1', name: 'Mystery Drink', price: 5.0, category: '', variations: [], temperatures: [], modifierGroupIds: [] },
       ];
 
       const categories = groupBasesByCategory(bases);
